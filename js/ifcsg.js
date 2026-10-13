@@ -192,11 +192,12 @@ export function indexRuleset(raw, overlay = null) {
           // RSP's own triage (blank on rows not yet categorised), not the
           // authority's — this is what the query tree groups components by.
           category: rule.rspCategory || null,
-          // Every category the selector's rows carry. CORENET X maps several
-          // RSP categories onto one selector (Area AGF/AST/ACN/AVF all on
-          // IfcSpace *AREA_GFA), so the query tree lists the target under each
-          // and shows each category only its own rows' properties.
-          categories: [],
+          // Every (RSP_Category, RSP_Priority) pair the selector's rows carry.
+          // CORENET X maps several RSP categories onto one selector (Area
+          // AGF/AST/ACN/AVF all on IfcSpace *AREA_GFA), and priority is set per
+          // row, so the query tree lists the target under each category and
+          // shows each category and priority only its own rows' properties.
+          tags: [],
           discipline: rule.discipline,
           entity: rule.entity,
           canonicalEntity: canonicalEntity(rule.entity),
@@ -209,7 +210,10 @@ export function indexRuleset(raw, overlay = null) {
       // it blank on another (e.g. a placeholder subtype row) — take the first
       // one seen rather than let a later blank row erase it.
       if (!target.category && rule.rspCategory) target.category = rule.rspCategory;
-      if (rule.rspCategory && !target.categories.includes(rule.rspCategory)) target.categories.push(rule.rspCategory);
+      const category = rule.rspCategory || null, priority = rule.rspPriority || null;
+      if (!target.tags.some((g) => g.category === category && g.priority === priority)) {
+        target.tags.push({ category, priority });
+      }
       if (rule.kind === 'requirement') target.requirements.push(rule);
     }
   }

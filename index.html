@@ -233,13 +233,18 @@
   .filters-top { flex-wrap: nowrap; padding: 8px 10px; }
   .filters-top label { white-space: nowrap; }
 
-  /* Gateway / Authority bubbles: the macro -> meso filter tiers, each row
-     scoped by the one(s) above it. Clicking a bubble drills the tree down. */
+  /* Gateway / Authority / Priority bubbles: the macro -> meso filter tiers,
+     each row scoped by the one(s) above it. Clicking a bubble drills the tree down. */
   .bubble-row {
     display: flex; flex-wrap: wrap; gap: 6px; padding: 9px 10px;
     border-bottom: 1px solid var(--border);
   }
   .bubble-row:empty { display: none; }
+  /* Each tier is headed like the Components section below it. */
+  .filter-tier { border-bottom: 1px solid var(--border); }
+  .filter-tier[hidden] { display: none; }
+  .filter-tier .q-head { position: static; }
+  .filter-tier .bubble-row { border-bottom: none; padding-top: 3px; }
   .bubble {
     display: flex; align-items: center; gap: 5px;
     background: var(--panel-2); border: 1px solid var(--border); color: var(--text-muted);
@@ -912,8 +917,9 @@
       <div class="filters filters-top">
         <label><input type="checkbox" id="f-present" checked /> Only components present in model</label>
       </div>
-      <div class="bubble-row" id="gw-bubbles"></div>
-      <div class="bubble-row" id="agency-bubbles"></div>
+      <div class="filter-tier"><div class="q-head">Gateway</div><div class="bubble-row" id="gw-bubbles"></div></div>
+      <div class="filter-tier"><div class="q-head">Authority</div><div class="bubble-row" id="agency-bubbles"></div></div>
+      <div class="filter-tier" id="priority-tier"><div class="q-head">Priority</div><div class="bubble-row" id="priority-bubbles"></div></div>
       <div class="filters">
         <input type="search" id="f-search" placeholder="Filter component or property…" />
       </div>
