@@ -1183,14 +1183,25 @@ function renderAgencyBubbles() {
  */
 const UNCATEGORISED = 'Uncategorised';
 
+/**
+ * The category a requirement is shown under. A row left blank takes its
+ * selector's first category, as an untriaged placeholder row always has.
+ */
+const reqCategory = (t, r) => r.rspCategory || t.category || UNCATEGORISED;
+
+/**
+ * A selector can sit under several categories (see `categories` in ifcsg.js):
+ * it is listed in each, and each shows only its own rows' properties.
+ */
 function componentGroups(targets) {
   const groups = new Map();
   for (const t of targets) {
-    const key = t.category || UNCATEGORISED;
-    let g = groups.get(key);
-    if (!g) groups.set(key, (g = { key, category: key, agencies: [], targets: [] }));
-    if (!g.agencies.includes(t.agency)) g.agencies.push(t.agency);
-    g.targets.push(t);
+    for (const key of t.categories.length ? t.categories : [UNCATEGORISED]) {
+      let g = groups.get(key);
+      if (!g) groups.set(key, (g = { key, category: key, agencies: [], targets: [] }));
+      if (!g.agencies.includes(t.agency)) g.agencies.push(t.agency);
+      g.targets.push(t);
+    }
   }
   return [...groups.values()].sort((a, b) => {
     if (a.category === UNCATEGORISED) return 1;
@@ -1230,6 +1241,7 @@ function groupProperties(group) {
   const list = new Map();
   for (const t of group.targets) {
     for (const r of t.requirements) {
+      if (reqCategory(t, r) !== group.category) continue;
       let p = list.get(reqId(r));
       if (!p) list.set(reqId(r), (p = { req: r, entities: [] }));
       if (!p.entities.includes(t.entity)) p.entities.push(t.entity);
@@ -1245,7 +1257,7 @@ function propertyElements(group, req) {
   const id = reqId(req);
   const seen = new Map();
   for (const t of group.targets) {
-    if (!t.requirements.some((r) => reqId(r) === id)) continue;
+    if (!t.requirements.some((r) => reqId(r) === id && reqCategory(t, r) === group.category)) continue;
     for (const e of selectElements(index, t)) seen.set(e.key, e);
   }
   return [...seen.values()];
@@ -2852,8 +2864,6 @@ function renderProjectPanel() {
         <input data-f="name" value="${esc(p.project.name)}" placeholder="Development name" /></label>
       <label class="pp-field"><span>Developer / client</span>
         <input data-f="developer" value="${esc(p.project.developer)}" /></label>
-      <label class="pp-field"><span>Cadastral lots</span>
-        <input data-f="lots" value="${esc(p.project.lots.join(', '))}" placeholder="MK18-01234A, MK18-01235K" /></label>
 
       <div class="pp-field"><span>Cadastral lot GeoJSON <small>from URA's site-information service</small></span>
         <div class="cm-file">
@@ -2920,10 +2930,7 @@ function renderProjectPanel() {
   el.projectPanel.querySelectorAll('input[data-f]').forEach((box) => {
     box.addEventListener('input', () => {
       ensureProject();
-      const f = box.dataset.f;
-      project.project[f] = f === 'lots'
-        ? box.value.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean)
-        : box.value.trim();
+      project.project[box.dataset.f] = box.value.trim();
       // Only the chip: redrawing the panel mid-keystroke would lose the caret.
       const dot = el.projectChip.querySelector('.pc-dot');
       dot.hidden = !projectDirty();
@@ -2951,7 +2958,7 @@ function renderProjectPanel() {
     }
     ensureProject();
     checkInputs.set(LOT_INPUT_KEY, { name: file.name, text });
-    // The lot numbers come with the file; add any the identity field lacks.
+    // The lot numbers come with the file; the report lists them.
     for (const l of parsed.lots) if (!project.project.lots.includes(l.key)) project.project.lots.push(l.key);
     for (const w of parsed.warnings) toast(w);
     redrawSurveyIfShown();

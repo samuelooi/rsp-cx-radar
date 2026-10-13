@@ -25,10 +25,13 @@
   mapping, not yet triaged) — a blank RSP_Category is expected, not an error.
   The query tree groups components by RSP_Category, with the untriaged ones
   under "Uncategorised".
+
+  "Suggested Revit Representation" is optional: later revisions drop it, and
+  the viewer does not use it.
 #>
 [CmdletBinding()]
 param(
-  [string]$Xlsx = "C:\Users\tx_samuel_ooi\OneDrive - RSP ARCHITECTS PLANNERS & ENGINEERS (PTE) LTD\Documents\0 - RSP IFC Model Viewer\Settings\industry-mapping-4-dec-2025139335b79c8943d695c7b84984c9d50b_gateway mapping.xlsx",
+  [string]$Xlsx = "C:\Users\tx_samuel_ooi\OneDrive - RSP ARCHITECTS PLANNERS & ENGINEERS (PTE) LTD\Documents\20260305 IFC Model Checker\industry-mapping-4-dec-2025139335b79c8943d695c7b84984c9d50b_gateway mapping.xlsx",
   [string]$Out = '',
 
   # Which "Suggested Discipline" rows to keep. Defaults to the architectural
@@ -202,8 +205,9 @@ try {
     unit = 'Property Unit'; materialSet = 'IFC4 Material Set'
     accepted = 'Accepted Values'; sample = 'Sample Value'
   }
-  # Optional: not every workbook revision has RSP's own triage columns yet.
-  $optionalCols = @('rspPriority', 'rspCategory', 'rspTypology')
+  # Optional: not every workbook revision has RSP's own triage columns yet, and
+  # later revisions drop the Revit column.
+  $optionalCols = @('rspPriority', 'rspCategory', 'rspTypology', 'revit')
   foreach ($key in $wanted.Keys) {
     $labels = @($wanted[$key])
     foreach ($label in $labels) {
