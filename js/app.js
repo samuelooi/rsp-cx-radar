@@ -117,6 +117,8 @@ let planActive = null;     // { name, y } while a plan view is showing
 // since it is checked for everything. '' means "all" for the authority tier.
 let gatewayFilter = GATEWAY.CONSTRUCTION;
 let agencyFilter = '';
+// RSP_Priority, below Authority: RSP's own triage, set per workbook row. '' = all.
+let priorityFilter = '';
 
 // Visibility policy. The viewer holds the resulting set; these two own the intent.
 const manualHidden = new Set();   // element keys hidden via the context menu
@@ -131,7 +133,7 @@ const el = {
   fileInput: $('file-input'), dropzone: $('dropzone'),
   loading: $('loading'), barFill: $('bar-fill'), loadingLabel: $('loading-label'),
   toast: $('toast'), left: $('left'), models: $('models'),
-  gwBubbles: $('gw-bubbles'), agencyBubbles: $('agency-bubbles'),
+  gwBubbles: $('gw-bubbles'), agencyBubbles: $('agency-bubbles'), priorityBubbles: $('priority-bubbles'), priorityTier: $('priority-tier'),
   fSearch: $('f-search'), fPresent: $('f-present'),
   tree: $('tree'), legend: $('legend'), legendTitle: $('legend-title'), legendRows: $('legend-rows'),
   btnClearQuery: $('btn-clear-query'),
@@ -1066,10 +1068,14 @@ function inScope(t) {
   return !projectAuthorities || t.agency === AGENCY_ALL || projectAuthorities.has(t.agency);
 }
 
+/** Does a workbook row's RSP_Priority pass the priority filter? */
+const matchesPriority = (p) => !priorityFilter || p === priorityFilter;
+
 function visibleTargets() {
   const list = ruleset.targets.filter((t) =>
     (!gatewayFilter || t.gateway === gatewayFilter) &&
     inScope(t) &&
+    t.tags.some((g) => matchesPriority(g.priority)) &&
     matchesSecondaryFilters(t));
   // With an authority chosen, its own components read first and the ones every
   // authority shares follow. The sort is stable, so the order within each
@@ -1086,6 +1092,7 @@ function visibleTargets() {
 function refreshFilters() {
   renderGatewayBubbles();
   renderAgencyBubbles();
+  renderPriorityBubbles();
   renderTree();
   renderProjectChip();
 }
@@ -1128,6 +1135,7 @@ function setGateway(gateway) {
     t.agency === agencyFilter && (!gatewayFilter || t.gateway === gatewayFilter) && matchesSecondaryFilters(t))) {
     agencyFilter = '';
   }
+  dropEmptyPriority();
   renderCheckMenu();
 }
 
@@ -1148,7 +1156,45 @@ function renderAgencyBubbles() {
   ];
   renderBubbles(el.agencyBubbles, items, agencyFilter, (id) => {
     agencyFilter = id;
+    dropEmptyPriority();
     renderAgencyBubbles();
+    renderPriorityBubbles();
+    renderTree();
+  });
+}
+
+/** Targets the gateway and authority tiers leave in view, before priority. */
+function priorityBase() {
+  return ruleset.targets.filter((t) =>
+    (!gatewayFilter || t.gateway === gatewayFilter) && inScope(t) && matchesSecondaryFilters(t));
+}
+
+/** As for authority: a priority with nothing left under the tiers above drops back to "all". */
+function dropEmptyPriority() {
+  if (priorityFilter && ruleset &&
+      !priorityBase().some((t) => t.tags.some((g) => g.priority === priorityFilter))) {
+    priorityFilter = '';
+  }
+}
+
+const PRIORITY_ORDER = ['High', 'Medium', 'Low'];
+
+/** Priority is the third tier: scoped by the gateway and authority selected above it. */
+function renderPriorityBubbles() {
+  if (!el.priorityBubbles) return;
+  const base = priorityBase();
+  const priorities = [...new Set(ruleset.targets.flatMap((t) => t.tags.map((g) => g.priority)).filter(Boolean))]
+    .sort((a, b) => ((PRIORITY_ORDER.indexOf(a) + 1) || 99) - ((PRIORITY_ORDER.indexOf(b) + 1) || 99) ||
+      a.localeCompare(b));
+  // A workbook without the RSP_Priority column has nothing to filter by.
+  el.priorityTier.hidden = !priorities.length;
+  const items = [
+    { id: '', label: 'All', n: base.length },
+    ...priorities.map((p) => ({ id: p, label: p, n: base.filter((t) => t.tags.some((g) => g.priority === p)).length })),
+  ];
+  renderBubbles(el.priorityBubbles, items, priorityFilter, (id) => {
+    priorityFilter = id;
+    renderPriorityBubbles();
     renderTree();
   });
 }
@@ -1190,13 +1236,26 @@ const UNCATEGORISED = 'Uncategorised';
 const reqCategory = (t, r) => r.rspCategory || t.category || UNCATEGORISED;
 
 /**
- * A selector can sit under several categories (see `categories` in ifcsg.js):
- * it is listed in each, and each shows only its own rows' properties.
+ * A selector can sit under several categories (see `tags` in ifcsg.js): it is
+ * listed in each whose rows pass the priority filter, and each shows only its
+ * own rows' properties.
  */
+function targetCategories(t) {
+  const out = [];
+  for (const g of t.tags) {
+    const c = g.category || t.category || UNCATEGORISED;
+    if (matchesPriority(g.priority) && !out.includes(c)) out.push(c);
+  }
+  return out;
+}
+
+/** Is a requirement shown under this category at the current priority? */
+const reqShown = (t, r, category) => reqCategory(t, r) === category && matchesPriority(r.rspPriority || null);
+
 function componentGroups(targets) {
   const groups = new Map();
   for (const t of targets) {
-    for (const key of t.categories.length ? t.categories : [UNCATEGORISED]) {
+    for (const key of targetCategories(t)) {
       let g = groups.get(key);
       if (!g) groups.set(key, (g = { key, category: key, agencies: [], targets: [] }));
       if (!g.agencies.includes(t.agency)) g.agencies.push(t.agency);
@@ -1241,7 +1300,7 @@ function groupProperties(group) {
   const list = new Map();
   for (const t of group.targets) {
     for (const r of t.requirements) {
-      if (reqCategory(t, r) !== group.category) continue;
+      if (!reqShown(t, r, group.category)) continue;
       let p = list.get(reqId(r));
       if (!p) list.set(reqId(r), (p = { req: r, entities: [] }));
       if (!p.entities.includes(t.entity)) p.entities.push(t.entity);
@@ -1257,7 +1316,7 @@ function propertyElements(group, req) {
   const id = reqId(req);
   const seen = new Map();
   for (const t of group.targets) {
-    if (!t.requirements.some((r) => reqId(r) === id && reqCategory(t, r) === group.category)) continue;
+    if (!t.requirements.some((r) => reqId(r) === id && reqShown(t, r, group.category))) continue;
     for (const e of selectElements(index, t)) seen.set(e.key, e);
   }
   return [...seen.values()];
@@ -1274,8 +1333,8 @@ function renderTree() {
   const groups = componentGroups(visibleTargets());
 
   if (!groups.length) {
-    const msg = agencyFilter
-      ? 'No mapped components fall under this gateway/authority selection yet — try “All” authorities.'
+    const msg = agencyFilter || priorityFilter
+      ? 'No mapped components fall under this gateway/authority/priority selection yet — try “All”.'
       : index ? 'No mapped components match these filters.'
               : 'Load an IFC model, or untick “Only components present in model”.';
     el.tree.innerHTML = `<div class="empty-note">${msg}</div>`;
