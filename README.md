@@ -81,8 +81,9 @@ IFC set, `<code>.ifcsg-project.json`, rather than re-entered every session.
 Open the **project chip** in the top bar (or **New project** / **Open project
 file…** on the start card) to fill it in:
 
-- **Code, name, developer, cadastral lots** — identity, for the chip and the
-  recent list.
+- **Code, name, developer** — identity, for the chip and the recent list.
+- **Cadastral lot GeoJSON** — the lot file from URA. Its lot numbers are
+  recorded with the project and listed in the report.
 - **Submission gateway** — Design or Construction. One setting drives both the
   query tab's gateway filter and the URA check's own gateway selector, so the
   two can no longer disagree.
