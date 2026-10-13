@@ -19,7 +19,15 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { IFCLoader } from 'web-ifc-three/IFCLoader';
 import { convexHull } from './geo/polygon.js';
 
-export const WASM_PATH = 'https://unpkg.com/web-ifc@0.0.36/';
+/**
+ * Where web-ifc's engine (web-ifc.wasm, from the same 0.0.36 release the
+ * import map loads) is served from: a copy kept in this repository, beside the
+ * app. Hosts that allow scripts from a CDN but no other requests to it (a
+ * published Claude artifact, a strict CSP) would otherwise fail to load it.
+ * An absolute URL, because web-ifc resolves a relative one against its own
+ * script's location on the CDN.
+ */
+export const WASM_PATH = new URL('../vendor/web-ifc/', import.meta.url).href;
 
 /**
  * Store vertex normals as signed bytes instead of floats.
@@ -122,7 +130,9 @@ export class Viewer {
     this.scene.add(this.grid);
 
     this.loader = new IFCLoader();
-    this.loader.ifcManager.setWasmPath(WASM_PATH);
+    // ifcManager.setWasmPath cannot mark the path absolute, so set it on the API.
+    this.loader.ifcManager.state.api.SetWasmPath(WASM_PATH, true);
+    this.loader.ifcManager.state.wasmPath = WASM_PATH;
 
     /**
      * The shared datum for federated models, adopted from the first file loaded.
