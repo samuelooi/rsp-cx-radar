@@ -206,9 +206,9 @@
     background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
     z-index: 20; display: flex; flex-direction: column; overflow: hidden;
   }
-  #left.collapsed { width: 40px; }
-  #left.collapsed > *:not(.tabs) { display: none; }
-  #left.collapsed .tabs button span { display: none; }
+  /* Folded away entirely: the rail's first button brings it back. (The tab
+     bodies carry inline display styles, so hiding children would not stick.) */
+  #left.collapsed { display: none; }
 
   .tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .tabs button {
@@ -614,7 +614,7 @@
 
   /* ---------- Right info panel ---------- */
   #panel {
-    position: absolute; top: 60px; right: 12px; width: 300px;
+    position: absolute; top: 60px; right: 12px; width: 360px; min-width: 280px; max-width: calc(100vw - 420px);
     max-height: calc(100vh - 84px);
     background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
     z-index: 20; display: none; flex-direction: column; overflow: hidden;
@@ -630,25 +630,31 @@
     font-size: 15px; line-height: 1; padding: 2px 4px;
   }
   #panel .panel-close:hover { color: var(--text); }
-  #panel .panel-body { padding: 12px; overflow-y: auto; font-size: 12.5px; }
+  #panel .panel-body { padding: 12px; overflow-y: auto; overflow-x: hidden; font-size: 12.5px; }
+  /* Drag the left edge to widen the panel for long property names. */
+  #panel .panel-resize {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 6px; cursor: ew-resize; z-index: 1;
+  }
+  #panel .panel-resize:hover, #panel.resizing .panel-resize { background: var(--accent-dim); }
+  #panel.resizing { user-select: none; }
 
   .prop-type { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
   .prop-id {
     font-family: "SFMono-Regular", ui-monospace, Menlo, monospace;
     font-size: 11px; color: var(--accent); margin-bottom: 12px;
   }
-  .prop-row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-top: 1px solid var(--border); }
-  .prop-row .k { color: var(--text-muted); flex-shrink: 0; }
-  .prop-row .v { text-align: right; word-break: break-word; }
+  .prop-row { display: flex; align-items: baseline; gap: 10px; padding: 5px 0; border-top: 1px solid var(--border); }
+  .prop-row .k { color: var(--text-muted); flex: 0 1 auto; max-width: 48%; min-width: 0; overflow-wrap: anywhere; }
+  .prop-row .v { flex: 1 1 0; min-width: 0; text-align: right; overflow-wrap: anywhere; }
   .sec-head {
     font-size: 10.5px; letter-spacing: .06em; color: var(--text-dim);
     margin: 14px 0 4px; padding-top: 10px; border-top: 1px solid var(--border);
   }
   .pset-name { font-size: 11.5px; color: var(--accent); margin: 9px 0 2px; }
   .chk-row { display: flex; gap: 7px; padding: 4px 0; align-items: baseline; border-top: 1px solid #2e333c; }
-  .chk-row .ck { flex: 1; min-width: 0; }
+  .chk-row .ck { flex: 1; min-width: 0; overflow-wrap: anywhere; }
   .chk-row .ck small { display: block; color: var(--text-dim); font-size: 10.5px; }
-  .chk-row .cv { text-align: right; word-break: break-word; max-width: 45%; }
+  .chk-row .cv { text-align: right; overflow-wrap: anywhere; max-width: 40%; }
 
   /* ---------- Section cuts bar ---------- */
   #sections-bar {
@@ -716,7 +722,8 @@
     position: absolute; top: 60px; left: 354px;
     display: flex; flex-direction: column; gap: 6px; z-index: 20;
   }
-  #left.collapsed ~ #rail { left: 64px; }
+  #left.collapsed ~ #rail { left: 12px; }
+  #left.collapsed ~ #rail #tool-collapse svg { transform: scaleX(-1); }
   .rail-btn {
     width: 34px; height: 34px; background: var(--panel);
     border: 1px solid var(--border); border-radius: var(--radius);
@@ -779,7 +786,6 @@
   /* ---------- IFC editing ---------- */
   .btn.xs { padding: 2px 7px; font-size: 10.5px; line-height: 1.4; }
   .chk-row .btn.xs, .prop-row .btn.xs { margin-left: 6px; flex-shrink: 0; }
-  .prop-row .v .btn.xs { vertical-align: middle; }
   .edit-row {
     display: flex; gap: 6px; align-items: center; padding: 6px 0 8px 14px;
     border-top: 1px dashed var(--border);
@@ -1038,6 +1044,7 @@
 
   <!-- Right info panel -->
   <div id="panel">
+    <div class="panel-resize" id="panel-resize" title="Drag to resize"></div>
     <div class="panel-head">
       <span>ELEMENT</span>
       <button class="panel-close" id="panel-close">&times;</button>

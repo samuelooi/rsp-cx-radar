@@ -342,6 +342,7 @@ function wireUI() {
   wireProjectUI();
 
   el.panelClose.addEventListener('click', closeElementPanel);
+  wirePanelResize();
   el.btnReset.addEventListener('click', () => viewer.fit());
   el.toolFit.addEventListener('click', () => viewer.fit());
 
@@ -2592,7 +2593,7 @@ function showElement(item) {
         html += `
           <div class="chk-row">
             <span class="status-dot" style="background:${colour}" title="${esc(f.label)}"></span>
-            <span class="ck">${esc(f.message || f.label)}<small>${detail}</small></span>
+            <span class="ck">${breakAtDots(esc(f.message || f.label))}<small>${detail}</small></span>
             <span class="cv">${esc(f.value === undefined ? '' : f.value)}</span>${fix}
           </div>`;
       }
@@ -2609,7 +2610,7 @@ function showElement(item) {
         const pencil = editable
           ? `<button class="btn xs" data-edit data-pset="${esc(pn)}" data-prop="${esc(k)}" title="Change this value in the IFC">Edit</button>` : '';
         html += `<div class="prop-row"><span class="k">${esc(k)}</span>
-                 <span class="v">${esc(isEmptyValue(v) ? '—' : formatValue(v))}${pencil}</span></div>`;
+                 <span class="v">${esc(isEmptyValue(v) ? '—' : formatValue(v))}</span>${pencil}</div>`;
       }
     }
   }
@@ -3300,6 +3301,36 @@ function acceptedOptions(req) {
     return ruleset.spaceValues[req.prop].map((v) => v.value);
   }
   return null;
+}
+
+/** Let a long "Pset.Property" name wrap at its dots before anywhere else. */
+const breakAtDots = (html) => html.replace(/\./g, '.<wbr>');
+
+const PANEL_WIDTH_KEY = 'rsp.panelWidth';
+
+/** Drag the element panel's left edge to widen it; the width is remembered. */
+function wirePanelResize() {
+  const handle = $('panel-resize');
+  try {
+    const saved = +localStorage.getItem(PANEL_WIDTH_KEY);
+    if (saved) el.panel.style.width = saved + 'px';
+  } catch { /* ignore */ }
+
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    el.panel.classList.add('resizing');
+    const right = el.panel.getBoundingClientRect().right;
+    const move = (ev) => { el.panel.style.width = Math.round(right - ev.clientX) + 'px'; };
+    const up = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', up);
+      el.panel.classList.remove('resizing');
+      try { localStorage.setItem(PANEL_WIDTH_KEY, String(el.panel.offsetWidth)); } catch { /* ignore */ }
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', up);
+  });
 }
 
 /**
