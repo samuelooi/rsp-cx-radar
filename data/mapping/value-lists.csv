@@ -904,9 +904,16 @@ ALS_LandscapeType,BBQ Pit,,Space Values sheet
 ALS_LandscapeType_AreaALS,Turfing,,Accepted Values column
 ALS_LandscapeType_AreaALS,Groundcover,,Accepted Values column
 ALS_LandscapeType_AreaALS,Shrubs,,Accepted Values column
+ALS_Status,Existing,,Accepted Values column
+ALS_Status,Proposed,,Accepted Values column
+ALS_Status,To be Removed,,Accepted Values column
 AST_AreaType,Strata (Private),,Space Values sheet
 AST_AreaType,Strata (Communal),,Space Values sheet
 AST_AreaType,Common Area,,Space Values sheet
+BeamSpanType,Single,,Accepted Values column
+BeamSpanType,End,,Accepted Values column
+BeamSpanType,Interior,,Accepted Values column
+BeamSpanType,Cantilever,,Accepted Values column
 BicycleRack_Type,Single-Tier Wheel Rack,,Accepted Values column
 BicycleRack_Type,Single-Tier U-Bar,,Accepted Values column
 BicycleRack_Type,Double-Tier,,Accepted Values column
@@ -952,6 +959,7 @@ ConstructionMethod_HouseholdShelter,PT (Post),,Accepted Values column
 ConstructionMethod_HouseholdShelter,PF,,Accepted Values column
 ConstructionMethod_HouseholdShelter,PPVC,,Accepted Values column
 ConstructionMethod_HouseholdShelter,Spun,,Accepted Values column
+ConstructionMethod_PrefabricatedBuildingSystemsandMEPComponents,Prefabricated,,Accepted Values column
 ConstructionMethod_PrefabSpace,Prefab,,Accepted Values column
 ConstructionMethod_PrefabSpace,CIS,,Accepted Values column
 ConstructionMethod_PrefabSpace,PC,,Accepted Values column
@@ -981,6 +989,9 @@ FireRating,2.5,,Accepted Values column
 FireRating,3,,Accepted Values column
 FireRating,3.5,,Accepted Values column
 FireRating,4,,Accepted Values column
+LeftConnectionType,Pinned,,Accepted Values column
+LeftConnectionType,Fixed,,Accepted Values column
+LeftConnectionType,Free,,Accepted Values column
 LoadingCapacity,24,,Accepted Values column
 LoadingCapacity,30,,Accepted Values column
 LoadingCapacity,50,,Accepted Values column
@@ -999,6 +1010,15 @@ MaterialGrade,S235,,Accepted Values column
 MaterialGrade,S275,,Accepted Values column
 MaterialGrade,S355,,Accepted Values column
 MaterialGrade,S460,,Accepted Values column
+MechanicalConnectionType,telescopic beam connector,,Accepted Values column
+MechanicalConnectionType,grounted sleeves,,Accepted Values column
+MechanicalConnectionType,lotus-root system,,Accepted Values column
+MechanicalConnectionType_Column,column shoes,,Accepted Values column
+MechanicalConnectionType_Column,grouted sleeves,,Accepted Values column
+MechanicalConnectionType_Column,spiral connector,,Accepted Values column
+MechanicalConnectionType_Wall,grouted sleeves,,Accepted Values column
+MechanicalConnectionType_Wall,spiral connector,,Accepted Values column
+MechanicalConnectionType_Wall,flexible loops,,Accepted Values column
 OccupancyType,Single dwelling residential,,Space Values sheet
 OccupancyType,Multi-unit residential,,Space Values sheet
 OccupancyType,Supervisory care facility,,Space Values sheet
@@ -1094,6 +1114,9 @@ OccupancyType,School field,,Space Values sheet
 OccupancyType,Promenade,,Space Values sheet
 OccupancyType,Marina,,Space Values sheet
 OccupancyType,Quarry,,Space Values sheet
+PileType,Driven,,Accepted Values column
+PileType,Bored,,Accepted Values column
+PileType,Jacked in,,Accepted Values column
 ProjectDevelopmentType,Residential (landed),,Accepted Values column
 ProjectDevelopmentType,Residential (non-landed),,Accepted Values column
 ProjectDevelopmentType,Mixed Development,,Accepted Values column
@@ -1106,6 +1129,20 @@ ProjectDevelopmentType,Transport Stations,,Accepted Values column
 ProjectDevelopmentType,Civil engineering works / Infrastructure,,Accepted Values column
 ProjectDevelopmentType,Free-standing structures,,Accepted Values column
 ProjectDevelopmentType,Others,,Accepted Values column
+ReinforcementSteelGrade,500A,,Accepted Values column
+ReinforcementSteelGrade,500B,,Accepted Values column
+ReinforcementSteelGrade,500C,,Accepted Values column
+ReinforcementSteelGrade,600A,,Accepted Values column
+ReinforcementSteelGrade,600B,,Accepted Values column
+ReinforcementSteelGrade,600C,,Accepted Values column
+SectionFabricationMethod,Hot rolled,,Accepted Values column
+SectionFabricationMethod,Cold formed,,Accepted Values column
+SlabType,One way,,Accepted Values column
+SlabType,Two way,,Accepted Values column
+SlabType,Cantilever,,Accepted Values column
+SlabType,Flat slab,,Accepted Values column
+SlabType,Flat slab with drop panel,,Accepted Values column
+SlabType,Transfer slab,,Accepted Values column
 SmokeControlSystem,Smoke Vent,,Accepted Values column
 SmokeControlSystem,Smoke Purging System,,Accepted Values column
 SmokeControlSystem,Ductless Jet Fan System,,Accepted Values column
@@ -1552,9 +1589,13 @@ SpaceName_Tank,irrigation tank,,Accepted Values column
 SpaceName_Tank,sprinkler tank,,Accepted Values column
 Status,Existing,,Accepted Values column
 Status,Proposed,,Accepted Values column
-Status_GreenVerge,Existing,,Accepted Values column
-Status_GreenVerge,Proposed,,Accepted Values column
-Status_GreenVerge,To be Removed,,Accepted Values column
+Status_DistributionChamber,Existing,,Accepted Values column
+Status_DistributionChamber,Proposed,,Accepted Values column
+Status_DistributionChamber,To Be Removed,,Accepted Values column
+Status_DistributionChamber,Abandoned,,Accepted Values column
+Status_DistributionChamber,New,,Accepted Values column
+Status_DistributionChamber,Temporary,,Accepted Values column
+Status_DistributionChamber,Demolished,,Accepted Values column
 Status_Planting,Existing,,Accepted Values column
 Status_Planting,Proposed,,Accepted Values column
 Status_Planting,To be Removed,,Accepted Values column
@@ -1563,6 +1604,11 @@ Status_PlantingAreas,Existing,,Accepted Values column
 Status_PlantingAreas,Proposed,,Accepted Values column
 Status_PlantingAreas,New,,Accepted Values column
 Status_PlantingAreas,To be Removed,,Accepted Values column
+StirrupsTypeLeft,Normal,,Accepted Values column
+StirrupsTypeLeft,U,,Accepted Values column
+StirrupsTypeLeft,C,,Accepted Values column
+StirrupsTypeLeft,CL,,Accepted Values column
+StirrupsTypeLeft,Torsion,,Accepted Values column
 VentilationMode,Natural Ventilation,,Accepted Values column
 VentilationMode,Air Conditioning,,Accepted Values column
 VentilationMode,Mechanical Ventilation,,Accepted Values column
