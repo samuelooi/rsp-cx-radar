@@ -39,7 +39,7 @@ Close a model before adding another when the meter goes amber.
   property. COMPLIANCE selects and runs checks and holds the results, the BCF
   and PDF buttons. ISSUES holds BCF topics.
 - **Tool rail.** Collapse panel, spaces on/off, survey outlines, show all,
-  ghost context, wireframe, fit, section cut, plan by level.
+  ghost context, fit, section cut, plan by level.
 - **Right panel.** The element inspector: identity, aggregate host, live
   pass/fail for every loaded check, property sets with Edit buttons.
 - **Bottom centre.** The edits bar appears when there are pending IFC edits.

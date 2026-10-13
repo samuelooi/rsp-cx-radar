@@ -491,9 +491,10 @@ answers one narrow question: **is this model in the right place on the ground?**
 Not whether the building complies with anything — whether the coordinates it was
 authored against put it inside the land it is supposed to occupy.
 
-Select the check and a file picker appears for the **cadastral lot GeoJSON**.
+The **cadastral lot GeoJSON** is set once, in project setup (the project chip in
+the top bar), and saved inside the project file; the check reads it from there.
 Get it from URA's site-information service: search the MK lot number, then
-*Download Cadastral Lot(s)* and *Download in GeoJSON format*. One file per run,
+*Download Cadastral Lot(s)* and *Download in GeoJSON format*. One file per project,
 so a development spanning several lots needs them all in the one file. There is
 also a fallback for a lot that is not in the cadastral database: three surveyed
 vertices in SVY21, checked against the site boundary to ±20 mm.
@@ -511,8 +512,11 @@ It reports:
 | Site boundary follows the lot line | Where a boundary is modelled, how far it departs from the cadastral line. |
 | IfcSite latitude and longitude agree | Cross-checks the site's declared position against the map conversion. |
 
-**Show on model** draws the cadastral lot in green and the site boundary in
-blue, on the ground plane, as the URA plugin does. The tool rail clears them.
+The **Draw Survey Outlines** tool on the rail draws the cadastral lot in green as
+soon as it is set — no check run needed — and, after a run, the site boundary in
+blue, on the ground plane, as the URA plugin does. Click it again to clear them.
+A lot more than 1 km from the model is drawn but left out of the framing, with a
+note saying how far away it is and in which direction.
 
 Three things are worth knowing about how it works.
 

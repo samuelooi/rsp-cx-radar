@@ -176,12 +176,12 @@ export function createAuthorityCheck(config) {
               ? '<span class="pill ok">' + stat.tested + '</span>'
               : '<span class="pill bad">' + stat.failed + '</span>';
 
-          const rows = stat.findings.slice(0, 200).map((f) =>
-            '<div class="irow">' +
+          const rows = stat.findings.slice(0, 200).map((f, fi) =>
+            '<div class="irow' + (f.element ? ' pick' : '') + '" data-sev="' + esc(f.severity) + '" data-f="' + fi + '">' +
               '<span class="status-dot" style="background:' +
                 hex(SEVERITY_COLOUR[f.severity] || SEVERITY_COLOUR[SEVERITY.FAIL]) + '"></span>' +
               '<span class="ik">' + esc(f.element ? (f.element.name || f.element.entity) : authority) +
-                '<br><span style="color:var(--text-dim);font-size:10.5px">' +
+                '<span class="imsg">' +
                 esc(f.message || SEVERITY_LABEL[f.severity]) + '</span></span>' +
             '</div>').join('');
 
@@ -190,7 +190,7 @@ export function createAuthorityCheck(config) {
               'and ' + (stat.findings.length - 200) + ' more…</span></div>'
             : '';
 
-          return '<div class="issue-target" data-i="' + i + '">' +
+          return '<div class="issue-target' + (clean ? ' clean' : '') + '" data-i="' + i + '">' +
             '<div class="issue-head">' +
               '<span class="iname">' + esc(stat.rule.title) +
                 '<small>' + esc(stat.rule.reference || authority) +
@@ -226,6 +226,10 @@ export function createAuthorityCheck(config) {
       const ordered = evaluated.slice().sort((a, b) => b.failed - a.failed || b.tested - a.tested);
       host.querySelectorAll('.issue-target').forEach((node) => {
         const stat = ordered[+node.dataset.i];
+        // A finding on one element selects it: highlighted, centred, inspected.
+        node.querySelectorAll('.irow.pick').forEach((row) => {
+          row.addEventListener('click', () => actions.showElement(stat.findings[+row.dataset.f].element));
+        });
         node.querySelector('.issue-head').addEventListener('click', () => {
           node.classList.toggle('open');
           const flagged = new Set(stat.findings.map((f) => f.element && f.element.key).filter(Boolean));

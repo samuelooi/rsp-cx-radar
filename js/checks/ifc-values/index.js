@@ -209,7 +209,7 @@ function renderPresets(results, host, actions) {
         bad.set(key, entry);
       }
 
-      return `<div class="issue-target" data-i="${i}">
+      return `<div class="issue-target${r.elements.length && !fail ? ' clean' : ''}" data-i="${i}">
         <div class="issue-head">
           <span class="iname">${esc(r.preset.name)}
             <small>${esc(describePreset(r.preset))} · ${r.elements.length} elements</small>
@@ -285,8 +285,8 @@ function renderMapping(result, host, actions) {
         rows.map((x) =>
           '<div class="irow">' +
             '<span class="status-dot" style="background:' + hex(STATUS_COLOUR[x.status]) + '"></span>' +
-            '<span class="ik">' + esc(x.req.prop) + '<br>' +
-              '<span style="color:var(--text-dim);font-size:10.5px">' +
+            '<span class="ik">' + esc(x.req.prop) +
+              '<span class="imsg">' +
               esc(x.req.pset) + ' — ' + esc(STATUS_LABEL[x.status]) + '</span></span>' +
             '<span class="iv">' + x.n + '</span>' +
           '</div>').join('') +

@@ -52,12 +52,12 @@ const MANIFEST = [
     inputs: [
       {
         id: 'cadastralLot',
-        kind: 'file',
+        // Held by the project, not the check: the survey tool draws it too.
+        kind: 'project',
         label: 'Cadastral lot (GeoJSON)',
-        accept: '.geojson,.json,application/geo+json,application/json',
-        help: 'Download from the URA site-information service: search the MK lot ' +
-          'number, then "Download Cadastral Lot(s)". One file per check — a ' +
-          'development spanning several lots needs them all in the one file.',
+        help: 'Set in project setup. Download from the URA site-information service: ' +
+          'search the MK lot number, then "Download Cadastral Lot(s)". A development ' +
+          'spanning several lots needs them all in the one file.',
       },
       {
         id: 'vertices',

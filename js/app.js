@@ -1,5 +1,5 @@
 /**
- * RSP CX Takeoff — application wiring.
+ * RSP IFC-SG Viewer & Checker — application wiring.
  *
  * Presets come straight from the CORENET X industry mapping: every component the
  * agencies query for becomes a clickable target, and every property they require
@@ -20,6 +20,7 @@ import {
   STATUS, STATUS_LABEL, GATEWAY, GATEWAY_ORDER, GATEWAY_LABEL, AGENCY_ALL, appliesToAgency,
 } from './ifcsg.js';
 import { buildTransform } from './geo/georef.js';
+import { parseCadastralGeoJson } from './geo/geojson.js';
 import * as registry from './checks/registry.js';
 import { runChecks, totalsOf } from './checks/runner.js';
 import {
@@ -97,6 +98,14 @@ const checkInputs = new Map();
 /** "<checkId>.<inputId>" -> loaded module for a `kind: 'custom'` input. */
 const customInputModules = new Map();
 let checkRunning = false;
+/** How the View Context tool names each mode in its hover card. */
+const CONTEXT_LABEL = { ghost: 'ghosted', hidden: 'hidden', normal: 'normal' };
+/** The rail button whose hover card is showing, if any. */
+let railTipFor = null;
+/** Whether the check menu is unfolded; it folds away once there are results to read. */
+let checkMenuOpen = true;
+/** Results view shows only what needs fixing: no passing rows, clean rules or clean checks. */
+let issuesOnly = false;
 /** Aborts an in-flight run when the model changes or a new run starts. */
 let checkAbort = null;
 
@@ -126,15 +135,16 @@ const el = {
   fSearch: $('f-search'), fPresent: $('f-present'),
   tree: $('tree'), legend: $('legend'), legendTitle: $('legend-title'), legendRows: $('legend-rows'),
   btnClearQuery: $('btn-clear-query'),
-  checkMenu: $('check-menu'),
+  checkMenu: $('check-menu'), checkMenuBar: $('check-menu-bar'),
+  checkMenuBarText: $('check-menu-bar-text'), checkMenuBarAct: $('check-menu-bar-act'),
   btnRunCheck: $('btn-run-check'), btnColourStatus: $('btn-colour-status'),
   summary: $('summary'), issues: $('issues'),
   panel: $('panel'), panelBody: $('panel-body'), panelClose: $('panel-close'),
   toolCollapse: $('tool-collapse'), toolGhost: $('tool-ghost'), toolSpaces: $('tool-spaces'),
-  toolShowAll: $('tool-showall'), toolWireframe: $('tool-wireframe'), toolFit: $('tool-fit'),
+  toolShowAll: $('tool-showall'), toolFit: $('tool-fit'),
   toolSection: $('tool-section'), toolLevels: $('tool-levels'),
   sectionsBar: $('sections-bar'), levelsPanel: $('levels-panel'), planBadge: $('plan-badge'),
-  toolSurvey: $('tool-survey'),
+  toolSurvey: $('tool-survey'), railTip: $('rail-tip'),
   ctxmenu: $('ctxmenu'),
   btnDash: $('btn-dash'), dash: $('dash'), dashBody: $('dash-body'),
   dashSub: $('dash-sub'), dashSeg: $('dash-seg'), dashClose: $('dash-close'),
@@ -329,20 +339,21 @@ function wireUI() {
 
   wireProjectUI();
 
-  el.panelClose.addEventListener('click', () => el.panel.classList.remove('visible'));
+  el.panelClose.addEventListener('click', closeElementPanel);
   el.btnReset.addEventListener('click', () => viewer.fit());
   el.toolFit.addEventListener('click', () => viewer.fit());
 
   el.toolCollapse.addEventListener('click', () => el.left.classList.toggle('collapsed'));
+  wireRailTips();
 
   el.toolGhost.addEventListener('click', () => {
     contextMode = contextMode === 'ghost' ? 'hidden' : contextMode === 'hidden' ? 'normal' : 'ghost';
-    el.toolGhost.title = `Context: ${contextMode} (click to change)`;
+    setRailState(el.toolGhost, `Now: ${CONTEXT_LABEL[contextMode]}`);
     el.toolGhost.classList.toggle('active', contextMode !== 'normal');
     viewer.setContextMode(contextMode);
   });
   el.toolGhost.classList.add('active');
-  el.toolGhost.title = 'Context: ghost (click to change)';
+  setRailState(el.toolGhost, `Now: ${CONTEXT_LABEL[contextMode]}`);
 
   el.toolSpaces.addEventListener('click', () => setSpacesVisible(!spacesVisible));
   el.toolShowAll.addEventListener('click', showAll);
@@ -350,23 +361,29 @@ function wireUI() {
   wireSectionTool();
   wireLevelsTool();
 
-  // The survey outlines are drawn by a check; the rail only clears them, so it
-  // does nothing until there is something to clear.
-  el.toolSurvey.addEventListener('click', () => {
-    if (!viewer.hasSurveyOverlays) {
-      toast('Run the geo-referencing check with a cadastral lot file to draw survey outlines.');
+  // A toggle: clears outlines that are drawn, otherwise draws the project's
+  // cadastral lot (plus the site boundary, once a check has found it). With no
+  // lot set, it opens project setup where the lot is added.
+  el.toolSurvey.addEventListener('click', (e) => {
+    if (viewer.hasSurveyOverlays) {
+      viewer.clearSurveyOverlays();
+      el.toolSurvey.classList.remove('active');
+      refreshSurveyRail();
       return;
     }
-    viewer.clearSurveyOverlays();
-    el.toolSurvey.classList.remove('active');
-    el.toolSurvey.title = 'No survey outlines drawn';
-  });
-
-  let wireframe = false;
-  el.toolWireframe.addEventListener('click', () => {
-    wireframe = !wireframe;
-    el.toolWireframe.classList.toggle('active', wireframe);
-    viewer.setWireframe(wireframe);
+    if (!viewer.hasModels) {
+      toast('Load a model first — the lot is drawn against its georeferencing.');
+      return;
+    }
+    const overlays = surveyOutlines();
+    if (overlays.length) {
+      shellActions.showSurvey(overlays);
+      return;
+    }
+    // Keep this click from reaching the document listener that closes the panel.
+    e.stopPropagation();
+    openProjectPanel();
+    toast('Add the cadastral lot GeoJSON in project setup to draw it.');
   });
 
   el.fPresent.addEventListener('change', refreshFilters);
@@ -403,6 +420,10 @@ function wireUI() {
   });
 
   el.btnRunCheck.addEventListener('click', doRunCheck);
+  el.checkMenuBar.addEventListener('click', () => {
+    checkMenuOpen = !checkMenuOpen;
+    applyCheckMenuFold();
+  });
   el.btnColourStatus.addEventListener('click', colourByStatus);
   el.btnToBcf.addEventListener('click', findingsToBcf);
   el.btnReport.addEventListener('click', makeReport);
@@ -430,14 +451,53 @@ function wireUI() {
   });
 }
 
+// ------------------------------------------------------------ rail tooltips
+
+/**
+ * Hover cards for the tool rail: the tool's name and what it does, from the
+ * button's data-tip / data-desc, plus its current state from data-state. These
+ * replace the native title tooltip, which is slow to appear and one line long.
+ */
+function wireRailTips() {
+  document.querySelectorAll('#rail .rail-btn[data-tip]').forEach((btn) => {
+    btn.addEventListener('mouseenter', () => showRailTip(btn));
+    btn.addEventListener('mouseleave', hideRailTip);
+    // The levels list opens where the card sits; let it have the space.
+    if (btn === el.toolLevels) btn.addEventListener('click', hideRailTip);
+  });
+}
+
+function showRailTip(btn) {
+  railTipFor = btn;
+  const { tip, desc, state } = btn.dataset;
+  el.railTip.innerHTML = `<b>${esc(tip)}</b>`
+    + (desc ? `<span class="rt-desc">${esc(desc)}</span>` : '')
+    + (state ? `<span class="rt-state">${esc(state)}</span>` : '');
+  const r = btn.getBoundingClientRect();
+  el.railTip.style.left = `${r.right + 8}px`;
+  el.railTip.style.top = `${r.top + r.height / 2}px`;
+  el.railTip.classList.add('visible');
+}
+
+function hideRailTip() {
+  railTipFor = null;
+  el.railTip.classList.remove('visible');
+}
+
+/** Updates a rail tool's state line, live if its card is showing. */
+function setRailState(btn, text) {
+  if (text) btn.dataset.state = text;
+  else delete btn.dataset.state;
+  if (railTipFor === btn) showRailTip(btn);
+}
+
 // ------------------------------------------------------------- section cuts
 
 function setSectionArmed(on) {
   sectionArmed = on;
   el.toolSection.classList.toggle('active', on);
-  el.toolSection.title = on
-    ? 'Placing section cuts — click a face to cut along it, drag a cut to slide it, click the tool again to stop'
-    : 'Section cut: click a face of the model (like Forma)';
+  setRailState(el.toolSection, on ? 'Placing cuts — click the tool again to stop' : '');
+  if (!on) viewer.endSectionPreview();
   viewer.renderer.domElement.style.cursor = on ? 'crosshair' : '';
 }
 
@@ -462,6 +522,25 @@ function wireSectionTool() {
   window.addEventListener('pointermove', (e) => {
     if (viewer.sectionDragging) viewer.dragSection(e);
   });
+
+  // While armed, a faint plane follows the pointer to show where a click would
+  // cut. One raycast per frame at most; none while a button is held (that is an
+  // orbit or a drag), and none over a placed cut, where a click grabs instead.
+  let previewEvent = null;
+  canvas.addEventListener('pointermove', (e) => {
+    if (!sectionArmed) return;
+    if (!previewEvent) {
+      requestAnimationFrame(() => {
+        const ev = previewEvent;
+        previewEvent = null;
+        if (!sectionArmed) return;
+        if (ev.buttons || viewer.sectionDragging || viewer.overSection(ev)) viewer.hideSectionPreview();
+        else viewer.previewSection(viewer.raycastFace(ev), viewer.activeCamera.position);
+      });
+    }
+    previewEvent = e;
+  });
+  canvas.addEventListener('pointerleave', () => viewer.hideSectionPreview());
   window.addEventListener('pointerup', (e) => {
     if (!press) return;
     const moved = Math.hypot(e.clientX - press.x, e.clientY - press.y) > 5;
@@ -732,6 +811,7 @@ async function loadFiles(files) {
   }
   rebuildIndex();
   viewer.fit();
+  refreshSurveyRail();
   setProgress(100, 'Done');
   if (skipped) toast(`${skipped} file${skipped > 1 ? 's were' : ' was'} skipped — not .ifc.`);
   setTimeout(() => el.loading.classList.remove('visible'), 250);
@@ -863,15 +943,15 @@ function applyVisibility() {
 
   const spaces = spaceElements().length;
   el.toolSpaces.classList.toggle('active', spacesVisible);
-  el.toolSpaces.title = spaces
-    ? `${spacesVisible ? 'Hide' : 'Show'} ${spaces} IfcSpace volume${spaces > 1 ? 's' : ''}`
-    : 'No IfcSpace elements in this model';
+  setRailState(el.toolSpaces, spaces
+    ? `${spaces} IfcSpace volume${spaces > 1 ? 's' : ''}, ${spacesVisible ? 'shown' : 'hidden'}`
+    : 'No IfcSpace elements in this model');
 
   const hiddenCount = manualHidden.size;
   el.toolShowAll.classList.toggle('active', hiddenCount > 0);
-  el.toolShowAll.title = hiddenCount
-    ? `Show all — ${hiddenCount} element${hiddenCount > 1 ? 's' : ''} hidden`
-    : 'Show all (nothing is hidden)';
+  setRailState(el.toolShowAll, hiddenCount
+    ? `${hiddenCount} element${hiddenCount > 1 ? 's' : ''} hidden`
+    : 'Nothing is hidden');
 }
 
 function setSpacesVisible(on) {
@@ -1407,16 +1487,116 @@ const shellActions = {
       opacity: 0.18,
       elevation: ground,
     })));
-    viewer.fitSurvey();
+    viewer.fitSurvey(SURVEY_REACH_M);
     el.toolSurvey.classList.add('active');
-    el.toolSurvey.title = `Clear ${overlays.length} survey outline${overlays.length > 1 ? 's' : ''}`;
+    setRailState(el.toolSurvey, `${overlays.length} outline${overlays.length > 1 ? 's' : ''} drawn — click to clear`);
+
+    // A lot far from the model is drawn where it really is, but left out of the
+    // framing; say where it went, since that is the finding.
+    const far = farOutlines(overlays, transform);
+    if (far.length) {
+      toast(far.map((f) => `${f.label} is ${f.distance} ${f.direction} of the model`).join('; ') +
+        ' — drawn there, but out of view. Check that this is the right lot, or the model\'s georeferencing.');
+    }
   },
 };
+
+/** Survey outlines further than this from the model are not framed with it. */
+const SURVEY_REACH_M = 1000;
+
+/**
+ * Outlines whose centre is beyond SURVEY_REACH_M of the model, with distance
+ * and compass direction. Measured in SVY21, where the rings already are; the
+ * model is placed by its own outline when a check found one, otherwise by the
+ * centre of its geometry.
+ */
+function farOutlines(overlays, transform) {
+  const centre = (ring) => ring.reduce((a, [E, N]) => [a[0] + E / ring.length, a[1] + N / ring.length], [0, 0]);
+  const own = overlays.find((o) => o.label === 'Site boundary' || o.label === 'Model extent');
+  let E0, N0;
+  if (own) {
+    [E0, N0] = centre(own.ring);
+  } else {
+    const hull = viewer.modelHull();
+    if (!hull.length) return [];
+    const [x, z] = centre(hull); // ground-plane [x, z] pairs, scene coordinates
+    ({ E: E0, N: N0 } = transform.sceneToSvy21({ x, y: 0, z }));
+  }
+  const compass = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
+  return overlays.filter((o) => o !== own).map((o) => {
+    const [E, N] = centre(o.ring);
+    const d = Math.hypot(E - E0, N - N0);
+    const bearing = (Math.atan2(E - E0, N - N0) * 180 / Math.PI + 360) % 360;
+    return {
+      label: o.label,
+      metres: d,
+      distance: d >= 1000 ? `${(d / 1000).toFixed(1)} km` : `${Math.round(d)} m`,
+      direction: compass[Math.round(bearing / 45) % 8],
+    };
+  }).filter((f) => f.metres > SURVEY_REACH_M);
+}
+
+/** Where the project's cadastral lot GeoJSON lives: the geo-referencing check's input. */
+const LOT_INPUT_KEY = 'geo-referencing.cadastralLot';
+/** Green, as the URA plugin draws a lot (and as the geo-referencing check does). */
+const LOT_COLOUR = 0x4fbf6a;
+
+/**
+ * The project's cadastral lot, parsed: `{ name, lots, error }`, or null when
+ * none is set. Parsing is cheap and the text can change, so it is not cached.
+ */
+function projectLot() {
+  const held = checkInputs.get(LOT_INPUT_KEY);
+  if (!held || !held.text) return null;
+  try {
+    return { name: held.name, lots: parseCadastralGeoJson(held.text).lots, error: null };
+  } catch (err) {
+    return { name: held.name, lots: [], error: err.message };
+  }
+}
+
+/**
+ * What the survey tool draws: the project's lots, straight from the GeoJSON,
+ * plus the model's own outline (site boundary or footprint) when a
+ * geo-referencing run has found one. No run is needed to draw the lot.
+ */
+function surveyOutlines() {
+  const lot = projectLot();
+  const lots = lot ? lot.lots.map((l) => ({ label: `Lot ${l.key}`, ring: l.ring, colour: LOT_COLOUR })) : [];
+  const geo = checkOutcomes.find((o) => o.id === 'geo-referencing' && o.result);
+  const own = ((geo && geo.result.detail && geo.result.detail.overlays) || [])
+    .filter((o) => !String(o.label).startsWith('Lot '));
+  return [...lots, ...own];
+}
+
+/** After the lot changes: outlines already on screen are redrawn from the new one. */
+function redrawSurveyIfShown() {
+  if (viewer && viewer.hasSurveyOverlays) {
+    viewer.clearSurveyOverlays();
+    el.toolSurvey.classList.remove('active');
+    const overlays = surveyOutlines();
+    if (overlays.length) shellActions.showSurvey(overlays);
+  }
+  refreshSurveyRail();
+}
+
+/** The survey tool's state line, from what there is to draw. */
+function refreshSurveyRail() {
+  if (viewer && viewer.hasSurveyOverlays) return; // showSurvey wrote it
+  const lot = projectLot();
+  const n = surveyOutlines().length;
+  setRailState(el.toolSurvey, lot && lot.error ? `${lot.name} could not be read`
+    : !n ? 'No lot set — add it in project setup'
+      : !viewer || !viewer.hasModels ? `${n} outline${n > 1 ? 's' : ''} ready — load a model to draw`
+        : `${n} outline${n > 1 ? 's' : ''} ready — click to draw`);
+}
 
 /** Drops the last run's results. Called whenever the model set changes. */
 function clearCheckResults() {
   if (checkAbort) checkAbort.abort();
   checkOutcomes = [];
+  checkMenuOpen = true;
+  applyCheckMenuFold();
   el.summary.classList.remove('visible');
   el.issues.innerHTML = '';
   el.btnColourStatus.disabled = true;
@@ -1425,7 +1605,7 @@ function clearCheckResults() {
   if (viewer) {
     viewer.clearSurveyOverlays();
     el.toolSurvey.classList.remove('active');
-    el.toolSurvey.title = 'No survey outlines drawn';
+    refreshSurveyRail();
   }
   if (el.checkMenu.children.length) renderCheckMenu();
 }
@@ -1502,6 +1682,22 @@ function renderCheckMenu() {
   wireCheckInputs();
   updateRunButton();
   renderProjectChip();
+  applyCheckMenuFold();
+}
+
+/**
+ * Folds the check menu into a one-line bar while there are results, so the
+ * results get the panel's height. With nothing to read yet the menu stays open.
+ */
+function applyCheckMenuFold() {
+  const hasResults = checkOutcomes.length > 0;
+  const open = !hasResults || checkMenuOpen;
+  const n = selectedChecks.size;
+  el.checkMenuBar.hidden = !hasResults;
+  el.checkMenu.hidden = !open;
+  el.checkMenuBarText.textContent = n === 0 ? 'No checks selected'
+    : n === 1 ? '1 check selected' : `${n} checks selected`;
+  el.checkMenuBarAct.innerHTML = open ? 'Done &#9652;' : 'Edit &#9662;';
 }
 
 /** The extra inputs a check declares, shown only while that check is selected. */
@@ -1516,6 +1712,12 @@ function renderCheckInputs(check) {
       // Filled by the input's own module once the menu is in the page.
       control = `<div class="cm-custom" data-custom="${esc(key)}">
            <div class="cm-help">Loading…</div>
+         </div>`;
+    } else if (input.kind === 'project') {
+      // Supplied once, in project setup; the check only shows what it will use.
+      control = `<div class="cm-file">
+           <span class="cm-filename">${held ? esc(held.name) : 'Not set'}</span>
+           <button class="btn sm" data-open-project>${held ? 'Change' : 'Add'} in project setup</button>
          </div>`;
     } else if (input.kind === 'file') {
       control = `<div class="cm-file">
@@ -1550,6 +1752,15 @@ function wireCheckInputs() {
     Promise.resolve(mod.mount(host, customInputApi)).catch((err) => {
       console.error(err);
       host.innerHTML = '<div class="cm-help">This input could not be shown — see the browser console.</div>';
+    });
+  });
+
+  el.checkMenu.querySelectorAll('[data-open-project]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      // Keep the click from reaching the document listener that closes the panel.
+      e.stopPropagation();
+      openProjectPanel();
     });
   });
 
@@ -1681,6 +1892,9 @@ async function doRunCheck() {
     checkOutcomes = await runChecks(ids, ctx, (msg) => {
       el.issues.innerHTML = `<div class="empty-note">${esc(msg)}</div>`;
     });
+    // The setup has done its job; give the results the room.
+    checkMenuOpen = false;
+    refreshSurveyRail();
     renderSummary();
     renderCheckResults();
     renderCheckMenu();
@@ -1718,12 +1932,27 @@ function renderSummary() {
     .filter(Boolean).join(' · ') || 'All gateways';
   const names = checkOutcomes.filter((o) => o.result).map((o) => o.meta.title).join(', ');
 
+  const num = (n) => n.toLocaleString();
+  // One line for what matters; the rest is a click away.
+  const headline = t.assertions
+    ? `<b style="color:var(--ok)">${pct}% compliant</b>
+       · <b style="color:${t.fail ? 'var(--danger)' : 'var(--ok)'}">${num(t.fail)} issue${t.fail === 1 ? '' : 's'}</b>
+       · ${num(t.elements)} element${t.elements === 1 ? '' : 's'}`
+    : '<b>Nothing checked</b>';
+
   el.summary.classList.add('visible');
   el.summary.innerHTML = `
     <div class="sbar">
       <i style="width:${pct}%;background:var(--ok)"></i>
       <i style="width:${100 - pct}%;background:var(--danger)"></i>
     </div>
+    <div class="sline">
+      <span>${headline}</span>
+      <label class="stoggle" title="Hide passing rows, clean rules and clean checks">
+        <input type="checkbox" data-issues-only${issuesOnly ? ' checked' : ''} /> Issues only
+      </label>
+    </div>
+    <details class="sdetails"><summary>Details</summary>
     <div class="sgrid">
       <span class="k">Checks run</span><span class="v">${esc(names || 'none')}</span>
       <span class="k">Scope</span><span class="v">${esc(scope)}</span>
@@ -1732,7 +1961,18 @@ function renderSummary() {
       <span class="k">Assertions</span><span class="v">${t.assertions}</span>
       <span class="k">Compliant</span><span class="v" style="color:var(--ok)">${t.pass} (${pct}%)</span>
       <span class="k">Issues</span><span class="v" style="color:var(--danger)">${t.fail}</span>
-    </div>`;
+    </div></details>`;
+
+  el.summary.querySelector('[data-issues-only]').addEventListener('change', (e) => {
+    issuesOnly = e.target.checked;
+    el.issues.classList.toggle('issues-only', issuesOnly);
+  });
+}
+
+/** Errors first, then most issues first; ties keep the menu's order. */
+function outcomeRank(o) {
+  if (o.error) return Number.MAX_SAFE_INTEGER;
+  return o.result ? o.result.summary.fail || 0 : 0;
 }
 
 /**
@@ -1741,17 +1981,23 @@ function renderSummary() {
  */
 function renderCheckResults() {
   el.issues.innerHTML = '';
+  el.issues.classList.toggle('issues-only', issuesOnly);
 
   if (!checkOutcomes.length) {
     el.issues.innerHTML = '<div class="empty-note">No checks were run.</div>';
     return;
   }
 
-  for (const outcome of checkOutcomes) {
-    const section = document.createElement('div');
-    section.className = 'check-result';
+  // Array sort is stable, so equal ranks stay in menu order.
+  const ordered = checkOutcomes.slice().sort((a, b) => outcomeRank(b) - outcomeRank(a));
 
+  for (const outcome of ordered) {
+    const section = document.createElement('div');
     const summary = outcome.result ? outcome.result.summary : null;
+    // Only checks that found something open by default; a clean check is one line.
+    const clean = !outcome.error && !(summary && summary.fail);
+    section.className = 'check-result' + (clean ? ' clean collapsed' : '');
+
     const pill = outcome.error
       ? '<span class="pill bad">error</span>'
       : summary && summary.fail ? `<span class="pill bad">${summary.fail}</span>`
@@ -1761,7 +2007,8 @@ function renderCheckResults() {
           : '<span class="pill">nothing checked</span>';
 
     section.innerHTML = `
-      <div class="cr-head">
+      <div class="cr-head" title="Show or hide this check's results">
+        <span class="cr-caret">&#9662;</span>
         <span class="cr-title">${esc(outcome.meta.title)}
           <small>${esc(outcome.meta.authority)} · ${Math.round(outcome.ms)} ms</small>
         </span>${pill}
@@ -1771,6 +2018,9 @@ function renderCheckResults() {
       <div class="cr-body"></div>`;
 
     const body = section.querySelector('.cr-body');
+    section.querySelector('.cr-head').addEventListener('click', () => {
+      section.classList.toggle('collapsed');
+    });
 
     if (outcome.error) {
       body.innerHTML =
@@ -1793,12 +2043,17 @@ function renderGenericFindings(result, host) {
     host.innerHTML = '<div class="empty-note">Nothing to report.</div>';
     return;
   }
-  host.innerHTML = '<div class="ilist">' + findings.slice(0, 300).map((f) => `
-    <div class="irow">
+  const shown = findings.slice(0, 300);
+  host.innerHTML = '<div class="ilist">' + shown.map((f, i) => `
+    <div class="irow${f.element ? ' pick' : ''}" data-sev="${esc(f.severity)}" data-f="${i}">
       <span class="status-dot" style="background:${hex(SEVERITY_COLOUR[f.severity] || SEVERITY_COLOUR.fail)}"></span>
-      <span class="ik">${esc(f.label || f.code)}<br>
-        <span style="color:var(--text-dim);font-size:10.5px">${esc(f.message || '')}</span></span>
+      <span class="ik">${esc(f.label || f.code)}
+        <span class="imsg">${esc(f.message || '')}</span></span>
     </div>`).join('') + '</div>';
+
+  host.querySelectorAll('.irow.pick').forEach((row) => {
+    row.addEventListener('click', () => showElement(shown[+row.dataset.f].element));
+  });
 }
 
 /**
@@ -2165,11 +2420,12 @@ function onPick(hit) {
   // click is drawing intent, not a pick.
   if (sectionArmed) return;
   if (!hit || !index) {
-    el.panel.classList.remove('visible');
+    closeElementPanel();
     return;
   }
   const item = pickedElement(hit);
   if (!item) {
+    viewer.setSelection(hit);
     el.panelBody.innerHTML =
       `<div class="prop-type">Element ${hit.expressID}</div>
        <div class="prop-id">Not covered by the IFC-SG mapping</div>`;
@@ -2177,6 +2433,12 @@ function onPick(hit) {
     return;
   }
   showElement(item);
+}
+
+/** Hides the properties panel and drops the 3D highlight with it. */
+function closeElementPanel() {
+  el.panel.classList.remove('visible');
+  viewer.clearSelection();
 }
 
 function showElement(item) {
@@ -2191,6 +2453,9 @@ function showElement(item) {
     ['GlobalId', item.globalId],
   ].filter(([, v]) => v !== null && v !== undefined && v !== '');
 
+  // Re-rendering the same element after an edit keeps the camera where the user left it.
+  const sel = viewer.selection;
+  viewer.setSelection(item, { pivot: !sel || sel.modelID !== item.modelID || sel.expressID !== item.expressID });
   lastPicked = item;
   const editable = canEdit(item);
   const fixable = []; // requirements behind the "Fix" buttons, by index
@@ -2422,6 +2687,12 @@ async function applyProject(p, { handle = null, quiet = false } = {}) {
   renderCheckMenu();
   renderStartProjects();
   refreshDashboardAvailability();
+  // A lot drawn for the previous project does not belong to this one.
+  if (viewer && viewer.hasSurveyOverlays) {
+    viewer.clearSurveyOverlays();
+    el.toolSurvey.classList.remove('active');
+  }
+  refreshSurveyRail();
 
   if (!quiet) toast(`Project ${labelOf(p)} loaded.`);
   if (unknown.length) toast(`Checks the project names but this viewer lacks were ignored: ${unknown.join(', ')}.`);
@@ -2565,6 +2836,7 @@ function renderProjectPanel() {
   const totals = submissionTotals();
   const nChecks = selectedChecks.size;
   const inputCount = [...checkInputs.keys()].filter((k) => k !== 'ura.gateway').length;
+  const lot = projectLot();
 
   el.projectPanel.innerHTML = `
     <div class="pp-head">
@@ -2582,6 +2854,20 @@ function renderProjectPanel() {
         <input data-f="developer" value="${esc(p.project.developer)}" /></label>
       <label class="pp-field"><span>Cadastral lots</span>
         <input data-f="lots" value="${esc(p.project.lots.join(', '))}" placeholder="MK18-01234A, MK18-01235K" /></label>
+
+      <div class="pp-field"><span>Cadastral lot GeoJSON <small>from URA's site-information service</small></span>
+        <div class="cm-file">
+          <button class="btn sm" data-lot-pick>${lot ? 'Replace…' : 'Choose file…'}</button>
+          <input type="file" data-lot-file accept=".geojson,.json,application/geo+json,application/json" hidden />
+          <span class="cm-filename">${lot ? esc(lot.name) : 'No file chosen'}</span>
+          ${lot ? '<button class="btn sm" data-lot-clear title="Remove the lot from the project">&times;</button>' : ''}
+        </div>
+        <div class="pp-note">${!lot
+          ? 'Drawn on the ground by the survey tool, and checked by Geo-referencing. Saved inside the project file.'
+          : lot.error ? `<span style="color:var(--danger)">Could not be read: ${esc(lot.error)}</span>`
+            : `${lot.lots.length} lot${lot.lots.length === 1 ? '' : 's'}: ${esc(lot.lots.map((l) => l.key).join(', '))}
+               ${viewer.hasModels ? '<button class="btn xs" data-lot-draw style="margin-left:6px">Draw on model</button>' : ''}`}
+        </div></div>
 
       <div class="pp-field"><span>Submission gateway</span>
         <select data-f="gateway">${GATEWAY_ORDER.map((g) =>
@@ -2647,6 +2933,45 @@ function renderProjectPanel() {
       el.projectPanel.querySelector('[data-act="save"]').disabled = false;
     });
   });
+
+  // The cadastral lot: read and validated here, stored as the geo-referencing
+  // check's input so the check and the project file both carry it unchanged.
+  const lotFile = el.projectPanel.querySelector('[data-lot-file]');
+  el.projectPanel.querySelector('[data-lot-pick]').addEventListener('click', () => lotFile.click());
+  lotFile.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    let text, parsed;
+    try {
+      text = await file.text();
+      parsed = parseCadastralGeoJson(text);
+    } catch (err) {
+      toast(`${file.name} could not be used: ${err.message}`);
+      return;
+    }
+    ensureProject();
+    checkInputs.set(LOT_INPUT_KEY, { name: file.name, text });
+    // The lot numbers come with the file; add any the identity field lacks.
+    for (const l of parsed.lots) if (!project.project.lots.includes(l.key)) project.project.lots.push(l.key);
+    for (const w of parsed.warnings) toast(w);
+    redrawSurveyIfShown();
+    renderCheckMenu(); // redraws the chip, this panel and the check inputs
+  });
+  const lotClear = el.projectPanel.querySelector('[data-lot-clear]');
+  if (lotClear) {
+    lotClear.addEventListener('click', () => {
+      checkInputs.delete(LOT_INPUT_KEY);
+      redrawSurveyIfShown();
+      renderCheckMenu();
+    });
+  }
+  const lotDraw = el.projectPanel.querySelector('[data-lot-draw]');
+  if (lotDraw) {
+    lotDraw.addEventListener('click', () => {
+      el.projectPicker.classList.remove('open');
+      shellActions.showSurvey(surveyOutlines());
+    });
+  }
 
   el.projectPanel.querySelector('[data-f="gateway"]').addEventListener('change', (e) => {
     ensureProject();
@@ -3067,7 +3392,7 @@ let bcfSelected = null;
 const AUTHOR_KEY = 'rsp-ifcsg.author';
 
 function bcfAuthor() {
-  return (el.bcfAuthor.value || '').trim() || 'RSP CX Takeoff';
+  return (el.bcfAuthor.value || '').trim() || 'RSP IFC-SG Viewer';
 }
 
 const TYPE_CHIP = { fail: 'fail', error: 'fail', alert: 'alert', warning: 'alert', info: 'info' };

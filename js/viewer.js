@@ -53,6 +53,14 @@ export function compressNormals(geometry) {
   return from.byteLength - packed.byteLength;
 }
 
+/** The selected element's highlight: Forma's selection blue, lit a little from within. */
+const SELECTION_COLOUR = 0x2f8cff;
+const SELECTION_EMISSIVE = 0x0b3d80;
+const SELECTION_ID = 'selection';
+
+/** How long the orbit pivot takes to glide onto a newly selected element. */
+const PIVOT_MS = 350;
+
 export class Viewer {
   constructor(container) {
     this.container = container;
@@ -79,6 +87,9 @@ export class Viewer {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
     this.controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.PAN };
+    // A drag that starts while the pivot is still gliding to a selection takes
+    // over from wherever the glide got to.
+    this.controls.addEventListener('start', () => { this._pivotAnim = null; });
 
     // Locked to top-down: no orbit, just pan/zoom, so plan mode can't be tilted
     // into a perspective view by accident. With nothing to orbit, left drag
@@ -141,7 +152,22 @@ export class Viewer {
     this.surveyOverlays = [];    // cadastral / site-boundary polygons, see setSurveyOverlays
     this.contextMode = 'ghost';  // how un-selected geometry is drawn during a query
     this.hiddenVersion = 0;      // bumped on every visibility change, see _applyHidden
-    this.wireframe = false;
+
+    // The selected element, redrawn over the model in one highlight colour, and
+    // the orbit pivot gliding onto it (see setSelection).
+    this.selection = null;       // { modelID, expressID, parts? } | null
+    this.selectionMesh = null;
+    this.selectionMaterial = new THREE.MeshLambertMaterial({
+      color: SELECTION_COLOUR,
+      emissive: SELECTION_EMISSIVE,
+      side: THREE.DoubleSide,
+      // Pull the highlight towards the camera so it wins against the base mesh
+      // and any overlay drawn over the same triangles.
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    });
+    this._pivotAnim = null;      // { from, to, t0 } while the pivot is moving
 
     this.pickListeners = [];
     this.menuListeners = [];
@@ -194,6 +220,7 @@ export class Viewer {
 
   _animate() {
     requestAnimationFrame(() => this._animate());
+    this._stepPivot();
     this.controls.update();
     this.controlsOrtho.update();
     this.renderer.render(this.scene, this.activeCamera);
@@ -241,7 +268,6 @@ export class Viewer {
         g.depthWrite = false;
         return g;
       });
-      if (this.wireframe) [...baseMaterials, ...ghostMaterials].forEach((m) => { m.wireframe = true; });
 
       // web-ifc-three stamps the mesh from its own counter, but everything that
       // matters (subsets, close, the property API) is keyed by web-ifc's model
@@ -315,6 +341,8 @@ export class Viewer {
     const entry = this.models.get(modelID);
     if (!entry) return;
     this._clearOverlays();
+    if (this.selection && this.selection.modelID === modelID) this.selection = null;
+    this._clearSelectionMesh();
     this.models.delete(modelID);
     this.hiddenByModel.delete(modelID);
 
@@ -591,7 +619,6 @@ export class Viewer {
         const material = new THREE.MeshLambertMaterial({
           color: new THREE.Color(g.colour),
           side: THREE.DoubleSide,
-          wireframe: this.wireframe,
         });
         const customID = `ifcsg-${gi}`;
         const mesh = this.loader.ifcManager.createSubset({
@@ -620,6 +647,97 @@ export class Viewer {
         entry.mesh.visible = false;
       }
     }
+
+    this._drawSelection();
+  }
+
+  // -------------------------------------------------------------- selection
+
+  /**
+   * Highlights one element and, unless told otherwise, glides the orbit pivot
+   * onto its centre so the next drag turns around it, as in Forma. The camera
+   * stays put; only where it looks moves. Pass null to clear the highlight —
+   * the pivot is left where it is.
+   *
+   * @param {{modelID:number, expressID:number, parts?:number[]}|null} el
+   * @param {{pivot?: boolean}} [opts]
+   */
+  setSelection(el, { pivot = true } = {}) {
+    this.selection = el && this.models.has(el.modelID)
+      ? { modelID: el.modelID, expressID: el.expressID, parts: el.parts }
+      : null;
+    this._drawSelection();
+    if (this.selection && pivot) this._pivotTo(this.selection);
+  }
+
+  clearSelection() {
+    this.setSelection(null);
+  }
+
+  _clearSelectionMesh() {
+    if (!this.selectionMesh) return;
+    try {
+      this.loader.ifcManager.removeSubset(this.selectionMesh.modelID, this.selectionMaterial, SELECTION_ID);
+    } catch { /* already gone with its model */ }
+    this.selectionMesh = null;
+  }
+
+  /** Rebuilds the highlight subset, skipping anything the user has hidden. */
+  _drawSelection() {
+    this._clearSelectionMesh();
+    const sel = this.selection;
+    if (!sel) return;
+    const entry = this.models.get(sel.modelID);
+    if (!entry || !entry.visible) return;
+
+    const hidden = this.hiddenByModel.get(sel.modelID);
+    const ids = this._geometryIds(sel).filter((id) => !hidden || !hidden.has(id));
+    if (!ids.length) return;
+
+    const mesh = this.loader.ifcManager.createSubset({
+      modelID: sel.modelID,
+      ids,
+      material: this.selectionMaterial,
+      scene: this.scene,
+      removePrevious: true,
+      customID: SELECTION_ID,
+    });
+    if (mesh) {
+      mesh.modelID = sel.modelID;
+      this.selectionMesh = mesh;
+    }
+  }
+
+  /** Bounding box of a set of elements, through their parts where they have them. */
+  _elementsBox(elements) {
+    const box = new THREE.Box3();
+    for (const el of elements || []) {
+      for (const p of this.elementPoints(el.modelID, el.expressID, 4000)) box.expandByPoint(p);
+      for (const id of el.parts || []) {
+        for (const p of this.elementPoints(el.modelID, id, 2000)) box.expandByPoint(p);
+      }
+    }
+    return box;
+  }
+
+  _pivotTo(el) {
+    // Plan view has no orbit to pivot, and moving its target would pan the plan.
+    if (this.activeCamera !== this.camera) return;
+    const box = this._elementsBox([el]);
+    if (box.isEmpty()) return;
+    const to = box.getCenter(new THREE.Vector3());
+    // OrbitControls cannot look at a point it is standing on.
+    if (to.distanceToSquared(this.camera.position) < 1e-4) return;
+    this._pivotAnim = { from: this.controls.target.clone(), to, t0: performance.now() };
+  }
+
+  _stepPivot() {
+    const a = this._pivotAnim;
+    if (!a) return;
+    const t = Math.min(1, (performance.now() - a.t0) / PIVOT_MS);
+    const k = 1 - Math.pow(1 - t, 3); // ease out
+    this.controls.target.lerpVectors(a.from, a.to, k);
+    if (t >= 1) this._pivotAnim = null;
   }
 
   // ------------------------------------------------------- geometry sampling
@@ -861,11 +979,22 @@ export class Viewer {
     return this.surveyOverlays.length > 0;
   }
 
-  /** Frames the camera on the survey overlays plus the models. */
-  fitSurvey() {
+  /**
+   * Frames the camera on the survey overlays plus the models. Overlays whose
+   * centre lies more than `reach` from the models' centre are left out, so a
+   * lot kilometres away (the wrong lot, or a mis-georeferenced model) does not
+   * shrink the model to a dot.
+   */
+  fitSurvey(reach = Infinity) {
     if (!this.surveyOverlays.length) return this.fit();
     const box = new THREE.Box3();
-    for (const o of this.surveyOverlays) box.expandByObject(o.object);
+    const models = this._visibleBox();
+    const centre = models && models.getCenter(new THREE.Vector3());
+    for (const o of this.surveyOverlays) {
+      const b = new THREE.Box3().setFromObject(o.object);
+      if (centre && b.getCenter(new THREE.Vector3()).distanceTo(centre) > reach) continue;
+      box.union(b);
+    }
     for (const entry of this.models.values()) {
       if (entry.visible) box.union(new THREE.Box3().setFromObject(entry.mesh));
     }
@@ -879,6 +1008,7 @@ export class Viewer {
     this.camera.near = maxDim / 200;
     this.camera.far = maxDim * 60;
     this.camera.updateProjectionMatrix();
+    this._pivotAnim = null;
     this.controls.target.copy(center);
     this.controls.update();
     return undefined;
@@ -891,26 +1021,12 @@ export class Viewer {
     this.refresh();
   }
 
-  setWireframe(on) {
-    this.wireframe = on;
-    for (const entry of this.models.values()) {
-      [...entry.baseMaterials, ...entry.ghostMaterials].forEach((m) => { m.wireframe = on; });
-    }
-    this.overlays.forEach((o) => { o.material.wireframe = on; });
-  }
-
   // ------------------------------------------------------------------ camera
 
   /** Union box of everything currently visible, or null if nothing is. */
   /** Frames a set of elements, using their parts where they draw through parts. */
   fitElements(elements) {
-    const box = new THREE.Box3();
-    for (const el of elements || []) {
-      for (const p of this.elementPoints(el.modelID, el.expressID, 4000)) box.expandByPoint(p);
-      for (const id of el.parts || []) {
-        for (const p of this.elementPoints(el.modelID, id, 2000)) box.expandByPoint(p);
-      }
-    }
+    const box = this._elementsBox(elements);
     if (box.isEmpty()) return false;
     if (this.activeCamera === this.orthoCamera) this.exitPlanView();
     const size = box.getSize(new THREE.Vector3());
@@ -920,6 +1036,7 @@ export class Viewer {
     if (dir.lengthSq() < 1e-6) dir.set(1, 0.75, 1);
     dir.normalize();
     this.camera.position.copy(center).addScaledVector(dir, dist);
+    this._pivotAnim = null;
     this.controls.target.copy(center);
     this.controls.update();
     return true;
@@ -974,6 +1091,7 @@ export class Viewer {
     // OrbitControls orbits about its target; put it a model's width ahead.
     const box = this._visibleBox();
     const reach = box ? box.getSize(new THREE.Vector3()).length() * 0.5 : 20;
+    this._pivotAnim = null;
     this.controls.target.copy(position).addScaledVector(direction, reach);
     this.controls.update();
     return true;
@@ -1025,6 +1143,7 @@ export class Viewer {
     this.camera.near = maxDim / 100;
     this.camera.far = maxDim * 50;
     this.camera.updateProjectionMatrix();
+    this._pivotAnim = null;
     this.controls.target.copy(center);
     this.controls.update();
     this.grid.position.y = box.min.y;
@@ -1216,6 +1335,12 @@ export class Viewer {
    * Starts sliding a cut if the pointer is on one of the cut helpers.
    * @returns {number|null} the grabbed cut's id
    */
+  /** True if the pointer is over a placed cut, where a click grabs it rather than placing one. */
+  overSection(event) {
+    if (!this.sectionPlanes.length) return false;
+    return this._pointerRay(event).intersectObjects(this.sectionPlanes.map((s) => s.group), true).length > 0;
+  }
+
   grabSection(event) {
     if (!this.sectionPlanes.length) return null;
     const targets = this.sectionPlanes.map((s) => s.group);
@@ -1278,14 +1403,17 @@ export class Viewer {
    * bounding box, with an arrow at the anchor pointing into the kept half. The
    * rectangle is also the handle: dragging it slides the cut along its axis.
    */
-  _buildSectionHelper({ id, axis, normal, anchor }) {
-    const group = new THREE.Group();
-    group.userData.sectionId = id;
-
-    const box = this._visibleBox() || new THREE.Box3(
-      new THREE.Vector3(-10, -10, -10), new THREE.Vector3(10, 10, 10));
+  /**
+   * The rectangle a cut draws: the model's bounds, padded a little, sliced at
+   * the anchor along the cut's axis. Also returns the model's largest
+   * dimension, which sizes the direction arrow.
+   */
+  _sectionRect({ axis, normal, anchor }, box = this._visibleBox()) {
+    box = (box || new THREE.Box3(
+      new THREE.Vector3(-10, -10, -10), new THREE.Vector3(10, 10, 10))).clone();
     const size = box.getSize(new THREE.Vector3());
-    box.expandByScalar(Math.max(size.x, size.y, size.z) * 0.04);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    box.expandByScalar(maxDim * 0.04);
 
     // The two in-plane axes, and the rectangle corners at the anchor's offset.
     const [u, v] = axis === 'x' ? ['y', 'z'] : axis === 'y' ? ['x', 'z'] : ['x', 'y'];
@@ -1297,7 +1425,91 @@ export class Viewer {
       // Nudged into the kept half so the plane never clips its own handle.
       return p.addScaledVector(normal, 1e-3);
     };
-    const corners = [corner(true, true), corner(false, true), corner(false, false), corner(true, false)];
+    return {
+      corners: [corner(true, true), corner(false, true), corner(false, false), corner(true, false)],
+      arrowLen: Math.max(maxDim * 0.08, 0.6),
+    };
+  }
+
+  /**
+   * Shows where a cut would go if the face under the pointer were clicked: the
+   * same rectangle and arrow a placed cut draws, fainter. Built once and moved,
+   * since it follows the pointer every frame.
+   * @param {{point: THREE.Vector3, normal: THREE.Vector3, axis: string}|null} face
+   */
+  previewSection(face, cameraPos) {
+    if (!face) {
+      this.hideSectionPreview();
+      return;
+    }
+    const normal = face.normal.clone().normalize();
+    if (normal.dot(new THREE.Vector3().subVectors(cameraPos, face.point)) > 0) normal.negate();
+
+    // The model's bounds do not change while the pointer moves; measure them once.
+    if (!this._previewBox) this._previewBox = this._visibleBox();
+    const { corners, arrowLen } = this._sectionRect(
+      { axis: face.axis, normal, anchor: face.point }, this._previewBox);
+
+    let p = this._sectionPreview;
+    if (!p) {
+      const colour = 0xffcf5c;
+      const outline = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints(corners),
+        new THREE.LineBasicMaterial({ color: colour, depthTest: false, transparent: true, opacity: 0.75 }));
+      const fill = new THREE.Mesh(
+        new THREE.BufferGeometry().setFromPoints(
+          [corners[0], corners[1], corners[2], corners[0], corners[2], corners[3]]),
+        new THREE.MeshBasicMaterial({
+          color: colour, transparent: true, opacity: 0.14, side: THREE.DoubleSide, depthWrite: false,
+        }));
+      const arrow = new THREE.ArrowHelper(normal, face.point, arrowLen, colour);
+      arrow.line.material.depthTest = false;
+      arrow.cone.material.depthTest = false;
+      for (const o of [outline, fill]) o.frustumCulled = false; // moved in place, bounds go stale
+      outline.renderOrder = 999;
+      fill.renderOrder = 998;
+      arrow.renderOrder = 999;
+      const group = new THREE.Group();
+      group.add(outline, fill, arrow);
+      this.scene.add(group);
+      p = this._sectionPreview = { group, outline, fill, arrow };
+    }
+
+    const op = p.outline.geometry.attributes.position;
+    corners.forEach((c, i) => op.setXYZ(i, c.x, c.y, c.z));
+    op.needsUpdate = true;
+    const fp = p.fill.geometry.attributes.position;
+    [0, 1, 2, 0, 2, 3].forEach((ci, i) => fp.setXYZ(i, corners[ci].x, corners[ci].y, corners[ci].z));
+    fp.needsUpdate = true;
+    p.arrow.position.copy(face.point);
+    p.arrow.setDirection(normal);
+    p.arrow.setLength(arrowLen, arrowLen * 0.35, arrowLen * 0.2);
+    p.group.visible = true;
+  }
+
+  hideSectionPreview() {
+    if (this._sectionPreview) this._sectionPreview.group.visible = false;
+  }
+
+  /** Drops the preview entirely, when the section tool is put away. */
+  endSectionPreview() {
+    const p = this._sectionPreview;
+    if (p) {
+      this.scene.remove(p.group);
+      p.group.traverse((o) => {
+        if (o.geometry) o.geometry.dispose();
+        if (o.material) o.material.dispose();
+      });
+    }
+    this._sectionPreview = null;
+    this._previewBox = null;
+  }
+
+  _buildSectionHelper({ id, axis, normal, anchor }) {
+    const group = new THREE.Group();
+    group.userData.sectionId = id;
+
+    const { corners, arrowLen: len } = this._sectionRect({ axis, normal, anchor });
 
     const outline = new THREE.LineLoop(
       new THREE.BufferGeometry().setFromPoints(corners),
@@ -1314,7 +1526,6 @@ export class Viewer {
     fill.renderOrder = 998;
     group.add(fill);
 
-    const len = Math.max(Math.max(size.x, size.y, size.z) * 0.08, 0.6);
     const arrow = new THREE.ArrowHelper(
       normal.clone(), anchor.clone(), len, 0xffcf5c, len * 0.35, len * 0.2);
     arrow.line.material.depthTest = false;
@@ -1349,6 +1560,8 @@ export class Viewer {
     // Overlay subsets live on the scene, not under a model, so both have to be
     // offered to the raycaster or picking would stop working during a query.
     if (includeOverlays) for (const o of this.overlays) if (o.mesh) targets.push(o.mesh);
+    // The highlight can be all that draws a selected element when context is hidden.
+    if (includeOverlays && this.selectionMesh) targets.push(this.selectionMesh);
 
     const hits = this._pointerRay(event).intersectObjects(targets, true).filter((h) => h.object.visible);
     if (!hits.length) return null;

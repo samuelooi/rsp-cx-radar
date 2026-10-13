@@ -314,7 +314,7 @@ const module = {
       }
     } else {
       add(SEVERITY.INFO, 'no-lot', 'Cadastral lot not supplied',
-        'Upload the cadastral lot GeoJSON to check the model against the land it sits on. ' +
+        'Add the cadastral lot GeoJSON in project setup to check the model against the land it sits on. ' +
         'Without it only the model\'s own georeferencing is checked.');
     }
 
@@ -405,10 +405,10 @@ const module = {
       const colour = f.severity === SEVERITY.PASS ? 'var(--ok)'
         : f.severity === SEVERITY.WARN ? 'var(--warn)'
           : f.severity === SEVERITY.INFO ? 'var(--accent)' : 'var(--danger)';
-      return `<div class="irow">
+      return `<div class="irow" data-sev="${esc(f.severity)}">
         <span class="status-dot" style="background:${colour}"></span>
-        <span class="ik">${esc(f.label)}<br>
-          <span style="color:var(--text-dim);font-size:10.5px">${esc(f.message)}</span></span>
+        <span class="ik">${esc(f.label)}
+          <span class="imsg">${esc(f.message)}</span></span>
       </div>`;
     }).join('') + '</div>');
 

@@ -305,6 +305,16 @@
 
   /* Check selection menu: which authority checks to run. */
   .check-menu { border-bottom: 1px solid var(--border); max-height: 60%; overflow-y: auto; flex-shrink: 0; }
+  /* Once results are in, the menu folds into this bar so they get the height. */
+  .cm-bar {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    padding: 8px 10px; background: none; border: none; border-bottom: 1px solid var(--border);
+    color: var(--text); font-family: inherit; font-size: 12px; text-align: left; cursor: pointer;
+  }
+  .cm-bar[hidden] { display: none; }
+  .cm-bar:hover { background: var(--panel-2); }
+  .cm-bar-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cm-bar-act { color: var(--accent); font-size: 11px; flex-shrink: 0; }
   .cm-group { padding: 6px 0; }
   .cm-group + .cm-group { border-top: 1px solid #2e333c; }
   .cm-head {
@@ -411,8 +421,19 @@
   .cr-head {
     display: flex; align-items: center; gap: 8px;
     padding: 8px 10px; background: var(--panel-2);
-    position: sticky; top: 0; z-index: 1;
+    position: sticky; top: 0; z-index: 1; cursor: pointer;
   }
+  .cr-caret {
+    flex-shrink: 0; width: 10px; font-size: 9px; color: var(--text-dim);
+    transition: transform .12s;
+  }
+  .check-result.collapsed .cr-caret { transform: rotate(-90deg); }
+  .check-result.collapsed .cr-note, .check-result.collapsed .cr-body { display: none; }
+
+  /* "Issues only": passing rows, clean rules and clean checks drop out. */
+  #issues.issues-only .check-result.clean,
+  #issues.issues-only .issue-target.clean,
+  #issues.issues-only .irow[data-sev="pass"] { display: none; }
   .cr-title { flex: 1; font-size: 12.5px; min-width: 0; }
   .cr-title small { display: block; color: var(--text-dim); font-size: 10.5px; }
   .cr-note {
@@ -420,9 +441,22 @@
     line-height: 1.5; border-bottom: 1px solid #2e333c;
   }
   .pill.ok { background: #27402a; color: #86c086; }
-  .summary { padding: 10px; border-bottom: 1px solid var(--border); display: none; }
+  .summary { padding: 9px 10px 8px; border-bottom: 1px solid var(--border); display: none; }
   .summary.visible { display: block; }
-  .sbar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 8px; background: var(--panel-2); }
+  .sbar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 7px; background: var(--panel-2); }
+  .sline {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums;
+  }
+  .sline b { font-weight: 600; }
+  .stoggle { margin-left: auto; display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer; }
+  .stoggle input { margin: 0; accent-color: var(--accent); }
+  .sdetails { margin-top: 5px; }
+  .sdetails > summary {
+    font-size: 10.5px; color: var(--text-dim); cursor: pointer; width: max-content;
+  }
+  .sdetails > summary:hover { color: var(--text-muted); }
+  .sdetails .sgrid { margin-top: 5px; }
   .sbar i { display: block; height: 100%; }
   .sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-size: 11.5px; }
   .sgrid .k { color: var(--text-muted); }
@@ -441,14 +475,19 @@
   }
   .pill.bad { background: #4a2a22; color: #e59277; }
   .pill.good { background: #27402a; color: #86c086; }
-  .issue-body { display: none; padding: 0 10px 8px 25px; }
+  .issue-body { display: none; padding: 0 10px 8px 12px; }
   .issue-target.open .issue-body { display: block; }
-  .ilist { font-size: 11.5px; }
+  .ilist { font-size: 12px; }
   .ilist .irow {
-    display: flex; gap: 7px; padding: 3px 0; border-top: 1px solid #2e333c;
+    display: flex; gap: 7px; padding: 4px 0; border-top: 1px solid #2e333c;
     align-items: baseline;
   }
-  .ilist .irow .ik { flex: 1; color: var(--text-muted); min-width: 0; }
+  .ilist .irow .ik { flex: 1; color: var(--text); min-width: 0; line-height: 1.4; overflow-wrap: anywhere; }
+  /* The explanation under a finding: what is wrong, readable at a glance. */
+  .ilist .imsg { display: block; color: var(--text-muted); font-size: 11.5px; margin-top: 1px; }
+  /* A finding on one element: click to select it in the model. */
+  .ilist .irow.pick { cursor: pointer; }
+  .ilist .irow.pick:hover { background: var(--panel-2); }
   .ilist .irow .iv { color: var(--text-dim); font-variant-numeric: tabular-nums; }
   .status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
 
@@ -683,6 +722,19 @@
   .rail-btn.active { color: #fff; background: var(--accent-dim); border-color: var(--accent); }
   .rail-btn svg { width: 16px; height: 16px; }
 
+  /* Hover card for the rail: what the tool is, what it does, and its state now. */
+  .rail-tip {
+    position: fixed; z-index: 60; width: max-content; max-width: 250px;
+    padding: 7px 10px; pointer-events: none;
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .35);
+    transform: translateY(-50%); opacity: 0; transition: opacity .1s ease;
+  }
+  .rail-tip.visible { opacity: 1; }
+  .rail-tip b { display: block; font-size: 12px; font-weight: 600; color: var(--text); }
+  .rail-tip .rt-desc { display: block; margin-top: 2px; font-size: 11px; line-height: 1.45; color: var(--text-muted); }
+  .rail-tip .rt-state { display: block; margin-top: 5px; font-size: 10.5px; color: var(--accent); }
+
   /* ---------- Drop zone ---------- */
   #dropzone {
     position: absolute; inset: 48px 0 0 0; display: none;
@@ -879,6 +931,10 @@
 
     <!-- Check tab -->
     <div id="tab-check" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <button class="cm-bar" id="check-menu-bar" hidden>
+        <span class="cm-bar-text" id="check-menu-bar-text"></span>
+        <span class="cm-bar-act" id="check-menu-bar-act">Edit &#9662;</span>
+      </button>
       <div class="check-menu" id="check-menu"></div>
       <div class="check-actions">
         <button class="btn primary" id="btn-run-check" disabled>Select a check</button>
@@ -914,41 +970,39 @@
 
   <!-- Tool rail -->
   <div id="rail">
-    <div class="rail-btn" id="tool-collapse" title="Collapse panel">
+    <div class="rail-btn" id="tool-collapse" aria-label="Collapse Panel" data-tip="Collapse Panel" data-desc="Fold the side panel away to give the model the full window. Click again to bring it back.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M15 6l-6 6 6 6"/></svg>
     </div>
-    <div class="rail-btn" id="tool-spaces" title="Show IfcSpace volumes">
+    <div class="rail-btn" id="tool-spaces" aria-label="Show IfcSpaces" data-tip="Show IfcSpaces" data-desc="Show or hide the IfcSpace room volumes. They start hidden because they cover the building elements inside them.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>
     </div>
-    <div class="rail-btn" id="tool-survey" title="No survey outlines drawn">
+    <div class="rail-btn" id="tool-survey" aria-label="Draw Survey Outlines" data-tip="Draw Survey Outlines" data-desc="Draw the project's cadastral lot (green) on the ground, from the GeoJSON in project setup — no check run needed. After a geo-referencing check it also draws the site boundary (blue), or the model footprint (amber) where none is modelled. Click again to clear." data-state="No lot set — add it in project setup">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 20l6-16 6 16M3 20l9-5 9 5M21 20L15 4"/></svg>
     </div>
-    <div class="rail-btn" id="tool-showall" title="Show all hidden elements">
+    <div class="rail-btn" id="tool-showall" aria-label="Show All" data-tip="Show All" data-desc="Bring back everything that is hidden: elements hidden or isolated from the right-click menu, IfcSpaces, and switched-off models.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>
     </div>
-    <div class="rail-btn" id="tool-ghost" title="Ghost the rest of the model">
+    <div class="rail-btn" id="tool-ghost" aria-label="View Context" data-tip="View Context" data-desc="How the rest of the model is drawn while a query or check colours some elements. Click to cycle: ghosted, hidden, normal.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18"/></svg>
     </div>
-    <div class="rail-btn" id="tool-wireframe" title="Toggle wireframe">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 2l9 5v10l-9 5-9-5V7l9-5z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>
-    </div>
-    <div class="rail-btn" id="tool-fit" title="Fit to view">
+    <div class="rail-btn" id="tool-fit" aria-label="Fit to View" data-tip="Fit to View" data-desc="Frame the whole visible model in the window.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
     </div>
-    <div class="rail-btn" id="tool-section" title="Section cut: click a face of the model (like Forma)">
+    <div class="rail-btn" id="tool-section" aria-label="Section Cut" data-tip="Section Cut" data-desc="Click a face of the model to cut along it, as in Forma. Drag a cut to slide it; click the tool again to stop placing cuts.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
         <rect x="3" y="5" width="18" height="14" rx="1"/>
         <path d="M3 15.5l18-8" stroke-dasharray="2.2 2.2"/>
         <path d="M16.5 5.5l3 2-3 2"/>
       </svg>
     </div>
-    <div class="rail-btn" id="tool-levels" title="Plan view by level">
+    <div class="rail-btn" id="tool-levels" aria-label="Plan View" data-tip="Plan View" data-desc="Pick a storey to look straight down on it, with everything above that level cut away.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round">
         <path d="M12 3l9 5-9 5-9-5 9-5z"/>
         <path d="M3 13l9 5 9-5"/>
       </svg>
     </div>
   </div>
+  <div class="rail-tip" id="rail-tip" role="tooltip"></div>
 
   <!-- Section cuts list -->
   <div id="sections-bar"></div>
