@@ -12,7 +12,10 @@
  * The fix runs before the file reaches web-ifc: every IFCARCINDEX segment is
  * replaced with a dense IFCLINEINDEX polyline that follows the same true
  * circular arc, and the extra points are appended to the point list it draws
- * from. Nothing else in the file changes — no entity is added, removed or
+ * from. Then a curve's segments are joined into one IFCLINEINDEX, because
+ * web-ifc 0.0.36 reads only a curve's first segment — a boundary split into
+ * several straight runs draws as its first run alone, arc or no arc.
+ * Nothing else in the file changes — no entity is added, removed or
  * renumbered, so every expressID a property, relationship or GUID lookup
  * depends on stays exactly where it was. This is only ever used to build the
  * mesh and the property index; editing, export and model identity keep
@@ -115,7 +118,7 @@ export async function flattenArcs(file, onProgress = () => {}) {
     try { line = parseLine(text); } catch { continue; }
     const segs = line.attrs[1];
     if (!segs || segs.kind !== 'list') continue;
-    if (segs.items.some((s) => s.kind === 'typed' && s.name === 'IFCARCINDEX')) curveById.set(id, line);
+    if (segs.items.length > 1 || segs.items.some((s) => s.kind === 'typed' && s.name === 'IFCARCINDEX')) curveById.set(id, line);
   }
   if (!curveById.size) return { file: null, curvesFixed: 0, arcsFixed: 0 };
 
@@ -172,8 +175,24 @@ export async function flattenArcs(file, onProgress = () => {}) {
       touchedPointLists.add(pref.id);
       arcsFixed++;
     }
+
+    // web-ifc 0.0.36 reads only the first segment of an IfcIndexedPolyCurve:
+    // a site boundary split as LINEINDEX((1,2,3)), ARCINDEX(...), ... drew as
+    // the triangle 1-2-3. Once every arc is a polyline, the segments chain end
+    // to start, so join them into the one LINEINDEX web-ifc does read.
+    if (segs.length > 1 && segs.every((s) => s.kind === 'typed' && s.name === 'IFCLINEINDEX')) {
+      const chain = [];
+      for (const s of segs) {
+        for (const n of s.value.items) {
+          const k = Number(n.raw);
+          if (chain[chain.length - 1] !== k) chain.push(k);
+        }
+      }
+      curve.attrs[1].items = [{ kind: 'typed', name: 'IFCLINEINDEX', value: { kind: 'list', items: chain.map(int) } }];
+      touchedCurves.add(curve.id);
+    }
   }
-  if (!arcsFixed) return { file: null, curvesFixed: 0, arcsFixed: 0 };
+  if (!touchedCurves.size) return { file: null, curvesFixed: 0, arcsFixed: 0 };
 
   // Splice only the touched lines into the original bytes — see editor.js's
   // export(), which this mirrors: nothing else is read into memory twice.
