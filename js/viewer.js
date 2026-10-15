@@ -61,6 +61,41 @@ export function compressNormals(geometry) {
   return from.byteLength - packed.byteLength;
 }
 
+/**
+ * Bounding box of every element in a mesh, from its per-vertex expressID
+ * attribute: expressID -> [minX, minY, minZ, maxX, maxY, maxZ].
+ * One pass over the vertices, made once per model at load.
+ */
+export function elementBoxes(geometry) {
+  const boxes = new Map();
+  const pos = geometry.attributes.position;
+  const ids = geometry.attributes.expressID;
+  if (!pos || !ids) return boxes;
+  const p = pos.array;
+  const id = ids.array;
+  for (let i = 0, n = pos.count; i < n; i++) {
+    const x = p[i * 3], y = p[i * 3 + 1], z = p[i * 3 + 2];
+    let b = boxes.get(id[i]);
+    if (!b) boxes.set(id[i], (b = [x, y, z, x, y, z]));
+    else {
+      if (x < b[0]) b[0] = x; if (y < b[1]) b[1] = y; if (z < b[2]) b[2] = z;
+      if (x > b[3]) b[3] = x; if (y > b[4]) b[4] = y; if (z > b[5]) b[5] = z;
+    }
+  }
+  return boxes;
+}
+
+/**
+ * Elements are "far" when their centre lies further than this from the core of
+ * the model: FAR_FACTOR times the core's size, and never less than FAR_MIN_M.
+ * The core is the box holding the middle 80% of element centres on each axis.
+ * Anything within three core-widths of it stays, so a long site of trees or a
+ * row of blocks stays whole, while a stray object kilometres away does not
+ * stretch the view.
+ */
+const FAR_FACTOR = 3;
+const FAR_MIN_M = 300;
+
 /** The selected element's highlight: Forma's selection blue, lit a little from within. */
 const SELECTION_COLOUR = 0x2f8cff;
 const SELECTION_EMISSIVE = 0x0b3d80;
@@ -157,6 +192,7 @@ export class Viewer {
     /** modelID -> Set<expressID> the user has hidden. */
     this.hiddenByModel = new Map();
 
+    this.farElements = [];       // elements left out of framing, see _visibleBox
     this.groups = [];            // [{ elements, colour }] from the active query
     this.overlays = [];          // created subsets, tracked for exact teardown
     this.surveyOverlays = [];    // cadastral / site-boundary polygons, see setSurveyOverlays
@@ -269,6 +305,8 @@ export class Viewer {
       // Before any subset exists, so subsets (which share this attribute by
       // reference) pick up the compressed version automatically.
       if (COMPRESS_NORMALS) compressNormals(mesh.geometry);
+      // Per-element extents, so framing can leave out stray far-away geometry.
+      const boxes = elementBoxes(mesh.geometry);
 
       const baseMaterials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       const ghostMaterials = baseMaterials.map((m) => {
@@ -307,6 +345,7 @@ export class Viewer {
         // on demand) and is what editing and GUID lookup read from later.
         file,
         mesh,
+        boxes,
         baseMaterials,
         ghostMaterials,
         visible: true,
@@ -600,6 +639,7 @@ export class Viewer {
    * Cheap enough to call on every interaction.
    */
   refresh() {
+    this._boxCache = null;
     this._clearOverlays();
 
     const hasQuery = this.groups.length > 0;
@@ -1005,9 +1045,7 @@ export class Viewer {
       if (centre && b.getCenter(new THREE.Vector3()).distanceTo(centre) > reach) continue;
       box.union(b);
     }
-    for (const entry of this.models.values()) {
-      if (entry.visible) box.union(new THREE.Box3().setFromObject(entry.mesh));
-    }
+    if (models) box.union(models);
     if (box.isEmpty()) return this.fit();
 
     const size = box.getSize(new THREE.Vector3());
@@ -1124,15 +1162,52 @@ export class Viewer {
       resolve(blob ? Object.assign(blob, { width: canvas.width, height: canvas.height }) : null), type, quality));
   }
 
+  /**
+   * The box the camera frames: every visible element except the far ones (see
+   * FAR_FACTOR). The far ones are kept in `farElements` so the app can name
+   * them, since geometry kilometres from the building is almost always an
+   * export problem worth fixing at source.
+   */
   _visibleBox() {
-    const box = new THREE.Box3();
-    let any = false;
-    for (const entry of this.models.values()) {
-      if (!entry.visible) continue;
-      box.union(new THREE.Box3().setFromObject(entry.mesh));
-      any = true;
+    const visible = this.entries.filter((e) => e.visible);
+    const key = visible.map((e) => e.modelID).join(',');
+    if (this._boxCache && this._boxCache.key === key) return this._boxCache.box;
+
+    const all = [];
+    for (const e of visible) for (const [id, b] of e.boxes || []) all.push({ modelID: e.modelID, expressID: id, b });
+
+    let box = null;
+    let far = [];
+    if (all.length >= 5) {
+      const pct = (axis, q) => {
+        const v = all.map((x) => (x.b[axis] + x.b[axis + 3]) / 2).sort((a, b) => a - b);
+        return v[Math.min(v.length - 1, Math.max(0, Math.round(q * (v.length - 1))))];
+      };
+      const core = new THREE.Box3(
+        new THREE.Vector3(pct(0, 0.1), pct(1, 0.1), pct(2, 0.1)),
+        new THREE.Vector3(pct(0, 0.9), pct(1, 0.9), pct(2, 0.9)));
+      const size = core.getSize(new THREE.Vector3());
+      const limit = Math.max(FAR_MIN_M, FAR_FACTOR * Math.max(size.x, size.y, size.z));
+      const c = new THREE.Vector3();
+      box = new THREE.Box3();
+      for (const x of all) {
+        c.set((x.b[0] + x.b[3]) / 2, (x.b[1] + x.b[4]) / 2, (x.b[2] + x.b[5]) / 2);
+        const d = core.distanceToPoint(c);
+        if (d > limit) far.push({ modelID: x.modelID, expressID: x.expressID, distance: d });
+        else box.expandByPoint(c.set(x.b[0], x.b[1], x.b[2])).expandByPoint(c.set(x.b[3], x.b[4], x.b[5]));
+      }
+      if (box.isEmpty()) { box = null; far = []; }
     }
-    return any && !box.isEmpty() ? box : null;
+    if (!box) {
+      // Too few elements to tell a stray from the model: frame everything.
+      box = new THREE.Box3();
+      for (const e of visible) box.union(new THREE.Box3().setFromObject(e.mesh));
+      if (box.isEmpty()) box = null;
+    }
+    far.sort((a, b) => b.distance - a.distance);
+    this.farElements = far;
+    this._boxCache = { key, box };
+    return box;
   }
 
   fit() {

@@ -814,10 +814,34 @@ async function loadFiles(files) {
   }
   rebuildIndex();
   viewer.fit();
+  reportFarElements();
   refreshSurveyRail();
   setProgress(100, 'Done');
   if (skipped) toast(`${skipped} file${skipped > 1 ? 's were' : ' was'} skipped — not .ifc.`);
   setTimeout(() => el.loading.classList.remove('visible'), 250);
+}
+
+/**
+ * Says which elements the view left out because they sit far from the rest of
+ * the model. Geometry kilometres from the building is nearly always an export
+ * problem (a stray object, or elements left at Revit's internal origin while
+ * the rest uses shared coordinates), so it is named rather than silently framed.
+ */
+function reportFarElements() {
+  const far = viewer.farElements || [];
+  if (!far.length) return;
+  const label = (f) => {
+    const e = index && index.byId.get(`${f.modelID}:${f.expressID}`);
+    return e ? `${e.name || e.entity} (${e.entity})` : `element #${f.expressID}`;
+  };
+  const dist = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`);
+  const shown = far.slice(0, 3).map(label).join(', ');
+  console.warn('Elements left out of the view because they are far from the rest of the model:',
+    far.map((f) => ({ name: label(f), modelID: f.modelID, expressID: f.expressID, distance: dist(f.distance) })));
+  toast(`${far.length} element${far.length === 1 ? '' : 's'} ${far.length === 1 ? 'sits' : 'sit'} up to ` +
+    `${dist(far[0].distance)} from the rest of the model: ${shown}${far.length > 3 ? ', …' : ''}. ` +
+    'The view frames the model without them. Check the export: stray geometry, or elements ' +
+    'at the internal origin while the rest uses shared coordinates.');
 }
 
 /**
