@@ -191,7 +191,6 @@ export const METRICS = [
     entity: 'IFCSPACE',
     subtypes: ['*AREA_GFA'],
     measure: SPACE_AREA,
-    groupBy: BY_USE_QUANTUM,
     subtotals: [
       { label: 'Verified (AVF_IncludeAsGFA = True)', when: (el) => isTrue(getValue(el, 'SGPset_SpaceArea_Verification', 'AVF_IncludeAsGFA')) },
       { label: 'Not yet verified', when: (el) => !isTrue(getValue(el, 'SGPset_SpaceArea_Verification', 'AVF_IncludeAsGFA')) },

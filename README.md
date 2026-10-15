@@ -253,7 +253,7 @@ federated model, with breakdowns **by level**, **by file**, or totals only.
 | Metric | Definition |
 | --- | --- |
 | Gross Floor Area | `IfcSpace` · ObjectType `AREA_GFA` · where `SGPset_SpaceArea_Verification.AVF_IncludeAsGFA` is True · sums `SGPset_SpaceDimension.Area`, split by use quantum (`SGPset_SpaceArea_GFA.AGF_UseQuantum`: Predominant / Ancillary) |
-| SGFA | Every `AREA_GFA` space, verified or not · same area, verified / not-yet-verified sub-totals, and the same use-quantum split |
+| SGFA | Every `AREA_GFA` space, verified or not · same area, with verified / not-yet-verified sub-totals |
 | Planting Areas | `IfcGeographicElement` · `*PLANTINGAREAS` · sums `SGPset_GeographicElementDimension.Area`, with encroachment and compensated sub-totals |
 | Parking Lots | `IfcBuildingElementProxy` · `*CARLOT`, `*MOTORCYCLELOT`, `*LORRYLOT`, `*COACHLOT`, `*ARTICULATEDVEHICLELOT`, `*BICYCLELOT` · counted per type |
 | Refuse & Recycling Bins | `IfcTank` · `*RECYCLINGBIN`, `*REFUSEBIN` · sums `SGPset_Tank.Litre` |
