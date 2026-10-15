@@ -105,7 +105,7 @@ once); other browsers download it. **Save as…** picks a new location. The chip
 shows an amber dot while the state differs from the file. Drop a project file
 onto the window, on its own or together with the IFCs, and it is applied before
 the models index. The last project used is also remembered in the browser and
-restored on the next visit; the start card lists the five most recent.
+restored on the next visit.
 
 Not in the file: hidden elements, section cuts and colours. Those are session
 scratch. The workbook stamp the project was saved against is recorded, and a
@@ -252,7 +252,8 @@ federated model, with breakdowns **by level**, **by file**, or totals only.
 
 | Metric | Definition |
 | --- | --- |
-| Gross Floor Area | `IfcSpace` · ObjectType `AREA_GFA` · where `SGPset_SpaceArea_Verification.AVF_IncludeAsGFA` is True · sums `SGPset_SpaceDimension.Area` |
+| Gross Floor Area | `IfcSpace` · ObjectType `AREA_GFA` · where `SGPset_SpaceArea_Verification.AVF_IncludeAsGFA` is True · sums `SGPset_SpaceDimension.Area`, split by use quantum (`SGPset_SpaceArea_GFA.AGF_UseQuantum`: Predominant / Ancillary) |
+| SGFA | Every `AREA_GFA` space, verified or not · same area, verified / not-yet-verified sub-totals, and the same use-quantum split |
 | Planting Areas | `IfcGeographicElement` · `*PLANTINGAREAS` · sums `SGPset_GeographicElementDimension.Area`, with encroachment and compensated sub-totals |
 | Parking Lots | `IfcBuildingElementProxy` · `*CARLOT`, `*MOTORCYCLELOT`, `*LORRYLOT`, `*COACHLOT`, `*ARTICULATEDVEHICLELOT`, `*BICYCLELOT` · counted per type |
 | Refuse & Recycling Bins | `IfcTank` · `*RECYCLINGBIN`, `*REFUSEBIN` · sums `SGPset_Tank.Litre` |

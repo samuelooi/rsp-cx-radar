@@ -30,7 +30,7 @@ import { esc, hex } from './util/dom.js';
 import {
   FORMAT as PROJECT_FORMAT, VERSION as PROJECT_VERSION, emptyProject, parseProject,
   looksLikeProjectFile, fingerprint, labelOf, saveToDisk, openFromDisk,
-  recentProjects, rememberProject, forgetRecent, lastProject, clearLastProject,
+  rememberProject, lastProject, clearLastProject,
 } from './project.js';
 import {
   loadPresets, currentPresets, enabledPresets, savePresets, canSave,
@@ -2239,6 +2239,7 @@ function computeProjectDashboard(liveDash) {
     const byFile = [];
     const byLevel = new Map();
     const byType = new Map();
+    const byGroup = new Map();
     const subtotals = new Map();
     const sources = new Set();
     const near = new Map();
@@ -2258,6 +2259,7 @@ function computeProjectDashboard(liveDash) {
       if (m.count) byFile.push({ label: r.name, value: m.total || 0, count: m.count });
       addRows(byLevel, m.byLevel);
       addRows(byType, m.byType);
+      addRows(byGroup, m.byGroup);
       addRows(subtotals, m.subtotals);
       for (const n of m.nearMisses || []) near.set(n.label, (near.get(n.label) || 0) + n.count);
     }
@@ -2275,6 +2277,8 @@ function computeProjectDashboard(liveDash) {
       nearMisses: count ? [] : [...near.entries()].map(([label, n]) => ({ label, count: n }))
         .sort((a, b) => b.count - a.count),
       byType: [...byType.values()].sort(byValueDesc),
+      groupTitle: spec.groupBy ? spec.groupBy.title : null,
+      byGroup: [...byGroup.values()].sort(byValueDesc),
       // Files read as a list of submitted drawings, so they keep their own
       // order rather than being ranked by size.
       byFile: byFile.sort(byFileName),
@@ -2450,6 +2454,16 @@ function renderDashboard() {
           parts.push(`<tr><td class="k">${esc(r.label)}</td>
             <td class="n">${esc(fmtNum(r.value, m.decimals))}${m.isCount ? '' : ' ' + esc(m.unit)}</td>
             <td class="c">${m.isCount ? '' : r.count}</td></tr>`);
+        }
+        parts.push('</table>');
+      }
+
+      if (m.groupTitle && m.byGroup.length) {
+        parts.push(`<div class="brk-title">${esc(m.groupTitle)}</div><table class="brk">`);
+        for (const r of m.byGroup) {
+          parts.push(`<tr><td class="k">${esc(r.label)}</td>
+            <td class="n">${esc(fmtNum(r.value, m.decimals))}${m.isCount ? '' : ' ' + esc(m.unit)}</td>
+            <td class="c">${r.count}</td></tr>`);
         }
         parts.push('</table>');
       }
@@ -3154,20 +3168,14 @@ function renderProjectPanel() {
   });
 }
 
-/** The start card's project row: open a file, start fresh, or pick a recent one. */
+/** The start card's project row: open a project file, or start a new one. */
 function renderStartProjects() {
   if (!el.startProjects) return;
-  const recent = recentProjects();
   el.startProjects.innerHTML = `
     <div class="sp-row">
       <button class="btn" data-act="open">Open project file…</button>
       <button class="btn" data-act="new">New project</button>
-    </div>
-    ${recent.length ? `<div class="sp-recent"><span>Recent</span>${recent.map((r) => `
-      <button class="sp-item" data-key="${esc(r.key)}" title="${esc(r.saved ? 'Saved ' + new Date(r.saved).toLocaleString() : 'Not saved to disk')}">
-        ${esc(r.label)}<small>${esc(r.project.submission.gateway === 'design' ? 'Design Gateway' : 'Construction Gateway')}</small>
-      </button>
-      <button class="sp-forget" data-forget="${esc(r.key)}" title="Remove from this list">&times;</button>`).join('')}</div>` : ''}`;
+    </div>`;
 
   // These open the project panel; the same click must not reach the document
   // listener that closes it.
@@ -3178,25 +3186,6 @@ function renderStartProjects() {
   el.startProjects.querySelector('[data-act="new"]').addEventListener('click', (e) => {
     e.stopPropagation();
     newProject();
-  });
-  el.startProjects.querySelectorAll('.sp-item').forEach((b) => {
-    b.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const hit = recentProjects().find((r) => r.key === b.dataset.key);
-      if (!hit) return;
-      try {
-        await applyProject(parseProject(JSON.stringify(hit.project)));
-      } catch (err) {
-        console.error(err);
-        toast('That project could not be restored: ' + err.message);
-      }
-    });
-  });
-  el.startProjects.querySelectorAll('[data-forget]').forEach((b) => {
-    b.addEventListener('click', () => {
-      forgetRecent(b.dataset.forget);
-      renderStartProjects();
-    });
   });
 }
 
@@ -3851,6 +3840,7 @@ function dashboardForModel(dash) {
     valueSources: m.valueSources,
     subtotals: m.subtotals.map(recordedRow),
     byType: m.byType.map(recordedRow),
+    byGroup: (m.byGroup || []).map(recordedRow),
     byLevel: m.byLevel.map(recordedRow),
     nearMisses: m.nearMisses,
   }));
