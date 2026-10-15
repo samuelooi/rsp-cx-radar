@@ -204,7 +204,14 @@
     color: var(--text-muted); font-family: inherit; font-size: 11.5px;
     letter-spacing: .04em; padding: 10px 6px; cursor: pointer;
   }
+  .tabs button { padding: 10px 2px; font-size: 11px; letter-spacing: .03em; white-space: nowrap; }
   .tabs button:hover { color: var(--text); }
+  .tab-count {
+    display: inline-block; min-width: 16px; margin-left: 4px; padding: 0 4px; border-radius: 8px;
+    background: var(--warn-bg, #5a2a22); color: #ffb4a3; font-size: 10px; font-weight: 600;
+    line-height: 16px; letter-spacing: 0; vertical-align: 1px;
+  }
+  .tab-count.review { background: #4a3d1e; color: #f2cf7a; }
   .tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
 
   .filters {
@@ -808,6 +815,42 @@
   .sg-table th { color: var(--text-dim); font-weight: 600; font-size: 10px; letter-spacing: .03em; position: sticky; top: 0; background: var(--panel); }
   .sg-table tr:hover td { background: var(--panel-2); }
 
+  /* ---------- Warnings ---------- */
+  .warn-summary {
+    display: flex; gap: 6px; align-items: center; padding: 10px; border-bottom: 1px solid var(--border);
+    font-size: 12px; color: var(--text-muted); flex-wrap: wrap;
+  }
+  .warn-summary .pill { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .warn-summary .pill.fail { background: #5a2a22; color: #ffb4a3; }
+  .warn-summary .pill.warn { background: #4a3d1e; color: #f2cf7a; }
+  .warn-summary .pill.ok { background: #1f4029; color: #9fe0b0; }
+  .warn-group { padding: 10px 10px 4px; font-size: 10.5px; letter-spacing: .06em; color: var(--text-dim); }
+  .warn-item { border-bottom: 1px solid #2e333c; }
+  .warn-head {
+    display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; cursor: pointer;
+    background: none; border: none; width: 100%; text-align: left; color: var(--text); font: inherit;
+  }
+  .warn-head:hover { background: var(--panel-2); }
+  .warn-head .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .warn-item.fail .dot { background: #e0624f; }
+  .warn-item.warn .dot { background: #e0b84f; }
+  .warn-head .wt { flex: 1; min-width: 0; font-size: 12.5px; line-height: 1.4; }
+  .warn-head .wt small { display: block; color: var(--text-dim); font-size: 10.5px; margin-top: 2px; overflow-wrap: anywhere; }
+  .warn-head .chev { color: var(--text-dim); font-size: 10px; margin-top: 3px; transition: transform .15s; }
+  .warn-item.open .warn-head .chev { transform: rotate(90deg); }
+  .warn-body { display: none; padding: 0 10px 10px 26px; font-size: 12px; line-height: 1.55; color: var(--text-muted); }
+  .warn-item.open .warn-body { display: block; }
+  .warn-body .acts { display: flex; gap: 6px; margin: 8px 0 6px; }
+  .warn-els { display: flex; flex-direction: column; margin-top: 4px; }
+  .warn-els button {
+    display: flex; gap: 6px; justify-content: space-between; background: none; border: none; text-align: left;
+    color: var(--text); font: inherit; font-size: 11.5px; padding: 3px 4px; border-radius: 4px; cursor: pointer;
+  }
+  .warn-els button:hover { background: var(--panel-2); }
+  .warn-els button span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .warn-els button small { color: var(--text-dim); flex-shrink: 0; }
+  .warn-els .more { font-size: 11px; color: var(--text-dim); padding: 3px 4px; }
+
   /* ---------- Issues (BCF) ---------- */
   .issues-actions { display: flex; gap: 6px; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); }
   .issues-actions .spacer { flex: 1; }
@@ -901,6 +944,7 @@
       <button data-tab="query" class="active"><span>QUERIES</span></button>
       <button data-tab="check"><span>COMPLIANCE</span></button>
       <button data-tab="issues"><span>ISSUES</span></button>
+      <button data-tab="warnings"><span>WARNINGS</span><b class="tab-count" id="warn-count" hidden></b></button>
     </div>
 
     <!-- Query tab -->
@@ -955,6 +999,12 @@
       <label class="issues-author"><span>Author</span><input id="bcf-author" placeholder="Your name, for comments and new topics" /></label>
       <div class="scroll" id="bcf-list"><div class="empty-note">No issues yet. Import a BCF from the CORENET X Model Checker, raise a topic on a selected element, or turn check findings into topics with “To BCF” on the Compliance tab.</div></div>
       <div id="bcf-detail"></div>
+    </div>
+
+    <!-- Warnings tab: export problems that will make the submission fail -->
+    <div id="tab-warnings" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="warn-summary" id="warn-summary"></div>
+      <div class="scroll" id="warn-list"><div class="empty-note">Load an IFC file to check it for export problems: spatial structure, georeferencing, stray geometry, GlobalIds and subtypes.</div></div>
     </div>
   </div>
 

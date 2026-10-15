@@ -1091,6 +1091,28 @@ export class Viewer {
   }
 
   /**
+   * Where each model's geometry sits in its own IFC coordinates (metres, Z up):
+   * the median of its element centres, so one stray object does not move it.
+   * The scene is `M · (x, z, -y)` of those (see geo/georef.js), undone here.
+   * @returns {Map<number, {x: number, y: number, z: number}>}
+   */
+  modelCentres() {
+    const Minv = (this.coordinationMatrix || new THREE.Matrix4()).clone().invert();
+    const out = new Map();
+    for (const e of this.entries) {
+      const boxes = [...(e.boxes || new Map()).values()];
+      if (!boxes.length) continue;
+      const median = (axis) => {
+        const v = boxes.map((b) => (b[axis] + b[axis + 3]) / 2).sort((a, b) => a - b);
+        return v[Math.floor(v.length / 2)];
+      };
+      const q = new THREE.Vector3(median(0), median(1), median(2)).applyMatrix4(Minv);
+      out.set(e.modelID, { x: q.x, y: -q.z, z: q.y });
+    }
+    return out;
+  }
+
+  /**
    * The current camera as a BCF viewpoint: IFC project coordinates, metres,
    * Z up. The scene is `M · (x, z, -y)` of those (see geo/georef.js), so this
    * undoes the re-centring and the axis swap.

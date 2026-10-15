@@ -12,6 +12,7 @@
 import { Viewer } from './viewer.js';
 import { buildIndex, mergeIndexes } from './ifc-index.js';
 import { flattenArcs } from './ifc-arc-fix.js';
+import { computeWarnings } from './warnings.js';
 import { DASHBOARD_ENTITIES, computeDashboard, formatValue as fmtNum, METRICS as DASHBOARD_METRICS } from './dashboard.js';
 import { measure, project as projectMemory, formatBytes, LEVEL } from './memory.js';
 import {
@@ -159,6 +160,7 @@ const el = {
   btnToBcf: $('btn-to-bcf'), btnReport: $('btn-report'), btnBcfImport: $('btn-bcf-import'), btnBcfNew: $('btn-bcf-new'),
   btnBcfExport: $('btn-bcf-export'), bcfInput: $('bcf-input'), bcfAuthor: $('bcf-author'),
   bcfList: $('bcf-list'), bcfDetail: $('bcf-detail'),
+  warnCount: $('warn-count'), warnSummary: $('warn-summary'), warnList: $('warn-list'),
 };
 
 /** Which breakdown the dashboard cards show: 'level' | 'file' | 'none'. */
@@ -812,7 +814,9 @@ async function loadFiles(files) {
   }
   rebuildIndex();
   viewer.fit();
+  farSnapshot = (viewer.farElements || []).slice();
   reportFarElements();
+  refreshWarnings();
   refreshSurveyRail();
   setProgress(100, 'Done');
   if (skipped) toast(`${skipped} file${skipped > 1 ? 's were' : ' was'} skipped — not .ifc.`);
@@ -838,8 +842,123 @@ function reportFarElements() {
     far.map((f) => ({ name: label(f), modelID: f.modelID, expressID: f.expressID, distance: dist(f.distance) })));
   toast(`${far.length} element${far.length === 1 ? '' : 's'} ${far.length === 1 ? 'sits' : 'sit'} up to ` +
     `${dist(far[0].distance)} from the rest of the model: ${shown}${far.length > 3 ? ', …' : ''}. ` +
-    'The view frames the model without them. Check the export: stray geometry, or elements ' +
-    'at the internal origin while the rest uses shared coordinates.');
+    'The view frames the model without them. See the Warnings tab.');
+}
+
+// ---------------------------------------------------------------------- warnings
+
+/**
+ * Elements the viewer left out of the framing when the models were loaded.
+ * Kept apart from viewer.farElements, which follows whichever models are
+ * visible at the last fit, so hiding a model does not clear its warning.
+ */
+let farSnapshot = [];
+/** Warning ids the user has unfolded, kept across recomputes. */
+const openWarnings = new Set();
+let warnings = [];
+
+/** Recomputes the export warnings for the loaded models and redraws the tab. */
+function refreshWarnings() {
+  const names = new Map(viewer.entries.map((e) => [e.modelID, e.name]));
+  farSnapshot = farSnapshot.filter((f) => names.has(f.modelID));
+  try {
+    warnings = viewer.entries.length ? computeWarnings({
+      indexes, identities, names, far: farSnapshot, centres: viewer.modelCentres(),
+    }) : [];
+  } catch (err) {
+    console.error('Model warnings could not be computed:', err);
+    warnings = [];
+  }
+  renderWarnings();
+}
+
+function renderWarnings() {
+  const fails = warnings.filter((w) => w.severity === 'fail');
+  const reviews = warnings.filter((w) => w.severity === 'warn');
+  el.warnCount.hidden = !warnings.length;
+  el.warnCount.textContent = String(fails.length || reviews.length);
+  el.warnCount.classList.toggle('review', !fails.length);
+  el.warnCount.title = `${fails.length} will fail, ${reviews.length} to review`;
+
+  if (!viewer.entries.length) {
+    el.warnSummary.innerHTML = '';
+    el.warnList.innerHTML = '<div class="empty-note">Load an IFC file to check it for export problems: ' +
+      'spatial structure, georeferencing, stray geometry, GlobalIds and subtypes.</div>';
+    return;
+  }
+  if (!indexes.size) {
+    el.warnSummary.innerHTML = '';
+    el.warnList.innerHTML = '<div class="empty-note">The IFC-SG ruleset did not load, so the models were not indexed and cannot be checked.</div>';
+    return;
+  }
+  el.warnSummary.innerHTML = warnings.length
+    ? `${fails.length ? `<span class="pill fail">${fails.length} will fail</span>` : ''}
+       ${reviews.length ? `<span class="pill warn">${reviews.length} to review</span>` : ''}`
+    : `<span class="pill ok">No export problems found</span>`;
+
+  const files = new Set(viewer.entries.map((e) => e.name));
+  const item = (w) => {
+    const n = w.elements.length;
+    const sub = [files.size > 1 || !w.file ? w.file : null, n ? `${n} element${n === 1 ? '' : 's'}` : null]
+      .filter(Boolean).join(' · ');
+    const shown = w.elements.slice(0, 50);
+    const els = n ? `
+      <div class="acts">
+        <button class="btn sm" data-show>Show in model</button>
+        <button class="btn sm" data-zoom>Zoom to</button>
+      </div>
+      <div class="warn-els">${shown.map((e, i) => `
+        <button data-el="${i}" title="${esc(e.globalId || '')}">
+          <span>${esc(e.name || e.entity)}</span>
+          <small>${esc(e.distance != null ? fmtDistance(e.distance) : e.entity)}${e.storey ? ' · ' + esc(e.storey) : ''}</small>
+        </button>`).join('')}
+        ${n > shown.length ? `<div class="more">and ${n - shown.length} more — use Show in model to see them all</div>` : ''}
+      </div>` : '';
+    return `
+      <div class="warn-item ${w.severity}${openWarnings.has(w.id) ? ' open' : ''}" data-w="${esc(w.id)}">
+        <button class="warn-head"><span class="dot"></span>
+          <span class="wt">${esc(w.title)}${sub ? `<small>${esc(sub)}</small>` : ''}</span>
+          <span class="chev">&#9654;</span></button>
+        <div class="warn-body">${esc(w.detail)}${els}</div>
+      </div>`;
+  };
+  el.warnList.innerHTML =
+    (fails.length ? `<div class="warn-group">WILL FAIL</div>${fails.map(item).join('')}` : '') +
+    (reviews.length ? `<div class="warn-group">REVIEW</div>${reviews.map(item).join('')}` : '') +
+    (warnings.length ? '' : '<div class="empty-note">Nothing found that would stop these files from being ' +
+      'accepted: one site and building per file, storeys present, georeferenced to SVY21, no stray ' +
+      'geometry, and every GlobalId and subtype in place. IFC-SG properties are checked on the Compliance tab.</div>');
+
+  el.warnList.querySelectorAll('.warn-item').forEach((node) => {
+    const w = warnings.find((x) => x.id === node.dataset.w);
+    node.querySelector('.warn-head').addEventListener('click', () => {
+      node.classList.toggle('open');
+      if (node.classList.contains('open')) openWarnings.add(w.id);
+      else openWarnings.delete(w.id);
+    });
+    const show = node.querySelector('[data-show]');
+    if (show) {
+      show.addEventListener('click', () => shellActions.showInModel(
+        [{ label: w.title, colour: w.severity === 'fail' ? 0xe0624f : 0xe0b84f, elements: w.elements }],
+        'Warning', w.file || ''));
+    }
+    const zoom = node.querySelector('[data-zoom]');
+    if (zoom) {
+      zoom.addEventListener('click', () => {
+        if (!viewer.fitElements(w.elements)) toast('These elements have no geometry to zoom to.');
+      });
+    }
+    node.querySelectorAll('[data-el]').forEach((b) => b.addEventListener('click', () => {
+      const e = w.elements[+b.dataset.el];
+      if (e.bare) viewer.setSelection(e);
+      else showElement(e);
+      viewer.fitElements([e]);
+    }));
+  });
+}
+
+function fmtDistance(m) {
+  return m >= 1000 ? `${(m / 1000).toFixed(1)} km away` : `${Math.round(m)} m away`;
 }
 
 /**
@@ -887,6 +1006,7 @@ function rebuildIndex() {
   renderTree();
   applyVisibility();
   renderMemory();
+  refreshWarnings();
 
   if (index && ![...counts.values()].some((n) => n > 0)) {
     toast('No IFC-SG mapped components found. The model may not use SGPset property sets.');
@@ -3210,7 +3330,7 @@ function wireProjectUI() {
 // ------------------------------------------------------------------------- tabs
 
 function showTab(tab) {
-  for (const id of ['query', 'check', 'issues']) {
+  for (const id of ['query', 'check', 'issues', 'warnings']) {
     $('tab-' + id).style.display = id === tab ? 'flex' : 'none';
   }
   document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('active', x.dataset.tab === tab));

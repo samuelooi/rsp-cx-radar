@@ -38,9 +38,11 @@ Close a model before adding another when the meter goes amber.
   file** at its foot), the project chip and Dashboard; opening one of these
   closes the other two. The memory meter is on the right. To reframe the
   model, use **Fit to View** on the tool rail.
-- **Left panel, three tabs.** QUERIES colours the model by component or
+- **Left panel, four tabs.** QUERIES colours the model by component or
   property. COMPLIANCE selects and runs checks and holds the results, the BCF
-  and PDF buttons. ISSUES holds BCF topics.
+  and PDF buttons. ISSUES holds BCF topics. WARNINGS lists export problems that
+  will fail the submission (multiple sites, no georeferencing, stray geometry,
+  duplicate GlobalIds and more), with a count on the tab.
 - **Tool rail.** Collapse panel, spaces on/off, survey outlines, show all,
   ghost context, fit, section cut, plan by level.
 - **Right panel.** The element inspector: identity, aggregate host, live

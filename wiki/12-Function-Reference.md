@@ -57,6 +57,7 @@ The `Viewer` class. Selected methods (the full list is in the source and the
 | `refresh()` | Reconciles the scene with the current models, hidden set and query groups — the one place colouring and hiding actually apply. |
 | `elementPoints`, `elementHull`, `modelHull`, `groundLevel`, `elementYRange`, `sampleFloorY` | Geometry sampling for checks that ask about *where* things are (geo-referencing, storey floor levels). |
 | `fitElements(elements)` | Frames the camera on a set of elements, resolving through their parts. |
+| `modelCentres()` | Each model's geometry centre (median of element centres) in its own IFC coordinates, for the warnings' origin and SVY21 placement tests. |
 | `cameraViewpoint()` / `setViewpoint(vp)` | Converts between the three.js camera and a BCF viewpoint (IFC project coordinates, metres, Z-up), via the coordination matrix. |
 | `snapshot(maxWidth?, type?, quality?)` | Renders the current view to a PNG/JPEG blob, used by BCF topics and the readiness report. |
 | `raycastFace(event)` | The face under the pointer with its normal snapped to the nearest world axis, for placing a section cut. |
@@ -175,6 +176,12 @@ key-values, page-breaking tables, signatures, footers) plus:
 | --- | --- |
 | `computeDashboard(index, modelNames?)` | Every headline metric (GFA, parking, planting, …) totalled and broken down by file, level and type, against the CORENET X mapping. |
 | `formatValue(value, decimals)` | Formats a metric total for display. |
+
+## `js/warnings.js` — model warnings
+
+| Function | Purpose |
+| --- | --- |
+| `computeWarnings({indexes, identities, names, far?, centres?})` | Export problems per file and across files (spatial structure, georeferencing, stray geometry, GlobalIds, subtypes), each `{id, severity: 'fail'\|'warn', title, detail, file, elements}`. Pure: reads only what loading already gathered. |
 
 ## `js/memory.js` — the memory meter
 
