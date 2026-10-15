@@ -19,7 +19,8 @@ browsers download instead.
 
 ## Load models
 
-Drop one or more `.ifc` files on the window, or use **Add IFC file**. Several
+Drop one or more `.ifc` files on the window, or use **Add IFC file** (the model
+name at the top left, or the foot of its list once a model is loaded). Several
 files are treated as one federated model: the first file establishes the datum
 and later files are placed against it. Nothing is uploaded; parsing happens in
 the browser with web-ifc.
@@ -33,8 +34,10 @@ Close a model before adding another when the meter goes amber.
 
 ## The screen
 
-- **Top bar.** Loaded models (click for the list), the project chip, memory
-  meter, ruleset badge, Dashboard, Reset view, Add IFC file.
+- **Top bar.** On the left: loaded models (click for the list, with **Add IFC
+  file** at its foot), the project chip and Dashboard; opening one of these
+  closes the other two. The memory meter is on the right. To reframe the
+  model, use **Fit to View** on the tool rail.
 - **Left panel, three tabs.** QUERIES colours the model by component or
   property. COMPLIANCE selects and runs checks and holds the results, the BCF
   and PDF buttons. ISSUES holds BCF topics.

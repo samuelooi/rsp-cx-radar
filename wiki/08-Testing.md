@@ -20,7 +20,7 @@ Local copies in `C:\Users\<you>\Downloads` and `Documents`:
    `model.ifc`.
 2. Append to the copied `app.js` a `window.__dbg` getter exposing the module
    state you need (`viewer`, `index`, `checkOutcomes`, `editProperty`, …).
-3. Write a harness script that waits for the ruleset badge, fetches the model,
+3. Write a harness script that waits for the ruleset to load (the Queries tab shows its gateway bubbles), fetches the model,
    wraps it in a `File`, puts it in a `DataTransfer` and dispatches a
    synthetic `drop` on `window`, then drives the UI by clicking buttons and
    dispatching input events, logging with a `[tag]` prefix.

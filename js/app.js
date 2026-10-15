@@ -128,8 +128,8 @@ let spacesVisible = false;        // IfcSpace volumes obscure everything by defa
 
 const $ = (id) => document.getElementById(id);
 const el = {
-  filename: $('filename'), modelPicker: $('model-picker'), badge: $('ruleset-badge'),
-  btnOpen: $('btn-open'), btnOpenEmpty: $('btn-open-empty'), btnReset: $('btn-reset'),
+  filename: $('filename'), modelPicker: $('model-picker'),
+  btnOpenEmpty: $('btn-open-empty'),
   fileInput: $('file-input'), dropzone: $('dropzone'),
   loading: $('loading'), barFill: $('bar-fill'), loadingLabel: $('loading-label'),
   toast: $('toast'), left: $('left'), models: $('models'),
@@ -250,19 +250,10 @@ async function init() {
       console.error('The IFC values check could not be loaded:', err);
     });
 
-    el.badge.innerHTML =
-      // Construction holds every component; counting all targets would list the
-      // Design Gateway ones twice.
-      `IFC-SG <b>${ruleset.meta.requirements}</b> rules · ` +
-      `<b>${ruleset.targets.filter((t) => t.gateway === GATEWAY.CONSTRUCTION).length}</b> components`;
-    el.badge.title =
-      `${ruleset.meta.source}\nSheet: ${ruleset.meta.sheet}\nGenerated ${ruleset.meta.generated}`;
     refreshFilters();
     await restoreLastProject();
   } catch (err) {
     console.error(err);
-    el.badge.textContent = 'Ruleset failed to load';
-    el.badge.classList.add('err');
     el.tree.innerHTML =
       `<div class="empty-note">Could not load <code>data/ifcsg-rules.json</code>.<br><br>
        This page must be served over http:// (not opened as a file). Run a static
@@ -303,7 +294,6 @@ const customInputApi = {
 // -------------------------------------------------------------------- UI wiring
 
 function wireUI() {
-  el.btnOpen.addEventListener('click', () => el.fileInput.click());
   el.btnOpenEmpty.addEventListener('click', () => el.fileInput.click());
   el.fileInput.addEventListener('change', (e) => {
     if (e.target.files.length) loadFiles([...e.target.files]);
@@ -343,7 +333,6 @@ function wireUI() {
 
   el.panelClose.addEventListener('click', closeElementPanel);
   wirePanelResize();
-  el.btnReset.addEventListener('click', () => viewer.fit());
   el.toolFit.addEventListener('click', () => viewer.fit());
 
   el.toolCollapse.addEventListener('click', () => el.left.classList.toggle('collapsed'));
@@ -399,7 +388,12 @@ function wireUI() {
       el.fileInput.click();
       return;
     }
-    el.modelPicker.classList.toggle('open');
+    if (el.modelPicker.classList.contains('open')) {
+      el.modelPicker.classList.remove('open');
+    } else {
+      closeTopPanels('models');
+      el.modelPicker.classList.add('open');
+    }
   });
   el.models.addEventListener('click', (e) => e.stopPropagation());
   document.addEventListener('click', () => el.modelPicker.classList.remove('open'));
@@ -433,8 +427,12 @@ function wireUI() {
   wireEditingUI();
   wireBcfUI();
 
-  el.btnDash.addEventListener('click', openDashboard);
-  el.dashClose.addEventListener('click', () => el.dash.classList.remove('visible'));
+  // The Dashboard button toggles, like the two pickers beside it.
+  el.btnDash.addEventListener('click', () => {
+    if (el.dash.classList.contains('visible')) closeDashboard();
+    else openDashboard();
+  });
+  el.dashClose.addEventListener('click', closeDashboard);
   el.dashSeg.querySelectorAll('button').forEach((b) => {
     b.addEventListener('click', () => {
       el.dashSeg.querySelectorAll('button').forEach((x) => x.classList.remove('active'));
@@ -856,7 +854,7 @@ function refreshDashboardAvailability() {
   el.btnDash.disabled = !loaded && !hasRecords;
   if (!el.dash.classList.contains('visible')) return;
   if (loaded || hasRecords) openDashboard();
-  else el.dash.classList.remove('visible');
+  else closeDashboard();
 }
 
 /** Recomputes the merged index, target counts and all dependent UI. */
@@ -873,13 +871,12 @@ function rebuildIndex() {
   }
 
   const names = viewer.entries.map((e) => e.name);
-  el.filename.querySelector('.fname').textContent = names.length === 0 ? 'No model loaded'
+  el.filename.querySelector('.fname').textContent = names.length === 0 ? 'Add IFC file'
     : names.length === 1 ? names[0]
       : `${names.length} models`;
   el.filename.classList.toggle('has-file', names.length > 0);
   el.filename.title = names.length ? names.join('\n') : 'Add an IFC file';
   if (!names.length) el.modelPicker.classList.remove('open');
-  el.btnReset.disabled = !viewer.hasModels;
   // Check inputs such as the preset editor read from the index, so redraw them.
   renderCheckMenu();
   // The dashboard reports the project, not the session: what a file measured
@@ -914,7 +911,12 @@ function renderModels() {
         <span class="mname" title="${esc(e.name)}">${esc(e.name)}<small>${n} mapped elements</small></span>
         <button class="icon-btn" data-act="del" title="Close this model">&times;</button>
       </div>`;
-  }).join('');
+  }).join('') + '<button class="m-add" data-act="add">+ Add IFC file</button>';
+
+  el.models.querySelector('[data-act="add"]').addEventListener('click', () => {
+    el.modelPicker.classList.remove('open');
+    el.fileInput.click();
+  });
 
   el.models.querySelectorAll('.mrow').forEach((row) => {
     const modelID = +row.dataset.m;
@@ -2322,7 +2324,25 @@ function openDashboard() {
     (unloaded > 0 ? `${loaded} loaded, ${unloaded} from the project record · ` : 'all loaded · ') +
     `${dashResult.summary.present} of ${dashResult.summary.total} metrics found`;
   renderDashboard();
+  closeTopPanels('dash');
   el.dash.classList.add('visible');
+  el.btnDash.classList.add('active');
+}
+
+function closeDashboard() {
+  el.dash.classList.remove('visible');
+  el.btnDash.classList.remove('active');
+}
+
+/**
+ * The model list, the project panel and the dashboard share the top bar's
+ * left side; opening one closes the others.
+ * @param {'models'|'project'|'dash'} keep  the one being opened
+ */
+function closeTopPanels(keep) {
+  if (keep !== 'models') el.modelPicker.classList.remove('open');
+  if (keep !== 'project') el.projectPicker.classList.remove('open');
+  if (keep !== 'dash') closeDashboard();
 }
 
 function renderDashboard() {
@@ -2491,7 +2511,7 @@ function showMetricInModel(metric) {
     `${esc(metric.title)}<small>${metric.count} elements · ${esc(fmtNum(metric.total, metric.decimals))} ${esc(metric.unit)}</small>`;
   renderLegend();
   applyOverlay();
-  el.dash.classList.remove('visible');
+  closeDashboard();
 }
 
 // ------------------------------------------------------------- element inspector
@@ -2914,8 +2934,8 @@ function renderProjectChip() {
 }
 
 function openProjectPanel(focusCode = false) {
+  closeTopPanels('project');
   el.projectPicker.classList.add('open');
-  el.modelPicker.classList.remove('open');
   renderProjectPanel();
   if (focusCode) {
     const box = el.projectPanel.querySelector('[data-f="code"]');

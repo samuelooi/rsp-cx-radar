@@ -161,13 +161,15 @@
   }
   .start-projects .sp-forget:hover { color: var(--text); }
 
-  .ruleset-badge {
-    font-size: 11px; color: var(--text-dim);
-    border: 1px solid var(--border); border-radius: 999px;
-    padding: 3px 9px; white-space: nowrap;
+  /* The open top-bar panel's button stays lit, like the pickers beside it. */
+  #btn-dash.active { background: var(--accent-dim); border-color: var(--accent); }
+  /* "Add IFC file" at the foot of the loaded-models list. */
+  .models-menu .m-add {
+    display: flex; align-items: center; gap: 7px; width: 100%;
+    padding: 8px 10px; background: none; border: none; border-top: 1px solid var(--border);
+    color: var(--accent); font: inherit; font-size: 12px; text-align: left; cursor: pointer;
   }
-  .ruleset-badge b { color: var(--text-muted); font-weight: 600; }
-  .ruleset-badge.err { border-color: var(--danger); color: var(--danger); }
+  .models-menu .m-add:hover { background: var(--panel-2); color: var(--text); }
 
   /* Memory meter: estimated tab memory against the session budget. */
   .mem {
@@ -883,7 +885,7 @@
     </svg>
     <div class="model-picker" id="model-picker">
       <button id="filename" class="filename" title="Loaded models">
-        <span class="fname">No model loaded</span><span class="caret">&#9660;</span>
+        <span class="fname">Add IFC file</span><span class="caret">&#9660;</span>
       </button>
       <div id="models" class="models-menu"></div>
     </div>
@@ -896,17 +898,14 @@
       </button>
       <div id="project-panel" class="project-panel"></div>
     </div>
+    <button class="btn" id="btn-dash" disabled>Dashboard</button>
     <div class="spacer"></div>
+    <span class="plan-badge" id="plan-badge"></span>
     <div class="mem" id="mem" title="Estimated tab memory">
       <span>Memory</span>
       <div class="mem-track"><div class="mem-fill" id="mem-fill"></div></div>
       <span class="mem-val" id="mem-val">—</span>
     </div>
-    <span class="plan-badge" id="plan-badge"></span>
-    <span class="ruleset-badge" id="ruleset-badge">Loading ruleset…</span>
-    <button class="btn" id="btn-dash" disabled>Dashboard</button>
-    <button class="btn" id="btn-reset" title="Reset view" disabled>Reset view</button>
-    <button class="btn primary" id="btn-open">Add IFC file</button>
     <input type="file" id="file-input" accept=".ifc" multiple />
   </div>
 

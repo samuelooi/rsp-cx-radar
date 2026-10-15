@@ -235,7 +235,8 @@ Each exports `{run, render, explain}` (see [Compliance checks](04-Compliance-Che
 Grouped by feature, in the order they appear in the file.
 
 **Boot and top bar**
-`toast`, `setProgress`, `renderMemory`, `init`, `loadCustomInputs`, `wireUI`.
+`toast`, `setProgress`, `renderMemory`, `init`, `loadCustomInputs`, `wireUI`,
+`closeTopPanels`, `closeDashboard`, `reportFarElements`.
 
 **Section cuts and plan levels**
 `setSectionArmed`, `wireSectionTool`, `renderSectionsBar`, `storeyGroups`,
