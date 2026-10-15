@@ -289,7 +289,7 @@ export function recentProjects() {
 }
 
 function recentKey(project) {
-  return (project.project.code || '') + ' ' + (project.project.name || '');
+  return (project.project.code || '') + '\u0000' + (project.project.name || '');
 }
 
 /**

@@ -1,0 +1,1614 @@
+﻿list,value,scope,source
+ACN_ActivityGeneratingUseType,Single Side,,Accepted Values column
+ACN_ActivityGeneratingUseType,Double Side,,Accepted Values column
+ACN_ConnectivityType,Open Walkway,,Accepted Values column
+ACN_ConnectivityType,Covered Walkway,,Accepted Values column
+ACN_ConnectivityType,Covered Linkway,,Accepted Values column
+ACN_ConnectivityType,Through Block Link,,Accepted Values column
+ACN_ConnectivityType,Elevated Pedestrian Link,,Accepted Values column
+ACN_ConnectivityType,Underground Pedestrian Link,,Accepted Values column
+ACN_ConnectivityType,Public Space Node,,Accepted Values column
+ACN_ConnectivityType,Cycling Path,,Accepted Values column
+ACN_ConnectivityType,Sky Bridge,,Accepted Values column
+AGF_BonusGFAType,Balcony Incentive Scheme,,Space Values sheet
+AGF_BonusGFAType,Conserved Bungalows Scheme,,Space Values sheet
+AGF_BonusGFAType,Indoor Recreation Spaces Scheme,,Space Values sheet
+AGF_BonusGFAType,Built Environment Transformation Scheme,,Space Values sheet
+AGF_BonusGFAType,Community and Sports Facilities Scheme,,Space Values sheet
+AGF_BonusGFAType,Rooftop ORA on Landscaped Roofs,,Space Values sheet
+AGF_BonusGFAType,ORA within Privately-Owned Public Spaces (POPS),,Space Values sheet
+AGF_BonusGFAType,CBD Incentive Scheme,,Space Values sheet
+AGF_BonusGFAType,Strategic Development Incentive (SDI) Scheme,,Space Values sheet
+AGF_BonusGFAType,Facade Articulation Scheme,,Space Values sheet
+AGF_BuildingTypology,Flats,,Space Values sheet
+AGF_BuildingTypology,Condominium,,Space Values sheet
+AGF_BuildingTypology,Shophouse,,Space Values sheet
+AGF_BuildingTypology,Terrace House,,Space Values sheet
+AGF_BuildingTypology,Detached House,,Space Values sheet
+AGF_BuildingTypology,Semi-Detached House,,Space Values sheet
+AGF_BuildingTypology,Good Class Bungalow,,Space Values sheet
+AGF_BuildingTypology,Strata-Landed Housing,,Space Values sheet
+AGF_BuildingTypology,Serviced Apartments,,Space Values sheet
+AGF_BuildingTypology,Polyclinic,,Space Values sheet
+AGF_BuildingTypology,Data Centre,,Space Values sheet
+AGF_BuildingTypology,Community Club / Centre,,Space Values sheet
+AGF_BuildingTypology,Adult Disability Home,,Space Values sheet
+AGF_BuildingTypology,Medical Centre,,Space Values sheet
+AGF_BuildingTypology,Public Acute Hospital,,Space Values sheet
+AGF_BuildingTypology,Public Community Hospital,,Space Values sheet
+AGF_BuildingTypology,Private Hospital,,Space Values sheet
+AGF_BuildingTypology,Assisted Living Facility,,Space Values sheet
+AGF_BuildingTypology,Confinement Centre,,Space Values sheet
+AGF_BuildingTypology,Service Apartment II,,Space Values sheet
+AGF_BuildingTypology,Adventure Centre / Campsite,,Space Values sheet
+AGF_BuildingTypology,Farm,,Space Values sheet
+AGF_BuildingTypology,Airport,,Space Values sheet
+AGF_BuildingTypology,Port,,Space Values sheet
+AGF_BuildingTypology,Light Industry,,Space Values sheet
+AGF_BuildingTypology,Clean Industry,,Space Values sheet
+AGF_BuildingTypology,General Industry,,Space Values sheet
+AGF_BuildingTypology,Special Industry,,Space Values sheet
+AGF_BuildingTypology,Serviced Apartments,,Space Values sheet
+AGF_DevelopmentUse,Agriculture,,Space Values sheet
+AGF_DevelopmentUse,Beach Area,,Space Values sheet
+AGF_DevelopmentUse,Business Park,,Space Values sheet
+AGF_DevelopmentUse,Business 1,,Space Values sheet
+AGF_DevelopmentUse,Business 2,,Space Values sheet
+AGF_DevelopmentUse,Cemetery,,Space Values sheet
+AGF_DevelopmentUse,Civic & Community Institution,,Space Values sheet
+AGF_DevelopmentUse,Commercial,,Space Values sheet
+AGF_DevelopmentUse,Educational Institution,,Space Values sheet
+AGF_DevelopmentUse,Health & Medical Care,,Space Values sheet
+AGF_DevelopmentUse,Hotel,,Space Values sheet
+AGF_DevelopmentUse,Open Space,,Space Values sheet
+AGF_DevelopmentUse,Park,,Space Values sheet
+AGF_DevelopmentUse,Place of Worship,,Space Values sheet
+AGF_DevelopmentUse,Port/Airport,,Space Values sheet
+AGF_DevelopmentUse,Rapid Transit,,Space Values sheet
+AGF_DevelopmentUse,Reserve Site,,Space Values sheet
+AGF_DevelopmentUse,Residential (Landed),,Space Values sheet
+AGF_DevelopmentUse,Residential (Non-landed),,Space Values sheet
+AGF_DevelopmentUse,Road,,Space Values sheet
+AGF_DevelopmentUse,Special Use,,Space Values sheet
+AGF_DevelopmentUse,Sports & Recreation,,Space Values sheet
+AGF_DevelopmentUse,Transport Facilities,,Space Values sheet
+AGF_DevelopmentUse,Utility,,Space Values sheet
+AGF_DevelopmentUse,Waterbody,,Space Values sheet
+AGF_Name,AC Ledge,Business 1,Space Values sheet
+AGF_Name,Airwell,Business 1,Space Values sheet
+AGF_Name,ATM Kiosk,Business 1,Space Values sheet
+AGF_Name,Balcony,Business 1,Space Values sheet
+AGF_Name,Bicycle Parking Space,Business 1,Space Values sheet
+AGF_Name,Bin Centre,Business 1,Space Values sheet
+AGF_Name,Bin Point,Business 1,Space Values sheet
+AGF_Name,Cable Chamber,Business 1,Space Values sheet
+AGF_Name,Car Parking Lot (Mechanised),Business 1,Space Values sheet
+AGF_Name,Cloud Kitchen,Business 1,Space Values sheet
+AGF_Name,Control Room/ Centre,Business 1,Space Values sheet
+AGF_Name,Core Media,Business 1,Space Values sheet
+AGF_Name,Corridor,Business 1,Space Values sheet
+AGF_Name,Courtyard,Business 1,Space Values sheet
+AGF_Name,Discharge Valve Chamber,Business 1,Space Values sheet
+AGF_Name,Driveways,Business 1,Space Values sheet
+AGF_Name,E-Business,Business 1,Space Values sheet
+AGF_Name,End of Trip Facilities,Business 1,Space Values sheet
+AGF_Name,Entrance Canopy,Business 1,Space Values sheet
+AGF_Name,Gondola and working platform,Business 1,Space Values sheet
+AGF_Name,Guardhouse / Sentry Post,Business 1,Space Values sheet
+AGF_Name,Industrial Canteen,Business 1,Space Values sheet
+AGF_Name,Industrial Training Room,Business 1,Space Values sheet
+AGF_Name,Kitchen/ Pantry/ Food Preparation area/ Food Stall,Business 1,Space Values sheet
+AGF_Name,Letter Box Area,Business 1,Space Values sheet
+AGF_Name,Lift Lobby,Business 1,Space Values sheet
+AGF_Name,Lift Motor Room,Business 1,Space Values sheet
+AGF_Name,Loading and Unloading Bay,Business 1,Space Values sheet
+AGF_Name,Loft,Business 1,Space Values sheet
+AGF_Name,M&E Floor,Business 1,Space Values sheet
+AGF_Name,M&E Room (enclosed),Business 1,Space Values sheet
+AGF_Name,M&E Services (non-load bearing covering above),Business 1,Space Values sheet
+AGF_Name,M&E Space (unenclosed),Business 1,Space Values sheet
+AGF_Name,Media/ Audio Visual/ Filming/ Streaming,Business 1,Space Values sheet
+AGF_Name,Meeting Room,Business 1,Space Values sheet
+AGF_Name,Office,Business 1,Space Values sheet
+AGF_Name,On-Site Food Waste Treatment Area,Business 1,Space Values sheet
+AGF_Name,Pavilion,Business 1,Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Business 1,Space Values sheet
+AGF_Name,Printing / Publishing,Business 1,Space Values sheet
+AGF_Name,Privately Owned Public Space,Business 1,Space Values sheet
+AGF_Name,RC Ledge,Business 1,Space Values sheet
+AGF_Name,Refuse Chute Chamber,Business 1,Space Values sheet
+AGF_Name,Refuse Room,Business 1,Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Business 1,Space Values sheet
+AGF_Name,Roof Terrace,Business 1,Space Values sheet
+AGF_Name,Server areas/ IT equipment,Business 1,Space Values sheet
+AGF_Name,Storey Shelter,Business 1,Space Values sheet
+AGF_Name,Swimming Pool,Business 1,Space Values sheet
+AGF_Name,Vending Machine Kiosk,Business 1,Space Values sheet
+AGF_Name,Warehouse/ Storage / Staging,Business 1,Space Values sheet
+AGF_Name,Workshop/ Manufacturing / Production/ Processing/ Yard,Business 1,Space Values sheet
+AGF_Name,AC Ledge,Business 2,Space Values sheet
+AGF_Name,Airwell,Business 2,Space Values sheet
+AGF_Name,Assembly,Business 2,Space Values sheet
+AGF_Name,ATM Kiosk,Business 2,Space Values sheet
+AGF_Name,Balcony,Business 2,Space Values sheet
+AGF_Name,Bicycle Parking Space,Business 2,Space Values sheet
+AGF_Name,Bin Centre,Business 2,Space Values sheet
+AGF_Name,Bin Point,Business 2,Space Values sheet
+AGF_Name,Cable Chamber,Business 2,Space Values sheet
+AGF_Name,Car Parking Lot (Mechanised),Business 2,Space Values sheet
+AGF_Name,Cloud Kitchen,Business 2,Space Values sheet
+AGF_Name,Control Room/ Centre,Business 2,Space Values sheet
+AGF_Name,Core Media,Business 2,Space Values sheet
+AGF_Name,Corridor,Business 2,Space Values sheet
+AGF_Name,Courtyard,Business 2,Space Values sheet
+AGF_Name,Server areas/ IT equipment,Business 2,Space Values sheet
+AGF_Name,Discharge Valve Chamber,Business 2,Space Values sheet
+AGF_Name,Driveways,Business 2,Space Values sheet
+AGF_Name,E-Business,Business 2,Space Values sheet
+AGF_Name,End of Trip Facilities,Business 2,Space Values sheet
+AGF_Name,Entrance Canopy,Business 2,Space Values sheet
+AGF_Name,Gondola and working platform,Business 2,Space Values sheet
+AGF_Name,Guardhouse / Sentry Post,Business 2,Space Values sheet
+AGF_Name,Industrial Canteen,Business 2,Space Values sheet
+AGF_Name,Industrial Training Room,Business 2,Space Values sheet
+AGF_Name,Kitchen/ Pantry/ Food Preparation area/ Food Stall,Business 2,Space Values sheet
+AGF_Name,Letter Box Area,Business 2,Space Values sheet
+AGF_Name,Lift Lobby,Business 2,Space Values sheet
+AGF_Name,Lift Motor Room,Business 2,Space Values sheet
+AGF_Name,Loading and Unloading Bay,Business 2,Space Values sheet
+AGF_Name,Loft,Business 2,Space Values sheet
+AGF_Name,M&E Floor,Business 2,Space Values sheet
+AGF_Name,M&E Room (enclosed),Business 2,Space Values sheet
+AGF_Name,M&E Services (non-load bearing covering above),Business 2,Space Values sheet
+AGF_Name,M&E Space (unenclosed),Business 2,Space Values sheet
+AGF_Name,Media/ Audio Visual/ Filming/ Streaming,Business 2,Space Values sheet
+AGF_Name,Meeting Room,Business 2,Space Values sheet
+AGF_Name,Office,Business 2,Space Values sheet
+AGF_Name,On-Site Food Waste Treatment Area,Business 2,Space Values sheet
+AGF_Name,Pavilion,Business 2,Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Business 2,Space Values sheet
+AGF_Name,Printing / Publishing,Business 2,Space Values sheet
+AGF_Name,Privately Owned Public Space,Business 2,Space Values sheet
+AGF_Name,RC Ledge,Business 2,Space Values sheet
+AGF_Name,Refuse Chute Chamber,Business 2,Space Values sheet
+AGF_Name,Refuse Room,Business 2,Space Values sheet
+AGF_Name,Repair / Servicing,Business 2,Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Business 2,Space Values sheet
+AGF_Name,Roof Terrace,Business 2,Space Values sheet
+AGF_Name,Storey Shelter,Business 2,Space Values sheet
+AGF_Name,Self-Storage,Business 2,Space Values sheet
+AGF_Name,Swimming Pool,Business 2,Space Values sheet
+AGF_Name,Vending Machine Kiosk,Business 2,Space Values sheet
+AGF_Name,Warehouse/ Storage / Staging,Business 2,Space Values sheet
+AGF_Name,Workshop/ Manufacturing / Production/ Processing/ Yard,Business 2,Space Values sheet
+AGF_Name,AC Ledge,Business Park,Space Values sheet
+AGF_Name,Airwell,Business Park,Space Values sheet
+AGF_Name,ATM Kiosk,Business Park,Space Values sheet
+AGF_Name,Balcony,Business Park,Space Values sheet
+AGF_Name,Bicycle Parking Space,Business Park,Space Values sheet
+AGF_Name,Bin Centre,Business Park,Space Values sheet
+AGF_Name,Bin Point,Business Park,Space Values sheet
+AGF_Name,Cable Chamber,Business Park,Space Values sheet
+AGF_Name,Car Parking Lot (Mechanised),Business Park,Space Values sheet
+AGF_Name,Central Distribution Centre,Business Park,Space Values sheet
+AGF_Name,Cloud Kitchen,Business Park,Space Values sheet
+AGF_Name,Control Room/ Centre,Business Park,Space Values sheet
+AGF_Name,Core media,Business Park,Space Values sheet
+AGF_Name,Corridor,Business Park,Space Values sheet
+AGF_Name,Courtyard,Business Park,Space Values sheet
+AGF_Name,Server areas/ IT equipment,Business Park,Space Values sheet
+AGF_Name,Data processing,Business Park,Space Values sheet
+AGF_Name,Discharge Valve Chamber,Business Park,Space Values sheet
+AGF_Name,Driveways,Business Park,Space Values sheet
+AGF_Name,E-Business,Business Park,Space Values sheet
+AGF_Name,End of Trip Facilities,Business Park,Space Values sheet
+AGF_Name,Entrance Canopy,Business Park,Space Values sheet
+AGF_Name,Gondola and working platform,Business Park,Space Values sheet
+AGF_Name,Guardhouse / Sentry Post,Business Park,Space Values sheet
+AGF_Name,Industrial Canteen,Business Park,Space Values sheet
+AGF_Name,Industrial Training Room,Business Park,Space Values sheet
+AGF_Name,Kitchen/ Pantry/ Food Preparation area/ Food Stall,Business Park,Space Values sheet
+AGF_Name,Letter Box Area,Business Park,Space Values sheet
+AGF_Name,Lift Lobby,Business Park,Space Values sheet
+AGF_Name,Lift Motor Room,Business Park,Space Values sheet
+AGF_Name,Loading and Unloading Bay,Business Park,Space Values sheet
+AGF_Name,Loft,Business Park,Space Values sheet
+AGF_Name,M&E Floor,Business Park,Space Values sheet
+AGF_Name,M&E Room (enclosed),Business Park,Space Values sheet
+AGF_Name,M&E Services (non-load bearing covering above),Business Park,Space Values sheet
+AGF_Name,M&E Space (unenclosed),Business Park,Space Values sheet
+AGF_Name,Manufacturing (High Tech),Business Park,Space Values sheet
+AGF_Name,Office,Business Park,Space Values sheet
+AGF_Name,On-Site Food Waste Treatment Area,Business Park,Space Values sheet
+AGF_Name,Outdoor Refreshment Area,Business Park,Space Values sheet
+AGF_Name,Outdoor Refreshment Kiosk,Business Park,Space Values sheet
+AGF_Name,Pavilion,Business Park,Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Business Park,Space Values sheet
+AGF_Name,Privately Owned Public Space,Business Park,Space Values sheet
+AGF_Name,Product Design / Development,Business Park,Space Values sheet
+AGF_Name,RC Ledge,Business Park,Space Values sheet
+AGF_Name,Refuse Chute Chamber,Business Park,Space Values sheet
+AGF_Name,Refuse Room,Business Park,Space Values sheet
+AGF_Name,Research / Research & Development,Business Park,Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Business Park,Space Values sheet
+AGF_Name,Roof Terrace,Business Park,Space Values sheet
+AGF_Name,Stage,Business Park,Space Values sheet
+AGF_Name,Storey Shelter,Business Park,Space Values sheet
+AGF_Name,Swimming Pool,Business Park,Space Values sheet
+AGF_Name,Test Laboratory,Business Park,Space Values sheet
+AGF_Name,Vending Machine Kiosk,Business Park,Space Values sheet
+AGF_Name,Warehouse/ Storage / Staging,Business Park,Space Values sheet
+AGF_Name,Workrooms/ Meeting Area/ Collaboration,Business Park,Space Values sheet
+AGF_Name,AC Ledge,Civic & Community Institution,Space Values sheet
+AGF_Name,Active Ageing Centre / Senior Care Centre,Civic & Community Institution,Space Values sheet
+AGF_Name,Airwell,Civic & Community Institution,Space Values sheet
+AGF_Name,Arts Centre,Civic & Community Institution,Space Values sheet
+AGF_Name,Association,Civic & Community Institution,Space Values sheet
+AGF_Name,ATM Kiosk,Civic & Community Institution,Space Values sheet
+AGF_Name,Balcony,Civic & Community Institution,Space Values sheet
+AGF_Name,Bicycle Parking Space,Civic & Community Institution,Space Values sheet
+AGF_Name,Bin Centre,Civic & Community Institution,Space Values sheet
+AGF_Name,Bin Point,Civic & Community Institution,Space Values sheet
+AGF_Name,Boys' / Girls' Home,Civic & Community Institution,Space Values sheet
+AGF_Name,Bunk/ Resting,Civic & Community Institution,Space Values sheet
+AGF_Name,Cable Chamber,Civic & Community Institution,Space Values sheet
+AGF_Name,Child Care Centre,Civic & Community Institution,Space Values sheet
+AGF_Name,Classroom,Civic & Community Institution,Space Values sheet
+AGF_Name,Columbarium,Civic & Community Institution,Space Values sheet
+AGF_Name,Community Club / Centre,Civic & Community Institution,Space Values sheet
+AGF_Name,Control Room/ Centre,Civic & Community Institution,Space Values sheet
+AGF_Name,Corridor,Civic & Community Institution,Space Values sheet
+AGF_Name,Court/ Pitch/ Field,Civic & Community Institution,Space Values sheet
+AGF_Name,Courtroom,Civic & Community Institution,Space Values sheet
+AGF_Name,Courtyard,Civic & Community Institution,Space Values sheet
+AGF_Name,Cultural Centre / Heritage Centre,Civic & Community Institution,Space Values sheet
+AGF_Name,Discharge Valve Chamber,Civic & Community Institution,Space Values sheet
+AGF_Name,Driveways,Civic & Community Institution,Space Values sheet
+AGF_Name,Educational / Training Institutions,Civic & Community Institution,Space Values sheet
+AGF_Name,Embalming Facilities,Civic & Community Institution,Space Values sheet
+AGF_Name,Embassy / Consulate / High Commision,Civic & Community Institution,Space Values sheet
+AGF_Name,Entrance Canopy,Civic & Community Institution,Space Values sheet
+AGF_Name,Equipment/ Storage,Civic & Community Institution,Space Values sheet
+AGF_Name,Evidence Room,Civic & Community Institution,Space Values sheet
+AGF_Name,Examination Room,Civic & Community Institution,Space Values sheet
+AGF_Name,Exhibit Area,Civic & Community Institution,Space Values sheet
+AGF_Name,Façade Articulation,Civic & Community Institution,Space Values sheet
+AGF_Name,Family Service Centre,Civic & Community Institution,Space Values sheet
+AGF_Name,Foreign Domestic Workers Hostel,Civic & Community Institution,Space Values sheet
+AGF_Name,Function Room,Civic & Community Institution,Space Values sheet
+AGF_Name,Funeral Parlour,Civic & Community Institution,Space Values sheet
+AGF_Name,Funeral-related Uses,Civic & Community Institution,Space Values sheet
+AGF_Name,Gondola and working platform,Civic & Community Institution,Space Values sheet
+AGF_Name,Government Building / Office,Civic & Community Institution,Space Values sheet
+AGF_Name,Guardhouse / Sentry Post,Civic & Community Institution,Space Values sheet
+AGF_Name,Holding Area/ Cell,Civic & Community Institution,Space Values sheet
+AGF_Name,Inmate Dayrooms,Civic & Community Institution,Space Values sheet
+AGF_Name,Interview Room,Civic & Community Institution,Space Values sheet
+AGF_Name,Judge Chambers,Civic & Community Institution,Space Values sheet
+AGF_Name,Kitchen/ Pantry/ Food Preparation area,Civic & Community Institution,Space Values sheet
+AGF_Name,Letter Box Area,Civic & Community Institution,Space Values sheet
+AGF_Name,Library,Civic & Community Institution,Space Values sheet
+AGF_Name,Lift Lobby,Civic & Community Institution,Space Values sheet
+AGF_Name,Lift Motor Room,Civic & Community Institution,Space Values sheet
+AGF_Name,Loading and Unloading Bay,Civic & Community Institution,Space Values sheet
+AGF_Name,M&E Floor,Civic & Community Institution,Space Values sheet
+AGF_Name,M&E Room (enclosed),Civic & Community Institution,Space Values sheet
+AGF_Name,M&E Services (non-load bearing covering above),Civic & Community Institution,Space Values sheet
+AGF_Name,M&E Space (unenclosed),Civic & Community Institution,Space Values sheet
+AGF_Name,Meditation Space,Civic & Community Institution,Space Values sheet
+AGF_Name,Meeting Room,Civic & Community Institution,Space Values sheet
+AGF_Name,Museum,Civic & Community Institution,Space Values sheet
+AGF_Name,Office,Civic & Community Institution,Space Values sheet
+AGF_Name,Outdoor Refreshment Area,Civic & Community Institution,Space Values sheet
+AGF_Name,Outdoor Refreshment Kiosk,Civic & Community Institution,Space Values sheet
+AGF_Name,Pavilion,Civic & Community Institution,Space Values sheet
+AGF_Name,Performance/ Theatre/ Auditorium,Civic & Community Institution,Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Civic & Community Institution,Space Values sheet
+AGF_Name,Privately Owned Public Space,Civic & Community Institution,Space Values sheet
+AGF_Name,RC Ledge,Civic & Community Institution,Space Values sheet
+AGF_Name,Refuse Chute Chamber,Civic & Community Institution,Space Values sheet
+AGF_Name,Refuse Room,Civic & Community Institution,Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Civic & Community Institution,Space Values sheet
+AGF_Name,Roof Terrace,Civic & Community Institution,Space Values sheet
+AGF_Name,Secondary Workers Dormitory,Civic & Community Institution,Space Values sheet
+AGF_Name,Secure Visiting Room,Civic & Community Institution,Space Values sheet
+AGF_Name,Security /Control,Civic & Community Institution,Space Values sheet
+AGF_Name,Social Services Facilities,Civic & Community Institution,Space Values sheet
+AGF_Name,Stage,Civic & Community Institution,Space Values sheet
+AGF_Name,Storey Shelter,Civic & Community Institution,Space Values sheet
+AGF_Name,Student Care Centre,Civic & Community Institution,Space Values sheet
+AGF_Name,Swimming Pool,Civic & Community Institution,Space Values sheet
+AGF_Name,Vending Machine Kiosk,Civic & Community Institution,Space Values sheet
+AGF_Name,Welfare Home,Civic & Community Institution,Space Values sheet
+AGF_Name,Workers' Dormitory,Civic & Community Institution,Space Values sheet
+AGF_Name,AC Ledge,Commercial,Space Values sheet
+AGF_Name,Airwell,Commercial,Space Values sheet
+AGF_Name,Amusement Centre,Commercial,Space Values sheet
+AGF_Name,ATM Kiosk,Commercial,Space Values sheet
+AGF_Name,Auto Accessories/Tyre & Battery Shop,Commercial,Space Values sheet
+AGF_Name,Balcony,Commercial,Space Values sheet
+AGF_Name,Bank,Commercial,Space Values sheet
+AGF_Name,Bar/Pub,Commercial,Space Values sheet
+AGF_Name,Beauty Salon,Commercial,Space Values sheet
+AGF_Name,Betting Centre,Commercial,Space Values sheet
+AGF_Name,Bicycle Parking Space,Commercial,Space Values sheet
+AGF_Name,Bin Centre,Commercial,Space Values sheet
+AGF_Name,Bin Point,Commercial,Space Values sheet
+AGF_Name,Cable Chamber,Commercial,Space Values sheet
+AGF_Name,Car Parking Lot (Mechanised),Commercial,Space Values sheet
+AGF_Name,Car Polishing & Waxing,Commercial,Space Values sheet
+AGF_Name,Casino,Commercial,Space Values sheet
+AGF_Name,Cinema,Commercial,Space Values sheet
+AGF_Name,Coffin Shop,Commercial,Space Values sheet
+AGF_Name,Commercial School,Commercial,Space Values sheet
+AGF_Name,Control Room/ Centre,Commercial,Space Values sheet
+AGF_Name,Convention Centre / Exhibition,Commercial,Space Values sheet
+AGF_Name,Corridor,Commercial,Space Values sheet
+AGF_Name,Court/ Pitch/ Field,Commercial,Space Values sheet
+AGF_Name,Courtyard,Commercial,Space Values sheet
+AGF_Name,Discharge Valve Chamber,Commercial,Space Values sheet
+AGF_Name,Driveways,Commercial,Space Values sheet
+AGF_Name,End of Trip Facilities,Commercial,Space Values sheet
+AGF_Name,Entrance Canopy,Commercial,Space Values sheet
+AGF_Name,Equipment/ Storage,Commercial,Space Values sheet
+AGF_Name,Façade Articulation,Commercial,Space Values sheet
+AGF_Name,Foot Reflexology,Commercial,Space Values sheet
+AGF_Name,Function Room,Commercial,Space Values sheet
+AGF_Name,Gondola and working platform,Commercial,Space Values sheet
+AGF_Name,Guardhouse / Sentry Post,Commercial,Space Values sheet
+AGF_Name,Gym/Fitness Centre,Commercial,Space Values sheet
+AGF_Name,Hawker/Food Centre/Canteen,Commercial,Space Values sheet
+AGF_Name,Karaoke Lounge,Commercial,Space Values sheet
+AGF_Name,Kiosk (Retail),Commercial,Space Values sheet
+AGF_Name,Kitchen/ Pantry/ Food Preparation area/ Food Stall,Commercial,Space Values sheet
+AGF_Name,Laundromat,Commercial,Space Values sheet
+AGF_Name,Letter Box Area,Commercial,Space Values sheet
+AGF_Name,Lift Lobby,Commercial,Space Values sheet
+AGF_Name,Lift Motor Room,Commercial,Space Values sheet
+AGF_Name,Living Quarter,Commercial,Space Values sheet
+AGF_Name,Loading and Unloading Bay,Commercial,Space Values sheet
+AGF_Name,Loft,Commercial,Space Values sheet
+AGF_Name,M&E Floor,Commercial,Space Values sheet
+AGF_Name,M&E Room (enclosed),Commercial,Space Values sheet
+AGF_Name,M&E Services (non-load bearing covering above),Commercial,Space Values sheet
+AGF_Name,M&E Space (unenclosed),Commercial,Space Values sheet
+AGF_Name,Market,Commercial,Space Values sheet
+AGF_Name,Massage Establishment,Commercial,Space Values sheet
+AGF_Name,Medical Clinic,Commercial,Space Values sheet
+AGF_Name,Medical Clinic/ Suites,Commercial,Space Values sheet
+AGF_Name,Meditation Centre,Commercial,Space Values sheet
+AGF_Name,Meeting Room,Commercial,Space Values sheet
+AGF_Name,Minimart,Commercial,Space Values sheet
+AGF_Name,Motor Vehicle Showroom,Commercial,Space Values sheet
+AGF_Name,Nightclub,Commercial,Space Values sheet
+AGF_Name,Office,Commercial,Space Values sheet
+AGF_Name,On-Site Food Waste Treatment Area,Commercial,Space Values sheet
+AGF_Name,Outdoor Refreshment Area,Commercial,Space Values sheet
+AGF_Name,Outdoor Refreshment Kiosk,Commercial,Space Values sheet
+AGF_Name,Pavilion,Commercial,Space Values sheet
+AGF_Name,Pet Boarding/Pet Day Care,Commercial,Space Values sheet
+AGF_Name,Pet Shop/Pet Grooming,Commercial,Space Values sheet
+AGF_Name,Petrol Station,Commercial,Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Commercial,Space Values sheet
+AGF_Name,Private Commercial Foreign System School,Commercial,Space Values sheet
+AGF_Name,Privately Owned Public Space,Commercial,Space Values sheet
+AGF_Name,RC Ledge,Commercial,Space Values sheet
+AGF_Name,Refuse Chute Chamber,Commercial,Space Values sheet
+AGF_Name,Refuse Room,Commercial,Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Commercial,Space Values sheet
+AGF_Name,Restaurant,Commercial,Space Values sheet
+AGF_Name,Restaurant and bar,Commercial,Space Values sheet
+AGF_Name,Restaurant and bar with live entertainment,Commercial,Space Values sheet
+AGF_Name,Restaurant with live entertainment,Commercial,Space Values sheet
+AGF_Name,Roof Terrace,Commercial,Space Values sheet
+AGF_Name,Shop,Commercial,Space Values sheet
+AGF_Name,Showroom,Commercial,Space Values sheet
+AGF_Name,Stage,Commercial,Space Values sheet
+AGF_Name,Storey Shelter,Commercial,Space Values sheet
+AGF_Name,Supermarket,Commercial,Space Values sheet
+AGF_Name,Swimming Pool,Commercial,Space Values sheet
+AGF_Name,Takeaway Food Shop,Commercial,Space Values sheet
+AGF_Name,Traditional Chinese Medicine,Commercial,Space Values sheet
+AGF_Name,Tyre Battery Shop,Commercial,Space Values sheet
+AGF_Name,Vending Machine Kiosk,Commercial,Space Values sheet
+AGF_Name,Vet Clinic/ Animal Hospital,Commercial,Space Values sheet
+AGF_Name,Visitor Centre,Commercial,Space Values sheet
+AGF_Name,Wholesale and Distribution Centre,Commercial,Space Values sheet
+AGF_Name,Work Booth,Commercial,Space Values sheet
+AGF_Name,AC Ledge,Educational Institution,Space Values sheet
+AGF_Name,Airwell,Educational Institution,Space Values sheet
+AGF_Name,Balcony,Educational Institution,Space Values sheet
+AGF_Name,Bicycle Parking Space,Educational Institution,Space Values sheet
+AGF_Name,Bin Centre,Educational Institution,Space Values sheet
+AGF_Name,Bin Point,Educational Institution,Space Values sheet
+AGF_Name,Cable Chamber,Educational Institution,Space Values sheet
+AGF_Name,Classroom,Educational Institution,Space Values sheet
+AGF_Name,Computer room,Educational Institution,Space Values sheet
+AGF_Name,Control Room/ Centre,Educational Institution,Space Values sheet
+AGF_Name,Corridor,Educational Institution,Space Values sheet
+AGF_Name,Court/ Pitch/ Field,Educational Institution,Space Values sheet
+AGF_Name,Courtyard,Educational Institution,Space Values sheet
+AGF_Name,Discharge Valve Chamber,Educational Institution,Space Values sheet
+AGF_Name,Driveways,Educational Institution,Space Values sheet
+AGF_Name,End of Trip Facilities,Educational Institution,Space Values sheet
+AGF_Name,Entrance Canopy,Educational Institution,Space Values sheet
+AGF_Name,Equipment/ Storage,Educational Institution,Space Values sheet
+AGF_Name,Façade Articulation,Educational Institution,Space Values sheet
+AGF_Name,Gondola and working platform,Educational Institution,Space Values sheet
+AGF_Name,Guardhouse / Sentry Post,Educational Institution,Space Values sheet
+AGF_Name,Home Economics/ Cooking,Educational Institution,Space Values sheet
+AGF_Name,Kindergarten,Educational Institution,Space Values sheet
+AGF_Name,Laboratory,Educational Institution,Space Values sheet
+AGF_Name,Lecture Theatre,Educational Institution,Space Values sheet
+AGF_Name,Leisure Room,Educational Institution,Space Values sheet
+AGF_Name,Letter Box Area,Educational Institution,Space Values sheet
+AGF_Name,Lift Lobby,Educational Institution,Space Values sheet
+AGF_Name,Lift Motor Room,Educational Institution,Space Values sheet
+AGF_Name,Loading and Unloading Bay,Educational Institution,Space Values sheet
+AGF_Name,M&E Room (enclosed),Educational Institution,Space Values sheet
+AGF_Name,M&E Services (non-load bearing covering above),Educational Institution,Space Values sheet
+AGF_Name,M&E Space (unenclosed),Educational Institution,Space Values sheet
+AGF_Name,Multipurpose Hall/ Sports Hall,Educational Institution,Space Values sheet
+AGF_Name,Music room,Educational Institution,Space Values sheet
+AGF_Name,Pavilion,Educational Institution,Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Educational Institution,Space Values sheet
+AGF_Name,Privately Owned Public Space,Educational Institution,Space Values sheet
+AGF_Name,RC Ledge,Educational Institution,Space Values sheet
+AGF_Name,Refuse Chute Chamber,Educational Institution,Space Values sheet
+AGF_Name,Refuse Room,Educational Institution,Space Values sheet
+AGF_Name,Religious Facilities,Educational Institution,Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Educational Institution,Space Values sheet
+AGF_Name,Roof Terrace,Educational Institution,Space Values sheet
+AGF_Name,School Canteen,Educational Institution,Space Values sheet
+AGF_Name,School Gym,Educational Institution,Space Values sheet
+AGF_Name,School Library,Educational Institution,Space Values sheet
+AGF_Name,Special Needs,Educational Institution,Space Values sheet
+AGF_Name,Stage,Educational Institution,Space Values sheet
+AGF_Name,Storey Shelter,Educational Institution,Space Values sheet
+AGF_Name,Students' Hostel,Educational Institution,Space Values sheet
+AGF_Name,Studio,Educational Institution,Space Values sheet
+AGF_Name,Study Area,Educational Institution,Space Values sheet
+AGF_Name,Swimming Pool,Educational Institution,Space Values sheet
+AGF_Name,Teachers / Staff room,Educational Institution,Space Values sheet
+AGF_Name,Vending Machine Kiosk,Educational Institution,Space Values sheet
+AGF_Name,Workshop,Educational Institution,Space Values sheet
+AGF_Name,AC Ledge,Health & Medical Care,Space Values sheet
+AGF_Name,Airwell,Health & Medical Care,Space Values sheet
+AGF_Name,ATM Kiosk,Health & Medical Care,Space Values sheet
+AGF_Name,Balcony,Health & Medical Care,Space Values sheet
+AGF_Name,Bicycle Parking Space,Health & Medical Care,Space Values sheet
+AGF_Name,Bin Centre,Health & Medical Care,Space Values sheet
+AGF_Name,Bin Point,Health & Medical Care,Space Values sheet
+AGF_Name,Cable Chamber,Health & Medical Care,Space Values sheet
+AGF_Name,Car Parking Lot (Mechanised),Health & Medical Care,Space Values sheet
+AGF_Name,Consulting rooms,Health & Medical Care,Space Values sheet
+AGF_Name,Control Room/ Centre,Health & Medical Care,Space Values sheet
+AGF_Name,Corridor,Health & Medical Care,Space Values sheet
+AGF_Name,Courtyard,Health & Medical Care,Space Values sheet
+AGF_Name,Discharge Valve Chamber,Health & Medical Care,Space Values sheet
+AGF_Name,Driveways,Health & Medical Care,Space Values sheet
+AGF_Name,End of Trip Facilities,Health & Medical Care,Space Values sheet
+AGF_Name,Entrance Canopy,Health & Medical Care,Space Values sheet
+AGF_Name,Equipment/ Storage,Health & Medical Care,Space Values sheet
+AGF_Name,Façade Articulation,Health & Medical Care,Space Values sheet
+AGF_Name,First aid rooms,Health & Medical Care,Space Values sheet
+AGF_Name,Function Room,Health & Medical Care,Space Values sheet
+AGF_Name,Gondola and working platform,Health & Medical Care,Space Values sheet
+AGF_Name,Guardhouse / Sentry Post,Health & Medical Care,Space Values sheet
+AGF_Name,Hospice,Health & Medical Care,Space Values sheet
+AGF_Name,Intensive care units,Health & Medical Care,Space Values sheet
+AGF_Name,Isolation units,Health & Medical Care,Space Values sheet
+AGF_Name,Kitchen/ Pantry/ Food Preparation area,Health & Medical Care,Space Values sheet
+AGF_Name,Letter Box Area,Health & Medical Care,Space Values sheet
+AGF_Name,Lift Lobby,Health & Medical Care,Space Values sheet
+AGF_Name,Lift Motor Room,Health & Medical Care,Space Values sheet
+AGF_Name,Loading and Unloading Bay,Health & Medical Care,Space Values sheet
+AGF_Name,Lounge,Health & Medical Care,Space Values sheet
+AGF_Name,M&E Floor,Health & Medical Care,Space Values sheet
+AGF_Name,M&E Room (enclosed),Health & Medical Care,Space Values sheet
+AGF_Name,M&E Services (non-load bearing covering above),Health & Medical Care,Space Values sheet
+AGF_Name,M&E Space (unenclosed),Health & Medical Care,Space Values sheet
+AGF_Name,Medical Clinic/ Suites,Health & Medical Care,Space Values sheet
+AGF_Name,Medical scanning and x-ray rooms,Health & Medical Care,Space Values sheet
+AGF_Name,Medical treatment rooms,Health & Medical Care,Space Values sheet
+AGF_Name,Meeting Room,Health & Medical Care,Space Values sheet
+AGF_Name,Nursing Home,Health & Medical Care,Space Values sheet
+AGF_Name,Occupational therapy rooms,Health & Medical Care,Space Values sheet
+AGF_Name,Office,Health & Medical Care,Space Values sheet
+AGF_Name,Operating theatres,Health & Medical Care,Space Values sheet
+AGF_Name,Outdoor Refreshment Area,Health & Medical Care,Space Values sheet
+AGF_Name,Outdoor Refreshment Kiosk,Health & Medical Care,Space Values sheet
+AGF_Name,Pavilion,Health & Medical Care,Space Values sheet
+AGF_Name,Pharmacy,Health & Medical Care,Space Values sheet
+AGF_Name,Phototherapy,Health & Medical Care,Space Values sheet
+AGF_Name,Physiotherapy,Health & Medical Care,Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Health & Medical Care,Space Values sheet
+AGF_Name,Privately Owned Public Space,Health & Medical Care,Space Values sheet
+AGF_Name,RC Ledge,Health & Medical Care,Space Values sheet
+AGF_Name,Refuse Chute Chamber,Health & Medical Care,Space Values sheet
+AGF_Name,Refuse Room,Health & Medical Care,Space Values sheet
+AGF_Name,Rehabilitation rooms,Health & Medical Care,Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Health & Medical Care,Space Values sheet
+AGF_Name,Roof Terrace,Health & Medical Care,Space Values sheet
+AGF_Name,Staff Quarters,Health & Medical Care,Space Values sheet
+AGF_Name,Stage,Health & Medical Care,Space Values sheet
+AGF_Name,Storey Shelter,Health & Medical Care,Space Values sheet
+AGF_Name,Swimming Pool,Health & Medical Care,Space Values sheet
+AGF_Name,Vending Machine Kiosk,Health & Medical Care,Space Values sheet
+AGF_Name,Wards,Health & Medical Care,Space Values sheet
+AGF_Name,AC Ledge,Hotel,Space Values sheet
+AGF_Name,Airwell,Hotel,Space Values sheet
+AGF_Name,ATM Kiosk,Hotel,Space Values sheet
+AGF_Name,Audio Visual Room,Hotel,Space Values sheet
+AGF_Name,Back of House,Hotel,Space Values sheet
+AGF_Name,Backpackers' Hostel,Hotel,Space Values sheet
+AGF_Name,Balcony,Hotel,Space Values sheet
+AGF_Name,Banquet Hall/ Ballroom,Hotel,Space Values sheet
+AGF_Name,Bicycle Parking Space,Hotel,Space Values sheet
+AGF_Name,Bin Centre,Hotel,Space Values sheet
+AGF_Name,Bin Point,Hotel,Space Values sheet
+AGF_Name,Cable Chamber,Hotel,Space Values sheet
+AGF_Name,Car Parking Lot (Mechanised),Hotel,Space Values sheet
+AGF_Name,Clubhouse,Hotel,Space Values sheet
+AGF_Name,Conserved Bungalow,Hotel,Space Values sheet
+AGF_Name,Control Room/ Centre,Hotel,Space Values sheet
+AGF_Name,Corridor,Hotel,Space Values sheet
+AGF_Name,Courtyard,Hotel,Space Values sheet
+AGF_Name,Discharge Valve Chamber,Hotel,Space Values sheet
+AGF_Name,Driveways,Hotel,Space Values sheet
+AGF_Name,End of Trip Facilities,Hotel,Space Values sheet
+AGF_Name,Entrance Canopy,Hotel,Space Values sheet
+AGF_Name,Equipment/ Storage,Hotel,Space Values sheet
+AGF_Name,Façade Articulation,Hotel,Space Values sheet
+AGF_Name,Function Room,Hotel,Space Values sheet
+AGF_Name,Gondola and working platform,Hotel,Space Values sheet
+AGF_Name,Guardhouse / Sentry Post,Hotel,Space Values sheet
+AGF_Name,Guest Room/ Hotel Room,Hotel,Space Values sheet
+AGF_Name,Gym/Fitness Centre (for Hotel guests only),Hotel,Space Values sheet
+AGF_Name,Kitchen/ Food Preparation area,Hotel,Space Values sheet
+AGF_Name,Letter Box Area,Hotel,Space Values sheet
+AGF_Name,Lift Lobby,Hotel,Space Values sheet
+AGF_Name,Lift Motor Room,Hotel,Space Values sheet
+AGF_Name,Loading and Unloading Bay,Hotel,Space Values sheet
+AGF_Name,Lounge,Hotel,Space Values sheet
+AGF_Name,M&E Floor,Hotel,Space Values sheet
+AGF_Name,M&E Room (enclosed),Hotel,Space Values sheet
+AGF_Name,M&E Services (non-load bearing covering above),Hotel,Space Values sheet
+AGF_Name,M&E Space (unenclosed),Hotel,Space Values sheet
+AGF_Name,Meeting/ Board/ Conference Room,Hotel,Space Values sheet
+AGF_Name,Outdoor Refreshment Area,Hotel,Space Values sheet
+AGF_Name,Outdoor Refreshment Kiosk,Hotel,Space Values sheet
+AGF_Name,Pavilion,Hotel,Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Hotel,Space Values sheet
+AGF_Name,Privately Owned Public Space,Hotel,Space Values sheet
+AGF_Name,RC Ledge,Hotel,Space Values sheet
+AGF_Name,Reflexology/ Massage (for Hotel guests only),Hotel,Space Values sheet
+AGF_Name,Refuse Chute Chamber,Hotel,Space Values sheet
+AGF_Name,Refuse Room,Hotel,Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Hotel,Space Values sheet
+AGF_Name,Roof Terrace,Hotel,Space Values sheet
+AGF_Name,Staff Quarters,Hotel,Space Values sheet
+AGF_Name,Stage,Hotel,Space Values sheet
+AGF_Name,Storey Shelter,Hotel,Space Values sheet
+AGF_Name,Swimming Pool,Hotel,Space Values sheet
+AGF_Name,Vending Machine Kiosk,Hotel,Space Values sheet
+AGF_Name,AC Ledge,Place of Worship,Space Values sheet
+AGF_Name,Airwell,Place of Worship,Space Values sheet
+AGF_Name,ATM Kiosk,Place of Worship,Space Values sheet
+AGF_Name,Balcony,Place of Worship,Space Values sheet
+AGF_Name,Bicycle Parking Space,Place of Worship,Space Values sheet
+AGF_Name,Bin Centre,Place of Worship,Space Values sheet
+AGF_Name,Bin Point,Place of Worship,Space Values sheet
+AGF_Name,Cable Chamber,Place of Worship,Space Values sheet
+AGF_Name,Chapel,Place of Worship,Space Values sheet
+AGF_Name,Columbarium,Place of Worship,Space Values sheet
+AGF_Name,Control Room/ Centre,Place of Worship,Space Values sheet
+AGF_Name,Corridor,Place of Worship,Space Values sheet
+AGF_Name,Courtyard,Place of Worship,Space Values sheet
+AGF_Name,Cultural,Place of Worship,Space Values sheet
+AGF_Name,Discharge Valve Chamber,Place of Worship,Space Values sheet
+AGF_Name,Driveways,Place of Worship,Space Values sheet
+AGF_Name,End of Trip Facilities,Place of Worship,Space Values sheet
+AGF_Name,Entrance Canopy,Place of Worship,Space Values sheet
+AGF_Name,Equipment/ Storage,Place of Worship,Space Values sheet
+AGF_Name,Function Room,Place of Worship,Space Values sheet
+AGF_Name,Gondola and working platform,Place of Worship,Space Values sheet
+AGF_Name,Guardhouse / Sentry Post,Place of Worship,Space Values sheet
+AGF_Name,Kitchen/ Pantry/ Food Preparation area,Place of Worship,Space Values sheet
+AGF_Name,Letter Box Area,Place of Worship,Space Values sheet
+AGF_Name,Library,Place of Worship,Space Values sheet
+AGF_Name,Lift Lobby,Place of Worship,Space Values sheet
+AGF_Name,Lift Motor Room,Place of Worship,Space Values sheet
+AGF_Name,Loading and Unloading Bay,Place of Worship,Space Values sheet
+AGF_Name,M&E Floor,Place of Worship,Space Values sheet
+AGF_Name,M&E Room (enclosed),Place of Worship,Space Values sheet
+AGF_Name,M&E Services (non-load bearing covering above),Place of Worship,Space Values sheet
+AGF_Name,M&E Space (unenclosed),Place of Worship,Space Values sheet
+AGF_Name,Meeting Room,Place of Worship,Space Values sheet
+AGF_Name,Non-religious Use,Place of Worship,Space Values sheet
+AGF_Name,Office,Place of Worship,Space Values sheet
+AGF_Name,Pavilion,Place of Worship,Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Place of Worship,Space Values sheet
+AGF_Name,Praying Area,Place of Worship,Space Values sheet
+AGF_Name,Quarters,Place of Worship,Space Values sheet
+AGF_Name,RC Ledge,Place of Worship,Space Values sheet
+AGF_Name,Refuse Chute Chamber,Place of Worship,Space Values sheet
+AGF_Name,Refuse Room,Place of Worship,Space Values sheet
+AGF_Name,Religious School,Place of Worship,Space Values sheet
+AGF_Name,Religious Teachings,Place of Worship,Space Values sheet
+AGF_Name,Religious Use,Place of Worship,Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Place of Worship,Space Values sheet
+AGF_Name,Roof Terrace,Place of Worship,Space Values sheet
+AGF_Name,Shrine,Place of Worship,Space Values sheet
+AGF_Name,Stage,Place of Worship,Space Values sheet
+AGF_Name,Storey Shelter,Place of Worship,Space Values sheet
+AGF_Name,Swimming Pool,Place of Worship,Space Values sheet
+AGF_Name,Theatre/ Auditorium,Place of Worship,Space Values sheet
+AGF_Name,Vending Machine Kiosk,Place of Worship,Space Values sheet
+AGF_Name,AC Ledge,Rapid Transit,Space Values sheet
+AGF_Name,Airwell,Rapid Transit,Space Values sheet
+AGF_Name,ATM Kiosk,Rapid Transit,Space Values sheet
+AGF_Name,Bicycle Parking Space,Rapid Transit,Space Values sheet
+AGF_Name,Bin Centre,Rapid Transit,Space Values sheet
+AGF_Name,Bin Point,Rapid Transit,Space Values sheet
+AGF_Name,Cable Chamber,Rapid Transit,Space Values sheet
+AGF_Name,Cleaning Area,Rapid Transit,Space Values sheet
+AGF_Name,Control Room/ Centre,Rapid Transit,Space Values sheet
+AGF_Name,Corridor,Rapid Transit,Space Values sheet
+AGF_Name,Courtyard,Rapid Transit,Space Values sheet
+AGF_Name,Discharge Valve Chamber,Rapid Transit,Space Values sheet
+AGF_Name,Driveways,Rapid Transit,Space Values sheet
+AGF_Name,End of Trip Facilities,Rapid Transit,Space Values sheet
+AGF_Name,Entrance Canopy,Rapid Transit,Space Values sheet
+AGF_Name,Equipment/ Storage,Rapid Transit,Space Values sheet
+AGF_Name,Gondola and working platform,Rapid Transit,Space Values sheet
+AGF_Name,Inspection,Rapid Transit,Space Values sheet
+AGF_Name,Letter Box Area,Rapid Transit,Space Values sheet
+AGF_Name,Lift Lobby,Rapid Transit,Space Values sheet
+AGF_Name,Lift Motor Room,Rapid Transit,Space Values sheet
+AGF_Name,Loading and Unloading Bay,Rapid Transit,Space Values sheet
+AGF_Name,M&E Floor,Rapid Transit,Space Values sheet
+AGF_Name,M&E Room (enclosed),Rapid Transit,Space Values sheet
+AGF_Name,M&E Space (unenclosed),Rapid Transit,Space Values sheet
+AGF_Name,Office,Rapid Transit,Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Rapid Transit,Space Values sheet
+AGF_Name,Platform Area,Rapid Transit,Space Values sheet
+AGF_Name,Privately Owned Public Space,Rapid Transit,Space Values sheet
+AGF_Name,RC Ledge,Rapid Transit,Space Values sheet
+AGF_Name,Refuse Chute Chamber,Rapid Transit,Space Values sheet
+AGF_Name,Refuse Room,Rapid Transit,Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Rapid Transit,Space Values sheet
+AGF_Name,Roof Terrace,Rapid Transit,Space Values sheet
+AGF_Name,Station Control,Rapid Transit,Space Values sheet
+AGF_Name,Storey Shelter,Rapid Transit,Space Values sheet
+AGF_Name,Vending Machine Kiosk,Rapid Transit,Space Values sheet
+AGF_Name,AC Ledge,Residential (Landed),Space Values sheet
+AGF_Name,Airwell,Residential (Landed),Space Values sheet
+AGF_Name,Balcony,Residential (Landed),Space Values sheet
+AGF_Name,Bathroom,Residential (Landed),Space Values sheet
+AGF_Name,Bedroom,Residential (Landed),Space Values sheet
+AGF_Name,Bin Centre,Residential (Landed),Space Values sheet
+AGF_Name,Bin Point,Residential (Landed),Space Values sheet
+AGF_Name,Bomb Shelter,Residential (Landed),Space Values sheet
+AGF_Name,Car Porch/Garage,Residential (Landed),Space Values sheet
+AGF_Name,Corridor,Residential (Landed),Space Values sheet
+AGF_Name,Courtyard,Residential (Landed),Space Values sheet
+AGF_Name,Dining Room,Residential (Landed),Space Values sheet
+AGF_Name,Discharge Valve Chamber,Residential (Landed),Space Values sheet
+AGF_Name,Family area,Residential (Landed),Space Values sheet
+AGF_Name,Household Shelter,Residential (Landed),Space Values sheet
+AGF_Name,Kitchen,Residential (Landed),Space Values sheet
+AGF_Name,Lift Lobby,Residential (Landed),Space Values sheet
+AGF_Name,Lift Motor Room,Residential (Landed),Space Values sheet
+AGF_Name,Living Room,Residential (Landed),Space Values sheet
+AGF_Name,Meter Compartment,Residential (Landed),Space Values sheet
+AGF_Name,RC Ledge,Residential (Landed),Space Values sheet
+AGF_Name,Roof Terrace,Residential (Landed),Space Values sheet
+AGF_Name,Storey Shelter,Residential (Landed),Space Values sheet
+AGF_Name,Swimming Pool,Residential (Landed),Space Values sheet
+AGF_Name,AC Ledge,Residential (Non-landed),Space Values sheet
+AGF_Name,Airwell,Residential (Non-landed),Space Values sheet
+AGF_Name,ATM Kiosk,Residential (Non-landed),Space Values sheet
+AGF_Name,Balcony,Residential (Non-landed),Space Values sheet
+AGF_Name,Bicycle Parking Space,Residential (Non-landed),Space Values sheet
+AGF_Name,Bin Centre,Residential (Non-landed),Space Values sheet
+AGF_Name,Bin Point,Residential (Non-landed),Space Values sheet
+AGF_Name,Cable Chamber,Residential (Non-landed),Space Values sheet
+AGF_Name,Car Parking Lot (Mechanised),Residential (Non-landed),Space Values sheet
+AGF_Name,Car Porch/Garage,Residential (Non-landed),Space Values sheet
+AGF_Name,Conserved Bungalow,Residential (Non-landed),Space Values sheet
+AGF_Name,Control Room/ Centre,Residential (Non-landed),Space Values sheet
+AGF_Name,Corridor,Residential (Non-landed),Space Values sheet
+AGF_Name,Courtyard,Residential (Non-landed),Space Values sheet
+AGF_Name,Discharge Valve Chamber,Residential (Non-landed),Space Values sheet
+AGF_Name,Driveways,Residential (Non-landed),Space Values sheet
+AGF_Name,Dwelling Unit (Nett),Residential (Non-landed),Space Values sheet
+AGF_Name,Entrance Canopy,Residential (Non-landed),Space Values sheet
+AGF_Name,Gondola and working platform,Residential (Non-landed),Space Values sheet
+AGF_Name,Guardhouse / Sentry Post,Residential (Non-landed),Space Values sheet
+AGF_Name,Indoor Recreation Space,Residential (Non-landed),Space Values sheet
+AGF_Name,Letter Box Area,Residential (Non-landed),Space Values sheet
+AGF_Name,Lift Lobby,Residential (Non-landed),Space Values sheet
+AGF_Name,Lift Motor Room,Residential (Non-landed),Space Values sheet
+AGF_Name,Loft,Residential (Non-landed),Space Values sheet
+AGF_Name,M&E Room (enclosed),Residential (Non-landed),Space Values sheet
+AGF_Name,M&E Services (non-load bearing covering above),Residential (Non-landed),Space Values sheet
+AGF_Name,M&E Space (unenclosed),Residential (Non-landed),Space Values sheet
+AGF_Name,Pavilion,Residential (Non-landed),Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Residential (Non-landed),Space Values sheet
+AGF_Name,Private Enclosed Space,Residential (Non-landed),Space Values sheet
+AGF_Name,Privately Owned Public Space,Residential (Non-landed),Space Values sheet
+AGF_Name,RC Ledge,Residential (Non-landed),Space Values sheet
+AGF_Name,Refuse Chute Chamber,Residential (Non-landed),Space Values sheet
+AGF_Name,Refuse Room,Residential (Non-landed),Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Residential (Non-landed),Space Values sheet
+AGF_Name,Roof Terrace,Residential (Non-landed),Space Values sheet
+AGF_Name,Serviced Apartment Unit (Nett),Residential (Non-landed),Space Values sheet
+AGF_Name,Storey Shelter,Residential (Non-landed),Space Values sheet
+AGF_Name,Students' Hostel,Residential (Non-landed),Space Values sheet
+AGF_Name,Swimming Pool,Residential (Non-landed),Space Values sheet
+AGF_Name,Tennis Court,Residential (Non-landed),Space Values sheet
+AGF_Name,Vending Machine Kiosk,Residential (Non-landed),Space Values sheet
+AGF_Name,Visitors' Hostel,Residential (Non-landed),Space Values sheet
+AGF_Name,AC Ledge,Sports & Recreation,Space Values sheet
+AGF_Name,Airwell,Sports & Recreation,Space Values sheet
+AGF_Name,ATM Kiosk,Sports & Recreation,Space Values sheet
+AGF_Name,Audio Visual Room,Sports & Recreation,Space Values sheet
+AGF_Name,Back of House,Sports & Recreation,Space Values sheet
+AGF_Name,Balcony,Sports & Recreation,Space Values sheet
+AGF_Name,Bicycle Parking Space,Sports & Recreation,Space Values sheet
+AGF_Name,Bin Centre,Sports & Recreation,Space Values sheet
+AGF_Name,Bin Point,Sports & Recreation,Space Values sheet
+AGF_Name,Cable Chamber,Sports & Recreation,Space Values sheet
+AGF_Name,Chalet / Bungalow,Sports & Recreation,Space Values sheet
+AGF_Name,Clubhouse,Sports & Recreation,Space Values sheet
+AGF_Name,Control Room/ Centre,Sports & Recreation,Space Values sheet
+AGF_Name,Corridor,Sports & Recreation,Space Values sheet
+AGF_Name,Court/ Pitch/ Field,Sports & Recreation,Space Values sheet
+AGF_Name,Courtyard,Sports & Recreation,Space Values sheet
+AGF_Name,Discharge Valve Chamber,Sports & Recreation,Space Values sheet
+AGF_Name,Dressroom,Sports & Recreation,Space Values sheet
+AGF_Name,Driveways,Sports & Recreation,Space Values sheet
+AGF_Name,Entrance Canopy,Sports & Recreation,Space Values sheet
+AGF_Name,Equipment/ Storage,Sports & Recreation,Space Values sheet
+AGF_Name,Exhibition Room,Sports & Recreation,Space Values sheet
+AGF_Name,Function Room,Sports & Recreation,Space Values sheet
+AGF_Name,Guardhouse / Sentry Post,Sports & Recreation,Space Values sheet
+AGF_Name,Gym/Fitness Centre,Sports & Recreation,Space Values sheet
+AGF_Name,Letter Box Area,Sports & Recreation,Space Values sheet
+AGF_Name,Lift Lobby,Sports & Recreation,Space Values sheet
+AGF_Name,Lift Motor Room,Sports & Recreation,Space Values sheet
+AGF_Name,Loading and Unloading Bay,Sports & Recreation,Space Values sheet
+AGF_Name,Lounge,Sports & Recreation,Space Values sheet
+AGF_Name,M&E Floor,Sports & Recreation,Space Values sheet
+AGF_Name,M&E Room (enclosed),Sports & Recreation,Space Values sheet
+AGF_Name,M&E Services (non-load bearing covering above),Sports & Recreation,Space Values sheet
+AGF_Name,M&E Space (unenclosed),Sports & Recreation,Space Values sheet
+AGF_Name,Meeting Room,Sports & Recreation,Space Values sheet
+AGF_Name,Multipurpose Hall/ Sports Hall,Sports & Recreation,Space Values sheet
+AGF_Name,Office,Sports & Recreation,Space Values sheet
+AGF_Name,Outdoor Refreshment Area,Sports & Recreation,Space Values sheet
+AGF_Name,Outdoor Refreshment Kiosk,Sports & Recreation,Space Values sheet
+AGF_Name,Pavilion,Sports & Recreation,Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Sports & Recreation,Space Values sheet
+AGF_Name,Privately Owned Public Space,Sports & Recreation,Space Values sheet
+AGF_Name,RC Ledge,Sports & Recreation,Space Values sheet
+AGF_Name,Recreational Club,Sports & Recreation,Space Values sheet
+AGF_Name,Refuse Chute Chamber,Sports & Recreation,Space Values sheet
+AGF_Name,Refuse Room,Sports & Recreation,Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Sports & Recreation,Space Values sheet
+AGF_Name,Roof Terrace,Sports & Recreation,Space Values sheet
+AGF_Name,Security / Control,Sports & Recreation,Space Values sheet
+AGF_Name,Stage,Sports & Recreation,Space Values sheet
+AGF_Name,Storey Shelter,Sports & Recreation,Space Values sheet
+AGF_Name,Studio,Sports & Recreation,Space Values sheet
+AGF_Name,Swimming Pool,Sports & Recreation,Space Values sheet
+AGF_Name,Theatre/ Auditorium,Sports & Recreation,Space Values sheet
+AGF_Name,Theme Park,Sports & Recreation,Space Values sheet
+AGF_Name,Vending Machine Kiosk,Sports & Recreation,Space Values sheet
+AGF_Name,Viewing Gallery,Sports & Recreation,Space Values sheet
+AGF_Name,Airwell,Transport Facilities,Space Values sheet
+AGF_Name,ATM Kiosk,Transport Facilities,Space Values sheet
+AGF_Name,Bicycle Parking Space,Transport Facilities,Space Values sheet
+AGF_Name,Bin Centre,Transport Facilities,Space Values sheet
+AGF_Name,Bin Point,Transport Facilities,Space Values sheet
+AGF_Name,Cable Chamber,Transport Facilities,Space Values sheet
+AGF_Name,Cleaning Area,Transport Facilities,Space Values sheet
+AGF_Name,Control Room/ Centre,Transport Facilities,Space Values sheet
+AGF_Name,Courtyard,Transport Facilities,Space Values sheet
+AGF_Name,Depot,Transport Facilities,Space Values sheet
+AGF_Name,Discharge Valve Chamber,Transport Facilities,Space Values sheet
+AGF_Name,Driveways,Transport Facilities,Space Values sheet
+AGF_Name,Entrance Canopy,Transport Facilities,Space Values sheet
+AGF_Name,Equipment Storage,Transport Facilities,Space Values sheet
+AGF_Name,Fuelling Space,Transport Facilities,Space Values sheet
+AGF_Name,Gondola and working platform,Transport Facilities,Space Values sheet
+AGF_Name,Letter Box Area,Transport Facilities,Space Values sheet
+AGF_Name,Lift Lobby,Transport Facilities,Space Values sheet
+AGF_Name,Lift Motor Room,Transport Facilities,Space Values sheet
+AGF_Name,Loading and Unloading Bay,Transport Facilities,Space Values sheet
+AGF_Name,M&E Floor,Transport Facilities,Space Values sheet
+AGF_Name,M&E Room (enclosed),Transport Facilities,Space Values sheet
+AGF_Name,M&E Space (unenclosed),Transport Facilities,Space Values sheet
+AGF_Name,Motorcycle Parking Lot,Transport Facilities,Space Values sheet
+AGF_Name,Office,Transport Facilities,Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Transport Facilities,Space Values sheet
+AGF_Name,Refuse Chute Chamber,Transport Facilities,Space Values sheet
+AGF_Name,Refuse Room,Transport Facilities,Space Values sheet
+AGF_Name,Repair Yard,Transport Facilities,Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Transport Facilities,Space Values sheet
+AGF_Name,Roof Terrace,Transport Facilities,Space Values sheet
+AGF_Name,Servicing and Testing,Transport Facilities,Space Values sheet
+AGF_Name,Standing space (Vehicular),Transport Facilities,Space Values sheet
+AGF_Name,Storey Shelter,Transport Facilities,Space Values sheet
+AGF_Name,Vending Machine Kiosk,Transport Facilities,Space Values sheet
+AGF_Name,Airwell,Utility,Space Values sheet
+AGF_Name,ATM Kiosk,Utility,Space Values sheet
+AGF_Name,Bicycle Parking Space,Utility,Space Values sheet
+AGF_Name,Bin Centre,Utility,Space Values sheet
+AGF_Name,Bin Point,Utility,Space Values sheet
+AGF_Name,Cable Chamber,Utility,Space Values sheet
+AGF_Name,Control Room/ Centre,Utility,Space Values sheet
+AGF_Name,Courtyard,Utility,Space Values sheet
+AGF_Name,Discharge Valve Chamber,Utility,Space Values sheet
+AGF_Name,Driveways,Utility,Space Values sheet
+AGF_Name,End of Trip Facilities,Utility,Space Values sheet
+AGF_Name,Entrance Canopy,Utility,Space Values sheet
+AGF_Name,Gondola and working platform,Utility,Space Values sheet
+AGF_Name,Letter Box Area,Utility,Space Values sheet
+AGF_Name,Lift Lobby,Utility,Space Values sheet
+AGF_Name,Lift Motor Room,Utility,Space Values sheet
+AGF_Name,Loading and Unloading Bay,Utility,Space Values sheet
+AGF_Name,M&E Floor,Utility,Space Values sheet
+AGF_Name,M&E Room (enclosed),Utility,Space Values sheet
+AGF_Name,M&E Space (unenclosed),Utility,Space Values sheet
+AGF_Name,Motorcycle Parking Lot,Utility,Space Values sheet
+AGF_Name,Office,Utility,Space Values sheet
+AGF_Name,Pick-up/ Drop-off Point,Utility,Space Values sheet
+AGF_Name,Privately Owned Public Space,Utility,Space Values sheet
+AGF_Name,Receiving/ Transmitting,Utility,Space Values sheet
+AGF_Name,Refuse Chute Chamber,Utility,Space Values sheet
+AGF_Name,Refuse Room,Utility,Space Values sheet
+AGF_Name,Residual Area and Corridor (Carpark Floor),Utility,Space Values sheet
+AGF_Name,Roof Terrace,Utility,Space Values sheet
+AGF_Name,Storey Shelter,Utility,Space Values sheet
+AGF_Name,Treatment Area,Utility,Space Values sheet
+AGF_Name,Vending Machine Kiosk,Utility,Space Values sheet
+AGF_Name,Voltage/ Transformer,Utility,Space Values sheet
+AGF_Name_HouseholdShelter,Household Shelter,,Accepted Values column
+AGF_SupportingFacility,Electrical Substation,,Space Values sheet
+AGF_SupportingFacility,Vehicular Parking Area,,Space Values sheet
+AGF_UseQuantum,Predominant,,Accepted Values column
+AGF_UseQuantum,Ancillary,,Accepted Values column
+ALS_GreeneryFeatures,Green Buffer,,Space Values sheet
+ALS_GreeneryFeatures,Peripheral Planting Strip,,Space Values sheet
+ALS_GreeneryFeatures,Landscape Deck - Vertical Greenery,,Space Values sheet
+ALS_GreeneryFeatures,Landscape Deck - Surface Greenery,,Space Values sheet
+ALS_GreeneryFeatures,Communal Ground Garden,,Space Values sheet
+ALS_GreeneryFeatures,Sky Terrace,,Space Values sheet
+ALS_GreeneryFeatures,Roof Top Landscaping,,Space Values sheet
+ALS_GreeneryFeatures,Ground Landscaping,,Space Values sheet
+ALS_GreeneryFeatures,Urban Farm / Greenhouse,,Space Values sheet
+ALS_GreeneryFeatures,Vertical Greenery,,Space Values sheet
+ALS_GreeneryFeatures,Extensive Green Roof,,Space Values sheet
+ALS_GreeneryFeatures,Green Verge,,Space Values sheet
+ALS_GreeneryFeatures_AreaALS,Green Verge,,Accepted Values column
+ALS_LandscapeType,Turfing,,Space Values sheet
+ALS_LandscapeType,Groundcovers,,Space Values sheet
+ALS_LandscapeType,Shrubs,,Space Values sheet
+ALS_LandscapeType,Decked / Patterned Floor,,Space Values sheet
+ALS_LandscapeType,Water Feature,,Space Values sheet
+ALS_LandscapeType,Landscaped Footpath,,Space Values sheet
+ALS_LandscapeType,Playground,,Space Values sheet
+ALS_LandscapeType,BBQ Pit,,Space Values sheet
+ALS_LandscapeType_AreaALS,Turfing,,Accepted Values column
+ALS_LandscapeType_AreaALS,Groundcover,,Accepted Values column
+ALS_LandscapeType_AreaALS,Shrubs,,Accepted Values column
+ALS_Status,Existing,,Accepted Values column
+ALS_Status,Proposed,,Accepted Values column
+ALS_Status,To be Removed,,Accepted Values column
+AST_AreaType,Strata (Private),,Space Values sheet
+AST_AreaType,Strata (Communal),,Space Values sheet
+AST_AreaType,Common Area,,Space Values sheet
+BeamSpanType,Single,,Accepted Values column
+BeamSpanType,End,,Accepted Values column
+BeamSpanType,Interior,,Accepted Values column
+BeamSpanType,Cantilever,,Accepted Values column
+BicycleRack_Type,Single-Tier Wheel Rack,,Accepted Values column
+BicycleRack_Type,Single-Tier U-Bar,,Accepted Values column
+BicycleRack_Type,Double-Tier,,Accepted Values column
+BroadLandUse,Agriculture,,Accepted Values column
+BroadLandUse,Beach Area,,Accepted Values column
+BroadLandUse,Business 1,,Accepted Values column
+BroadLandUse,Business 1- White,,Accepted Values column
+BroadLandUse,Business 2,,Accepted Values column
+BroadLandUse,Business 2- White,,Accepted Values column
+BroadLandUse,Business Park,,Accepted Values column
+BroadLandUse,Business Park- White,,Accepted Values column
+BroadLandUse,Cemetery,,Accepted Values column
+BroadLandUse,Civic & Community Institution,,Accepted Values column
+BroadLandUse,Commercial,,Accepted Values column
+BroadLandUse,Commercial & Residential,,Accepted Values column
+BroadLandUse,Commercial/Institution,,Accepted Values column
+BroadLandUse,Educational Institution,,Accepted Values column
+BroadLandUse,Health & Medical Care,,Accepted Values column
+BroadLandUse,Hotel,,Accepted Values column
+BroadLandUse,Open Space,,Accepted Values column
+BroadLandUse,Park,,Accepted Values column
+BroadLandUse,Place of Worship,,Accepted Values column
+BroadLandUse,Port/Airport,,Accepted Values column
+BroadLandUse,Rapid Transit,,Accepted Values column
+BroadLandUse,Reserve Site,,Accepted Values column
+BroadLandUse,Residential,,Accepted Values column
+BroadLandUse,Residential with Commercial at 1st storey,,Accepted Values column
+BroadLandUse,Residential/Institution,,Accepted Values column
+BroadLandUse,Road,,Accepted Values column
+BroadLandUse,Special Use,,Accepted Values column
+BroadLandUse,Sports & Recreation,,Accepted Values column
+BroadLandUse,Transport Facilities,,Accepted Values column
+BroadLandUse,Utility,,Accepted Values column
+BroadLandUse,Waterbody,,Accepted Values column
+BroadLandUse,White,,Accepted Values column
+ConstructionMethod,Precast,,Accepted Values column
+ConstructionMethod,Prefab,,Accepted Values column
+ConstructionMethod,CIS,,Accepted Values column
+ConstructionMethod_HouseholdShelter,CIS,,Accepted Values column
+ConstructionMethod_HouseholdShelter,PC,,Accepted Values column
+ConstructionMethod_HouseholdShelter,PT (Pre),,Accepted Values column
+ConstructionMethod_HouseholdShelter,PT (Post),,Accepted Values column
+ConstructionMethod_HouseholdShelter,PF,,Accepted Values column
+ConstructionMethod_HouseholdShelter,PPVC,,Accepted Values column
+ConstructionMethod_HouseholdShelter,Spun,,Accepted Values column
+ConstructionMethod_PrefabricatedBuildingSystemsandMEPComponents,Prefabricated,,Accepted Values column
+ConstructionMethod_PrefabSpace,Prefab,,Accepted Values column
+ConstructionMethod_PrefabSpace,CIS,,Accepted Values column
+ConstructionMethod_PrefabSpace,PC,,Accepted Values column
+ConstructionMethod_PrefabSpace,PBU,,Accepted Values column
+EmergencyVoiceCommunicationSystem,1-way EVC System,,Accepted Values column
+EmergencyVoiceCommunicationSystem,2-way EVC System,,Accepted Values column
+EmergencyVoiceCommunicationSystem,Public Address System,,Accepted Values column
+FireDetectionAndSuppressionSystem,Automatic Fire Alarm System,,Accepted Values column
+FireDetectionAndSuppressionSystem,Automatic Sprinkler System,,Accepted Values column
+FireDetectionAndSuppressionSystem,Water Mist System,,Accepted Values column
+FireDetectionAndSuppressionSystem,Video Image Fire Detector System,,Accepted Values column
+FireDetectionAndSuppressionSystem,Kitchen Hood Fire Extinguishing System,,Accepted Values column
+FireDetectionAndSuppressionSystem,Clean Agent Fire Extinguishing System,,Accepted Values column
+FireDetectionAndSuppressionSystem,Automatic Foam Sprinkler System,,Accepted Values column
+FireDetectionAndSuppressionSystem,Foam Extinguisher System,,Accepted Values column
+FireEmergencyVentilationMode,Natural Ventilation,,Accepted Values column
+FireEmergencyVentilationMode,Mechanical Ventilation,,Accepted Values column
+FireEmergencyVentilationMode,Pressurisation,,Accepted Values column
+FireEmergencyVentilationMode,Cross-ventilation,,Accepted Values column
+FireEmergencyVentilationMode,Cross-ventilation with Intermediate Ventilation Opening,,Accepted Values column
+FireEmergencyVentilationMode,Vapour Extraction System (for spray painting room),,Accepted Values column
+FireRating,0.5,,Accepted Values column
+FireRating,1,,Accepted Values column
+FireRating,1.5,,Accepted Values column
+FireRating,2,,Accepted Values column
+FireRating,2.5,,Accepted Values column
+FireRating,3,,Accepted Values column
+FireRating,3.5,,Accepted Values column
+FireRating,4,,Accepted Values column
+LeftConnectionType,Pinned,,Accepted Values column
+LeftConnectionType,Fixed,,Accepted Values column
+LeftConnectionType,Free,,Accepted Values column
+LoadingCapacity,24,,Accepted Values column
+LoadingCapacity,30,,Accepted Values column
+LoadingCapacity,50,,Accepted Values column
+MaterialGrade,C12/15,,Accepted Values column
+MaterialGrade,C20/25,,Accepted Values column
+MaterialGrade,C30/37,,Accepted Values column
+MaterialGrade,C32/40,,Accepted Values column
+MaterialGrade,C35/45,,Accepted Values column
+MaterialGrade,C40/50,,Accepted Values column
+MaterialGrade,C50/60,,Accepted Values column
+MaterialGrade,C55/67,,Accepted Values column
+MaterialGrade,C60/75,,Accepted Values column
+MaterialGrade,C70/85,,Accepted Values column
+MaterialGrade,C80/95,,Accepted Values column
+MaterialGrade,S235,,Accepted Values column
+MaterialGrade,S275,,Accepted Values column
+MaterialGrade,S355,,Accepted Values column
+MaterialGrade,S460,,Accepted Values column
+MechanicalConnectionType,telescopic beam connector,,Accepted Values column
+MechanicalConnectionType,grounted sleeves,,Accepted Values column
+MechanicalConnectionType,lotus-root system,,Accepted Values column
+MechanicalConnectionType_Column,column shoes,,Accepted Values column
+MechanicalConnectionType_Column,grouted sleeves,,Accepted Values column
+MechanicalConnectionType_Column,spiral connector,,Accepted Values column
+MechanicalConnectionType_Wall,grouted sleeves,,Accepted Values column
+MechanicalConnectionType_Wall,spiral connector,,Accepted Values column
+MechanicalConnectionType_Wall,flexible loops,,Accepted Values column
+OccupancyType,Single dwelling residential,,Space Values sheet
+OccupancyType,Multi-unit residential,,Space Values sheet
+OccupancyType,Supervisory care facility,,Space Values sheet
+OccupancyType,Supervisory care facility (detention),,Space Values sheet
+OccupancyType,Nursing care facilities,,Space Values sheet
+OccupancyType,Hospital without A&E services,,Space Values sheet
+OccupancyType,Hospital with A&E services,,Space Values sheet
+OccupancyType,Ambulatory care facility,,Space Values sheet
+OccupancyType,Ambulatory care facility (standalone),,Space Values sheet
+OccupancyType,Custodian care facility,,Space Values sheet
+OccupancyType,Custodian care facility (nursery),,Space Values sheet
+OccupancyType,Primary school,,Space Values sheet
+OccupancyType,Secondary school,,Space Values sheet
+OccupancyType,Tertiary education institution,,Space Values sheet
+OccupancyType,Public education institution,,Space Values sheet
+OccupancyType,Private education institution,,Space Values sheet
+OccupancyType,Tuition center,,Space Values sheet
+OccupancyType,Workers dormitory,,Space Values sheet
+OccupancyType,Office,,Space Values sheet
+OccupancyType,Telephone exchange/ central office,,Space Values sheet
+OccupancyType,Factory office,,Space Values sheet
+OccupancyType,Shop,,Space Values sheet
+OccupancyType,ODA,,Space Values sheet
+OccupancyType,Outpatient clinic,,Space Values sheet
+OccupancyType,Polyclinic,,Space Values sheet
+OccupancyType,Market,,Space Values sheet
+OccupancyType,Temporary showflat,,Space Values sheet
+OccupancyType,Factory showroom,,Space Values sheet
+OccupancyType,Petrol station,,Space Values sheet
+OccupancyType,Factory,,Space Values sheet
+OccupancyType,Food production factory,,Space Values sheet
+OccupancyType,M&E area,,Space Values sheet
+OccupancyType,Wafer fabrication plant,,Space Values sheet
+OccupancyType,Trade effluent treatment plant,,Space Values sheet
+OccupancyType,Waste management and recycling,,Space Values sheet
+OccupancyType,Embalming facility,,Space Values sheet
+OccupancyType,Agriculture,,Space Values sheet
+OccupancyType,Animal related facility,,Space Values sheet
+OccupancyType,High containment facility,,Space Values sheet
+OccupancyType,Electrical and gas facility,,Space Values sheet
+OccupancyType,Body treatment place,,Space Values sheet
+OccupancyType,Entertainment place,,Space Values sheet
+OccupancyType,Assembly place,,Space Values sheet
+OccupancyType,Cinema,,Space Values sheet
+OccupancyType,Recreational place,,Space Values sheet
+OccupancyType,Sky terrace,,Space Values sheet
+OccupancyType,F&B outlet,,Space Values sheet
+OccupancyType,Fast food outlet,,Space Values sheet
+OccupancyType,ORA,,Space Values sheet
+OccupancyType,Food centre,,Space Values sheet
+OccupancyType,Educational place,,Space Values sheet
+OccupancyType,Serviced apartment,,Space Values sheet
+OccupancyType,Hostel,,Space Values sheet
+OccupancyType,Hotel,,Space Values sheet
+OccupancyType,Backpacker hotel,,Space Values sheet
+OccupancyType,Capsule hotel,,Space Values sheet
+OccupancyType,Community club,,Space Values sheet
+OccupancyType,Social club,,Space Values sheet
+OccupancyType,Religious place,,Space Values sheet
+OccupancyType,Park,,Space Values sheet
+OccupancyType,Sports facility,,Space Values sheet
+OccupancyType,Sports facility (ancillary),,Space Values sheet
+OccupancyType,Residential amenities,,Space Values sheet
+OccupancyType,Train interchange station,,Space Values sheet
+OccupancyType,Train station,,Space Values sheet
+OccupancyType,Airport,,Space Values sheet
+OccupancyType,Ferry terminal,,Space Values sheet
+OccupancyType,Bus interchange,,Space Values sheet
+OccupancyType,Bus terminal,,Space Values sheet
+OccupancyType,Rail depot,,Space Values sheet
+OccupancyType,Bus depot,,Space Values sheet
+OccupancyType,Parking,,Space Values sheet
+OccupancyType,FAMCP,,Space Values sheet
+OccupancyType,Warehouse,,Space Values sheet
+OccupancyType,Chemical/ hazmat storage,,Space Values sheet
+OccupancyType,Storage,,Space Values sheet
+OccupancyType,Airbase,,Space Values sheet
+OccupancyType,Live firing area,,Space Values sheet
+OccupancyType,Training area,,Space Values sheet
+OccupancyType,Road tunnel,,Space Values sheet
+OccupancyType,Campsite,,Space Values sheet
+OccupancyType,Wet play field,,Space Values sheet
+OccupancyType,Reservoir,,Space Values sheet
+OccupancyType,River,,Space Values sheet
+OccupancyType,Canal,,Space Values sheet
+OccupancyType,Major drain,,Space Values sheet
+OccupancyType,Pond,,Space Values sheet
+OccupancyType,Lake,,Space Values sheet
+OccupancyType,Other waterbody,,Space Values sheet
+OccupancyType,Nature reserve,,Space Values sheet
+OccupancyType,Nature area,,Space Values sheet
+OccupancyType,School field,,Space Values sheet
+OccupancyType,Promenade,,Space Values sheet
+OccupancyType,Marina,,Space Values sheet
+OccupancyType,Quarry,,Space Values sheet
+PileType,Driven,,Accepted Values column
+PileType,Bored,,Accepted Values column
+PileType,Jacked in,,Accepted Values column
+ProjectDevelopmentType,Residential (landed),,Accepted Values column
+ProjectDevelopmentType,Residential (non-landed),,Accepted Values column
+ProjectDevelopmentType,Mixed Development,,Accepted Values column
+ProjectDevelopmentType,Commercial,,Accepted Values column
+ProjectDevelopmentType,Industrial,,Accepted Values column
+ProjectDevelopmentType,Healthcare,,Accepted Values column
+ProjectDevelopmentType,Institutional,,Accepted Values column
+ProjectDevelopmentType,Agriculture,,Accepted Values column
+ProjectDevelopmentType,Transport Stations,,Accepted Values column
+ProjectDevelopmentType,Civil engineering works / Infrastructure,,Accepted Values column
+ProjectDevelopmentType,Free-standing structures,,Accepted Values column
+ProjectDevelopmentType,Others,,Accepted Values column
+ReinforcementSteelGrade,500A,,Accepted Values column
+ReinforcementSteelGrade,500B,,Accepted Values column
+ReinforcementSteelGrade,500C,,Accepted Values column
+ReinforcementSteelGrade,600A,,Accepted Values column
+ReinforcementSteelGrade,600B,,Accepted Values column
+ReinforcementSteelGrade,600C,,Accepted Values column
+SectionFabricationMethod,Hot rolled,,Accepted Values column
+SectionFabricationMethod,Cold formed,,Accepted Values column
+SlabType,One way,,Accepted Values column
+SlabType,Two way,,Accepted Values column
+SlabType,Cantilever,,Accepted Values column
+SlabType,Flat slab,,Accepted Values column
+SlabType,Flat slab with drop panel,,Accepted Values column
+SlabType,Transfer slab,,Accepted Values column
+SmokeControlSystem,Smoke Vent,,Accepted Values column
+SmokeControlSystem,Smoke Purging System,,Accepted Values column
+SmokeControlSystem,Ductless Jet Fan System,,Accepted Values column
+SmokeControlSystem,Engineered Smoke Control System,,Accepted Values column
+SpaceName,Balcony,,Space Values sheet
+SpaceName,Bedroom,,Space Values sheet
+SpaceName,Master Bedroom,,Space Values sheet
+SpaceName,Maid Room,,Space Values sheet
+SpaceName,Guestroom,,Space Values sheet
+SpaceName,Bathroom,,Space Values sheet
+SpaceName,Master Bath,,Space Values sheet
+SpaceName,Maid Bath,,Space Values sheet
+SpaceName,Yard Bath,,Space Values sheet
+SpaceName,Dining Room,,Space Values sheet
+SpaceName,Dining Area,,Space Values sheet
+SpaceName,Household Shelter,,Space Values sheet
+SpaceName,Kitchen,,Space Values sheet
+SpaceName,Living Room,,Space Values sheet
+SpaceName,Living Area,,Space Values sheet
+SpaceName,Loft,,Space Values sheet
+SpaceName,Private Lift Lobby,,Space Values sheet
+SpaceName,Private Enclosed Space,,Space Values sheet
+SpaceName,Service Yard,,Space Values sheet
+SpaceName,Study,,Space Values sheet
+SpaceName,Toilet,,Space Values sheet
+SpaceName,Walk-In Wardrobe,,Space Values sheet
+SpaceName,Staff Quarters,,Space Values sheet
+SpaceName,Student Bedroom Individual,,Space Values sheet
+SpaceName,Student Bedroom Multipax,,Space Values sheet
+SpaceName,Housekeeping,,Space Values sheet
+SpaceName,Isolation Ward Toilet,,Space Values sheet
+SpaceName,Accessible Washroom,,Space Values sheet
+SpaceName,Male Toilet,,Space Values sheet
+SpaceName,Female Toilet,,Space Values sheet
+SpaceName,Unisex Toilet,,Space Values sheet
+SpaceName,Common Toilet,,Space Values sheet
+SpaceName,Individual Family Washroom,,Space Values sheet
+SpaceName,Washroom With Shower,,Space Values sheet
+SpaceName,Powder Room,,Space Values sheet
+SpaceName,Accessible Changing Room,,Space Values sheet
+SpaceName,Changing Room,,Space Values sheet
+SpaceName,Female Changing Room,,Space Values sheet
+SpaceName,Male Changing Room,,Space Values sheet
+SpaceName,Nursing Room,,Space Values sheet
+SpaceName,Locker Room,,Space Values sheet
+SpaceName,Restroom,,Space Values sheet
+SpaceName,Lactation Room,,Space Values sheet
+SpaceName,Sick Room,,Space Values sheet
+SpaceName,Male Shower Room,,Space Values sheet
+SpaceName,Female Shower Room,,Space Values sheet
+SpaceName,Shower Stall,,Space Values sheet
+SpaceName,Wash Area,,Space Values sheet
+SpaceName,Archive Room (Reading),,Space Values sheet
+SpaceName,Archive Room (Stack),,Space Values sheet
+SpaceName,Ball Room,,Space Values sheet
+SpaceName,Banking Hall,,Space Values sheet
+SpaceName,Bazaar,,Space Values sheet
+SpaceName,Business Centre,,Space Values sheet
+SpaceName,Business Office,,Space Values sheet
+SpaceName,Cashier,,Space Values sheet
+SpaceName,Classroom,,Space Values sheet
+SpaceName,Clean Room,,Space Values sheet
+SpaceName,Computer Classroom,,Space Values sheet
+SpaceName,Common Room,,Space Values sheet
+SpaceName,Computer Room,,Space Values sheet
+SpaceName,Concierge,,Space Values sheet
+SpaceName,Conference Room,,Space Values sheet
+SpaceName,Consultant Room,,Space Values sheet
+SpaceName,Crematoria,,Space Values sheet
+SpaceName,Dance Studio,,Space Values sheet
+SpaceName,Department Store,,Space Values sheet
+SpaceName,Design Studio,,Space Values sheet
+SpaceName,Detention Room,,Space Values sheet
+SpaceName,Exposition,,Space Values sheet
+SpaceName,Trade Fair Area,,Space Values sheet
+SpaceName,Filing Room,,Space Values sheet
+SpaceName,Store,,Space Values sheet
+SpaceName,Fire Command Centre,,Space Values sheet
+SpaceName,Function Room,,Space Values sheet
+SpaceName,Exhibits Gallery,,Space Values sheet
+SpaceName,Choir Gallery,,Space Values sheet
+SpaceName,Prayer Gallery,,Space Values sheet
+SpaceName,Seating Gallery,,Space Values sheet
+SpaceName,Trading Gallery,,Space Values sheet
+SpaceName,Viewing Gallery,,Space Values sheet
+SpaceName,Guard House,,Space Values sheet
+SpaceName,Hobby Room,,Space Values sheet
+SpaceName,Kiosk,,Space Values sheet
+SpaceName,Laboratory,,Space Values sheet
+SpaceName,Laundry,,Space Values sheet
+SpaceName,Library Room (Stack),,Space Values sheet
+SpaceName,Library Room (Reading),,Space Values sheet
+SpaceName,Lounge,,Space Values sheet
+SpaceName,Machine/Printing Room,,Space Values sheet
+SpaceName,Mailroom,,Space Values sheet
+SpaceName,Meeting Room,,Space Values sheet
+SpaceName,Music Studio,,Space Values sheet
+SpaceName,Night Club,,Space Values sheet
+SpaceName,Admin Office,,Space Values sheet
+SpaceName,General Office,,Space Values sheet
+SpaceName,Ancillary Office,,Space Values sheet
+SpaceName,Director Office,,Space Values sheet
+SpaceName,Manager Office,,Space Values sheet
+SpaceName,Drafting Office,,Space Values sheet
+SpaceName,Outdoor Display Area,,Space Values sheet
+SpaceName,Packing Area,,Space Values sheet
+SpaceName,Distribution Area,,Space Values sheet
+SpaceName,Pantry,,Space Values sheet
+SpaceName,Prayer Hall,,Space Values sheet
+SpaceName,Prayer Room,,Space Values sheet
+SpaceName,Male Prayer Room,,Space Values sheet
+SpaceName,Female Prayer Room,,Space Values sheet
+SpaceName,Pre-Function Room,,Space Values sheet
+SpaceName,Production Area,,Space Values sheet
+SpaceName,Promotion Area,,Space Values sheet
+SpaceName,Reading Room,,Space Values sheet
+SpaceName,Reception Area,,Space Values sheet
+SpaceName,Seminar Room,,Space Values sheet
+SpaceName,Security Room,,Space Values sheet
+SpaceName,Service Area,,Space Values sheet
+SpaceName,Shed,,Space Values sheet
+SpaceName,Shop,,Space Values sheet
+SpaceName,Showflat,,Space Values sheet
+SpaceName,Showroom,,Space Values sheet
+SpaceName,Society Room,,Space Values sheet
+SpaceName,Spray Painting Room,,Space Values sheet
+SpaceName,Staff Office,,Space Values sheet
+SpaceName,Staff Lounge,,Space Values sheet
+SpaceName,Supermarket,,Space Values sheet
+SpaceName,Therapy Centre,,Space Values sheet
+SpaceName,Ticketing Office,,Space Values sheet
+SpaceName,Trading Floor,,Space Values sheet
+SpaceName,Visitors Lounge,,Space Values sheet
+SpaceName,Waiting Area,,Space Values sheet
+SpaceName,Workshop,,Space Values sheet
+SpaceName,Bar,,Space Values sheet
+SpaceName,Pub,,Space Values sheet
+SpaceName,Café,,Space Values sheet
+SpaceName,Cafeteria,,Space Values sheet
+SpaceName,Canteen,,Space Values sheet
+SpaceName,Food Stall,,Space Values sheet
+SpaceName,Service Counter,,Space Values sheet
+SpaceName,Restaurant,,Space Values sheet
+SpaceName,Snack Bar,,Space Values sheet
+SpaceName,Staff Canteen,,Space Values sheet
+SpaceName,Area Of Refuge,,Space Values sheet
+SpaceName,Clinic,,Space Values sheet
+SpaceName,Consultation Room,,Space Values sheet
+SpaceName,Examination Room,,Space Values sheet
+SpaceName,Surgical Viewing Gallery,,Space Values sheet
+SpaceName,Nurse Station,,Space Values sheet
+SpaceName,Operation Theatre,,Space Values sheet
+SpaceName,Outpatient Waiting Area,,Space Values sheet
+SpaceName,Patient Accommodation Intensive Care,,Space Values sheet
+SpaceName,Patient Accommodation Ward,,Space Values sheet
+SpaceName,Isolation Ward,,Space Values sheet
+SpaceName,Pharmacy Staff Area,,Space Values sheet
+SpaceName,Pharmacy Waiting Area,,Space Values sheet
+SpaceName,Treatment Room,,Space Values sheet
+SpaceName,Amphitheatre,,Space Values sheet
+SpaceName,Amphitheatre Without Fixed Seating,,Space Values sheet
+SpaceName,Auditorium,,Space Values sheet
+SpaceName,Auditorium Without Fixed Seating,,Space Values sheet
+SpaceName,Cinema,,Space Values sheet
+SpaceName,Cinema Without Fixed Seating,,Space Values sheet
+SpaceName,Grandstand,,Space Values sheet
+SpaceName,Grandstand Without Fixed Seating,,Space Values sheet
+SpaceName,Assembly Hall,,Space Values sheet
+SpaceName,Assembly Hall Without Fixed Seating,,Space Values sheet
+SpaceName,Concert Hall,,Space Values sheet
+SpaceName,Concert Hall Without Fixed Seating,,Space Values sheet
+SpaceName,Exhibition Hall,,Space Values sheet
+SpaceName,Exhibition Hall Without Fixed Seating,,Space Values sheet
+SpaceName,Conference Hall,,Space Values sheet
+SpaceName,Conference Hall Without Fixed Seating,,Space Values sheet
+SpaceName,Function Hall,,Space Values sheet
+SpaceName,Function Hall Without Fixed Seating,,Space Values sheet
+SpaceName,Lecture Room,,Space Values sheet
+SpaceName,Lecture Room Without Fixed Seating,,Space Values sheet
+SpaceName,Spectator Area,,Space Values sheet
+SpaceName,Spectator Area Without Fixed Seating,,Space Values sheet
+SpaceName,Theatre,,Space Values sheet
+SpaceName,Theatre Without Fixed Seating,,Space Values sheet
+SpaceName,Indoor Sport Hall,,Space Values sheet
+SpaceName,Multi-Purpose Hall,,Space Values sheet
+SpaceName,Multi-Purpose Room,,Space Values sheet
+SpaceName,Multi-Purpose Sports Hall,,Space Values sheet
+SpaceName,Audio Visual Area,,Space Values sheet
+SpaceName,Audio Visual Control Room,,Space Values sheet
+SpaceName,Audio Visual Lighting Control Room,,Space Values sheet
+SpaceName,Live Entertainment,,Space Values sheet
+SpaceName,Live Performance,,Space Values sheet
+SpaceName,Orchestral Pit,,Space Values sheet
+SpaceName,Projection Room,,Space Values sheet
+SpaceName,Back Stage,,Space Values sheet
+SpaceName,Front Stage,,Space Values sheet
+SpaceName,Amusement Park,,Space Values sheet
+SpaceName,Billiards Room,,Space Values sheet
+SpaceName,Body Massage,,Space Values sheet
+SpaceName,Bowling Alley,,Space Values sheet
+SpaceName,Bowling Lane,,Space Values sheet
+SpaceName,Casino,,Space Values sheet
+SpaceName,Children Playground,,Space Values sheet
+SpaceName,Water Playground,,Space Values sheet
+SpaceName,Interactive Water Fountain,,Space Values sheet
+SpaceName,Club Room,,Space Values sheet
+SpaceName,Discotheque Dancing Area,,Space Values sheet
+SpaceName,Discotheque Dining Area,,Space Values sheet
+SpaceName,Hockey Field,,Space Values sheet
+SpaceName,Hockey Pitch,,Space Values sheet
+SpaceName,Rugby Field,,Space Values sheet
+SpaceName,Rugby Pitch,,Space Values sheet
+SpaceName,Soccer Field,,Space Values sheet
+SpaceName,Soccer Pitch,,Space Values sheet
+SpaceName,Fitness Corner,,Space Values sheet
+SpaceName,Foot Reflexology,,Space Values sheet
+SpaceName,Fitness Club,,Space Values sheet
+SpaceName,Fitness Centre,,Space Values sheet
+SpaceName,Gaming Centre,,Space Values sheet
+SpaceName,Gymnasium,,Space Values sheet
+SpaceName,Health Club,,Space Values sheet
+SpaceName,Health Centre,,Space Values sheet
+SpaceName,Indoor Games Room,,Space Values sheet
+SpaceName,Karaoke Lounge,,Space Values sheet
+SpaceName,Karaoke Dining Area,,Space Values sheet
+SpaceName,Recreation Room,,Space Values sheet
+SpaceName,Refreshmen Area,,Space Values sheet
+SpaceName,Skating Rink,,Space Values sheet
+SpaceName,Skating Rink - Spectator Area,,Space Values sheet
+SpaceName,Spa,,Space Values sheet
+SpaceName,Hot Tub,,Space Values sheet
+SpaceName,Jacuzzi,,Space Values sheet
+SpaceName,Badminton Court,,Space Values sheet
+SpaceName,Basketball Court,,Space Values sheet
+SpaceName,Basketball Half Court,,Space Values sheet
+SpaceName,Futsal Court,,Space Values sheet
+SpaceName,Netball Court,,Space Values sheet
+SpaceName,Netball Half Court,,Space Values sheet
+SpaceName,Sepak Takraw Court,,Space Values sheet
+SpaceName,Squash Court,,Space Values sheet
+SpaceName,Tennis Court,,Space Values sheet
+SpaceName,Tennis Half Court,,Space Values sheet
+SpaceName,Volleyball Court,,Space Values sheet
+SpaceName,Swimming Pool,,Space Values sheet
+SpaceName,Wading Pool,,Space Values sheet
+SpaceName,Lap Pool,,Space Values sheet
+SpaceName,Family Pool,,Space Values sheet
+SpaceName,Kids Pool,,Space Values sheet
+SpaceName,Leisure Pool,,Space Values sheet
+SpaceName,Spa Pool,,Space Values sheet
+SpaceName,Hydrotherapy Pool,,Space Values sheet
+SpaceName,Swimming Pool Deck,,Space Values sheet
+SpaceName,Training Area,,Space Values sheet
+SpaceName,Backyard,,Space Values sheet
+SpaceName,Courtyard,,Space Values sheet
+SpaceName,Outdoor Refreshment Area,,Space Values sheet
+SpaceName,Pavilion,,Space Values sheet
+SpaceName,Roof,,Space Values sheet
+SpaceName,Green Roof (public),,Space Values sheet
+SpaceName,Green Roof (access for maintenance only),,Space Values sheet
+SpaceName,Private Roof Garden,,Space Values sheet
+SpaceName,Jogging Track,,Space Values sheet
+SpaceName,Footpath,,Space Values sheet
+SpaceName,Sunken Planting Area,,Space Values sheet
+SpaceName,Roof Garden,,Space Values sheet
+SpaceName,Garden,,Space Values sheet
+SpaceName,Battery Room,,Space Values sheet
+SpaceName,Cooling Tower,,Space Values sheet
+SpaceName,Equipment Disinfection Room,,Space Values sheet
+SpaceName,Equipment Washing Bay,,Space Values sheet
+SpaceName,Lubrication Bay,,Space Values sheet
+SpaceName,Pulley Room,,Space Values sheet
+SpaceName,Mechnical Plant Room,,Space Values sheet
+SpaceName,AC Plant Room,,Space Values sheet
+SpaceName,AHU Room,,Space Values sheet
+SpaceName,Boiler Room,,Space Values sheet
+SpaceName,Boiler Room (Oil Fired),,Space Values sheet
+SpaceName,Chiller Room,,Space Values sheet
+SpaceName,Discharge Valve Chamber,,Space Values sheet
+SpaceName,Electric Lift Motor Room,,Space Values sheet
+SpaceName,Electrical Room,,Space Values sheet
+SpaceName,Essential Fan Room,,Space Values sheet
+SpaceName,Fire Pump Room,,Space Values sheet
+SpaceName,Balancing Pump Room,,Space Values sheet
+SpaceName,Domestic Pump Room,,Space Values sheet
+SpaceName,Irrigation Pump Room,,Space Values sheet
+SpaceName,Portable Water Pump Room,,Space Values sheet
+SpaceName,Sprinkler Pump Room,,Space Values sheet
+SpaceName,Pumped Sanitary System Room,,Space Values sheet
+SpaceName,Pumped Drainage System Room,,Space Values sheet
+SpaceName,Ejector Room,,Space Values sheet
+SpaceName,Emergency Generator Room,,Space Values sheet
+SpaceName,Generator Room,,Space Values sheet
+SpaceName,High Voltage Switch Room,,Space Values sheet
+SpaceName,Hydraulic Lift Motor Room,,Space Values sheet
+SpaceName,Lift Machine Room,,Space Values sheet
+SpaceName,Lift Motor Room,,Space Values sheet
+SpaceName,Low Voltage Switch Room,,Space Values sheet
+SpaceName,Oil Tank Room,,Space Values sheet
+SpaceName,Sprinkler Tank Room,,Space Values sheet
+SpaceName,Telecommunication Room,,Space Values sheet
+SpaceName,Equipment Room,,Space Values sheet
+SpaceName,Transformer Room,,Space Values sheet
+SpaceName,Wet Riser Tank Room,,Space Values sheet
+SpaceName,Electrical Switchgear Room,,Space Values sheet
+SpaceName,PABX Room,,Space Values sheet
+SpaceName,Server Room,,Space Values sheet
+SpaceName,MDF Room,,Space Values sheet
+SpaceName,Mobile Installation Space,,Space Values sheet
+SpaceName,Mobile Deployment Space,,Space Values sheet
+SpaceName,Electronics Parking System Room,,Space Values sheet
+SpaceName,Police Equipment Room,,Space Values sheet
+SpaceName,Vent Room,,Space Values sheet
+SpaceName,Substation,,Space Values sheet
+SpaceName,Meter Compartment,,Space Values sheet
+SpaceName,Domestic Transfer Tank Room,,Space Values sheet
+SpaceName,Hosereel Tank Room,,Space Values sheet
+SpaceName,Hydrant Tank Room,,Space Values sheet
+SpaceName,NEWater Tank Room,,Space Values sheet
+SpaceName,Non-Potable Water Tank Room,,Space Values sheet
+SpaceName,Potable Water Tank Room,,Space Values sheet
+SpaceName,Balancing Tank,,Space Values sheet
+SpaceName,Detention Tank,,Space Values sheet
+SpaceName,Domestic Booster Tank,,Space Values sheet
+SpaceName,Domestic Water Tank,,Space Values sheet
+SpaceName,Hot Water Tank,,Space Values sheet
+SpaceName,Make Up Water Tank,,Space Values sheet
+SpaceName,NEWater Tank,,Space Values sheet
+SpaceName,Pneumatic Tank,,Space Values sheet
+SpaceName,Potable Water Tank,,Space Values sheet
+SpaceName,Rainwater Harvesting Tank,,Space Values sheet
+SpaceName,Irrigation Tank,,Space Values sheet
+SpaceName,Sprinkler Tank,,Space Values sheet
+SpaceName,Refuse Chute Chamber,,Space Values sheet
+SpaceName,Recyclables Chute Chamber,,Space Values sheet
+SpaceName,Refuse Room,,Space Values sheet
+SpaceName,Bin Center,,Space Values sheet
+SpaceName,Bin Point,,Space Values sheet
+SpaceName,Recycling Point,,Space Values sheet
+SpaceName,Main Recycling Point,,Space Values sheet
+SpaceName,Coldroom,,Space Values sheet
+SpaceName,Deposit Room,,Space Values sheet
+SpaceName,Strong Room,,Space Values sheet
+SpaceName,Mortuary,,Space Values sheet
+SpaceName,Storage,,Space Values sheet
+SpaceName,Storeroom,,Space Values sheet
+SpaceName,Warehouse,,Space Values sheet
+SpaceName,Hazardous Waste Storage Area,,Space Values sheet
+SpaceName,Industrial Waste Storage Area,,Space Values sheet
+SpaceName,Driveway,,Space Values sheet
+SpaceName,Garage,,Space Values sheet
+SpaceName,Parking Place,,Space Values sheet
+SpaceName,Vehicle Washing Bay,,Space Values sheet
+SpaceName,Car Lobby,,Space Values sheet
+SpaceName,Loading/Unloading Bay,,Space Values sheet
+SpaceName,Loading/Unloading Platform,,Space Values sheet
+SpaceName,Alighting Point,,Space Values sheet
+SpaceName,Boarding Point,,Space Values sheet
+SpaceName,Drop Off Point,,Space Values sheet
+SpaceName,Bus Stop,,Space Values sheet
+SpaceName,Taxi Bay,,Space Values sheet
+SpaceName,Taxi Shelter,,Space Values sheet
+SpaceName,Atrium,,Space Values sheet
+SpaceName,Concourse,,Space Values sheet
+SpaceName,Foyer,,Space Values sheet
+SpaceName,Passenger Arrival Area,,Space Values sheet
+SpaceName,Passenger Departure Area,,Space Values sheet
+SpaceName,Bed Lift Lobby,,Space Values sheet
+SpaceName,Cargo Lift Lobby,,Space Values sheet
+SpaceName,Goods Lift Lobby,,Space Values sheet
+SpaceName,Common Lobby,,Space Values sheet
+SpaceName,Evacuation Lift Lobby,,Space Values sheet
+SpaceName,Fire Lift Lobby,,Space Values sheet
+SpaceName,Passenger Lift Lobby,,Space Values sheet
+SpaceName,Protected Lobby,,Space Values sheet
+SpaceName,Smoke-Free Lobby,,Space Values sheet
+SpaceName,Service Lift Lobby,,Space Values sheet
+SpaceName,Equipment Platform,,Space Values sheet
+SpaceName,Pedestrian Linkway (with commercial activities),,Space Values sheet
+SpaceName,Pedestrian Linkway (building to Rapid Transit Stations without commercial activities),,Space Values sheet
+SpaceName,Pedestrian Linkway (building to building without commercial activities),,Space Values sheet
+SpaceName,Pedestrian Linkway (standalone type without commercial activities),,Space Values sheet
+SpaceName,Promenade,,Space Values sheet
+SpaceName,Boardwalk,,Space Values sheet
+SpaceName,Through-Block Link,,Space Values sheet
+SpaceName,Access Aisle,,Space Values sheet
+SpaceName,Private Corridor,,Space Values sheet
+SpaceName,Corridor,,Space Values sheet
+SpaceName,External Corridor,,Space Values sheet
+SpaceName,Open Walkway,,Space Values sheet
+SpaceName,Covered Walkway,,Space Values sheet
+SpaceName,Footway,,Space Values sheet
+SpaceName,Pathway,,Space Values sheet
+SpaceName,Veranda,,Space Values sheet
+SpaceName,Void Deck,,Space Values sheet
+SpaceName,External Exit Staircase,,Space Values sheet
+SpaceName,Internal Exit Staircase,,Space Values sheet
+SpaceName,External Exit Passageway,,Space Values sheet
+SpaceName,Internal Exit Passageway,,Space Values sheet
+SpaceName,External Exit Ramp,,Space Values sheet
+SpaceName,Internal Exit Ramp,,Space Values sheet
+SpaceName,Staircase,,Space Values sheet
+SpaceName,Airlock,,Space Values sheet
+SpaceName,Letter Box,,Space Values sheet
+SpaceName,Dry Riser Shaft,,Space Values sheet
+SpaceName,Electrical Shaft,,Space Values sheet
+SpaceName,Gas Shaft,,Space Values sheet
+SpaceName,Ventilation Shaft,,Space Values sheet
+SpaceName,Water Shaft,,Space Values sheet
+SpaceName,Wet Riser Shaft,,Space Values sheet
+SpaceName,Lift Shaft,,Space Values sheet
+SpaceName,Telecommunication Shaft,,Space Values sheet
+SpaceName,Chilled Water Shaft,,Space Values sheet
+SpaceName,Sewerage Shaft,,Space Values sheet
+SpaceName,Exhaust Shaft,,Space Values sheet
+SpaceName,Refuse Chute,,Space Values sheet
+SpaceName,Recyclables Chute,,Space Values sheet
+SpaceName,Household non-Shelter,,Space Values sheet
+SpaceName,Storey Shelter,,Space Values sheet
+SpaceName,Storey non-Shelter,,Space Values sheet
+SpaceName,Staircase Storey Shelter,,Space Values sheet
+SpaceName,Staircase Storey non-Shelter,,Space Values sheet
+SpaceName,Rest Area,,Space Values sheet
+SpaceName,Airwell (non-accessible),,Space Values sheet
+SpaceName_HouseholdShelter,Household Shelter,,Accepted Values column
+SpaceName_HouseholdShelter,Setback,,Accepted Values column
+SpaceName_RefuseChuteRecyclablesChute,Refuse Chute,,Accepted Values column
+SpaceName_RefuseChuteRecyclablesChute,Recyclables Chute,,Accepted Values column
+SpaceName_Room,Parking place,,Accepted Values column
+SpaceName_Staircase,external exit staircase,,Accepted Values column
+SpaceName_Staircase,internal exit staircase,,Accepted Values column
+SpaceName_Staircase,staircase,,Accepted Values column
+SpaceName_Tank,balancing tank,,Accepted Values column
+SpaceName_Tank,detention tank,,Accepted Values column
+SpaceName_Tank,domestic booster tank,,Accepted Values column
+SpaceName_Tank,domestic water tank,,Accepted Values column
+SpaceName_Tank,hot water tank,,Accepted Values column
+SpaceName_Tank,make up water tank,,Accepted Values column
+SpaceName_Tank,NEWater tank,,Accepted Values column
+SpaceName_Tank,pneumatic tank,,Accepted Values column
+SpaceName_Tank,portable water tank,,Accepted Values column
+SpaceName_Tank,rainwater harvesting tank,,Accepted Values column
+SpaceName_Tank,irrigation tank,,Accepted Values column
+SpaceName_Tank,sprinkler tank,,Accepted Values column
+Status,Existing,,Accepted Values column
+Status,Proposed,,Accepted Values column
+Status_DistributionChamber,Existing,,Accepted Values column
+Status_DistributionChamber,Proposed,,Accepted Values column
+Status_DistributionChamber,To Be Removed,,Accepted Values column
+Status_DistributionChamber,Abandoned,,Accepted Values column
+Status_DistributionChamber,New,,Accepted Values column
+Status_DistributionChamber,Temporary,,Accepted Values column
+Status_DistributionChamber,Demolished,,Accepted Values column
+Status_Planting,Existing,,Accepted Values column
+Status_Planting,Proposed,,Accepted Values column
+Status_Planting,To be Removed,,Accepted Values column
+Status_Planting,To be Transplanted,,Accepted Values column
+Status_PlantingAreas,Existing,,Accepted Values column
+Status_PlantingAreas,Proposed,,Accepted Values column
+Status_PlantingAreas,New,,Accepted Values column
+Status_PlantingAreas,To be Removed,,Accepted Values column
+StirrupsTypeLeft,Normal,,Accepted Values column
+StirrupsTypeLeft,U,,Accepted Values column
+StirrupsTypeLeft,C,,Accepted Values column
+StirrupsTypeLeft,CL,,Accepted Values column
+StirrupsTypeLeft,Torsion,,Accepted Values column
+VentilationMode,Natural Ventilation,,Accepted Values column
+VentilationMode,Air Conditioning,,Accepted Values column
+VentilationMode,Mechanical Ventilation,,Accepted Values column

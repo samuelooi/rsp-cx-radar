@@ -142,6 +142,18 @@ const TITLE_CASE = {
 };
 const pretty = (k) => TITLE_CASE[k] || k;
 
+/**
+ * GFA split by use quantum: how much is the predominant use of the
+ * development and how much is ancillary to it (SGPset_SpaceArea_GFA.AGF_UseQuantum).
+ */
+const BY_USE_QUANTUM = {
+  title: 'BY USE QUANTUM',
+  get: (el) => {
+    const v = getValue(el, 'SGPset_SpaceArea_GFA', 'AGF_UseQuantum');
+    return v === undefined || v === null || String(v).trim() === '' ? '(not set)' : String(v).trim();
+  },
+};
+
 // --------------------------------------------------------------- metric specs
 
 /**
@@ -163,6 +175,7 @@ export const METRICS = [
     whereProp: 'AVF_IncludeAsGFA',
     whereLabel: 'AVF_IncludeAsGFA = True',
     measure: SPACE_AREA,
+    groupBy: BY_USE_QUANTUM,
     source: 'IfcSpace · ObjectType AREA_GFA · SGPset_SpaceArea_Verification.AVF_IncludeAsGFA',
   },
   {
@@ -284,6 +297,7 @@ export function computeDashboard(index, modelNames = new Map()) {
     const byFile = new Map();
     const byLevel = new Map();
     const byType = new Map();
+    const byGroup = new Map();
     const sources = new Set();
 
     let total = 0;
@@ -304,6 +318,7 @@ export function computeDashboard(index, modelNames = new Map()) {
       if (spec.splitByType) {
         addTo(byType, pretty(subtypeOf(el, spec.splitByType) || 'Other'), v, 1, el);
       }
+      if (spec.groupBy) addTo(byGroup, spec.groupBy.get(el), v, 1, el);
       (spec.subtotals || []).forEach((s, i) => {
         if (s.when(el)) { subtotals[i].value += v; subtotals[i].count++; }
       });
@@ -346,6 +361,9 @@ export function computeDashboard(index, modelNames = new Map()) {
       valueSources: [...sources],
       subtotals,
       byType: [...byType.values()].sort(byValueDesc),
+      // A breakdown by one property's value, e.g. GFA by use quantum.
+      groupTitle: spec.groupBy ? spec.groupBy.title : null,
+      byGroup: [...byGroup.values()].sort(byValueDesc),
       byFile: [...byFile.values()].sort(byValueDesc),
       byLevel: [...byLevel.values()].sort(byValueDesc),
       elements,

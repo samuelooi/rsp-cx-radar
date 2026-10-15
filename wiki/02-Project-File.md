@@ -96,9 +96,9 @@ decides.
   **Open…** uses the picker. **Save** writes in place once a location is
   chosen; **Save as…** picks another. The amber dot means unsaved changes.
 - **Drop** a project file on the window, alone or with the IFCs.
-- The **start card** lists the five most recent projects and restores the last
-  one automatically on the next visit (kept in browser storage, stripped to
-  what fits).
+- The **last project used** is restored automatically on the next visit (kept
+  in browser storage, stripped to what fits). The start card offers **Open
+  project file…** and **New project**.
 - Leaving the page with unsaved changes prompts.
 
 ## Design notes

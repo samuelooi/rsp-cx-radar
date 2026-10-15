@@ -543,7 +543,7 @@ export class IfcEditor {
     const text = header + (header.trim().endsWith('ENDSEC;') ? '' : 'ENDSEC;\n') +
       'DATA;\n' + changed.map((c) => c.text).join('\n') + '\nENDSEC;\nEND-ISO-10303-21;\n';
     const api = new WebIFC.IfcAPI();
-    api.SetWasmPath(wasmPath);
+    api.SetWasmPath(wasmPath, true);
     await api.Init();
     let modelID = -1;
     try {

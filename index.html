@@ -142,32 +142,20 @@
   }
   .project-panel .pp-actions .spacer { flex: 1; }
 
-  /* Start card: open, create or resume a project before any model is loaded. */
+  /* Start card: open or create a project before any model is loaded. */
   .start-projects { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--border); text-align: left; }
   .start-projects .sp-row { display: flex; gap: 8px; justify-content: center; }
   .start-projects .sp-row .btn { margin: 0; }
-  .start-projects .sp-recent { display: grid; grid-template-columns: 1fr auto; gap: 4px 6px; margin-top: 14px; align-items: center; }
-  .start-projects .sp-recent > span { grid-column: 1 / -1; font-size: 10.5px; letter-spacing: .04em; color: var(--text-dim); }
-  .start-projects .sp-item {
-    display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
-    font: inherit; font-size: 12.5px; color: var(--text); text-align: left;
-    background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 6px 10px; cursor: pointer;
-  }
-  .start-projects .sp-item:hover { border-color: var(--accent); }
-  .start-projects .sp-item small { color: var(--text-dim); white-space: nowrap; }
-  .start-projects .sp-forget {
-    background: none; border: none; color: var(--text-dim); font-size: 14px; cursor: pointer; padding: 2px 5px;
-  }
-  .start-projects .sp-forget:hover { color: var(--text); }
 
-  .ruleset-badge {
-    font-size: 11px; color: var(--text-dim);
-    border: 1px solid var(--border); border-radius: 999px;
-    padding: 3px 9px; white-space: nowrap;
+  /* The open top-bar panel's button stays lit, like the pickers beside it. */
+  #btn-dash.active { background: var(--accent-dim); border-color: var(--accent); }
+  /* "Add IFC file" at the foot of the loaded-models list. */
+  .models-menu .m-add {
+    display: flex; align-items: center; gap: 7px; width: 100%;
+    padding: 8px 10px; background: none; border: none; border-top: 1px solid var(--border);
+    color: var(--accent); font: inherit; font-size: 12px; text-align: left; cursor: pointer;
   }
-  .ruleset-badge b { color: var(--text-muted); font-weight: 600; }
-  .ruleset-badge.err { border-color: var(--danger); color: var(--danger); }
+  .models-menu .m-add:hover { background: var(--panel-2); color: var(--text); }
 
   /* Memory meter: estimated tab memory against the session budget. */
   .mem {
@@ -206,9 +194,9 @@
     background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
     z-index: 20; display: flex; flex-direction: column; overflow: hidden;
   }
-  #left.collapsed { width: 40px; }
-  #left.collapsed > *:not(.tabs) { display: none; }
-  #left.collapsed .tabs button span { display: none; }
+  /* Folded away entirely: the rail's first button brings it back. (The tab
+     bodies carry inline display styles, so hiding children would not stick.) */
+  #left.collapsed { display: none; }
 
   .tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .tabs button {
@@ -614,7 +602,7 @@
 
   /* ---------- Right info panel ---------- */
   #panel {
-    position: absolute; top: 60px; right: 12px; width: 300px;
+    position: absolute; top: 60px; right: 12px; width: 360px; min-width: 280px; max-width: calc(100vw - 420px);
     max-height: calc(100vh - 84px);
     background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
     z-index: 20; display: none; flex-direction: column; overflow: hidden;
@@ -630,25 +618,31 @@
     font-size: 15px; line-height: 1; padding: 2px 4px;
   }
   #panel .panel-close:hover { color: var(--text); }
-  #panel .panel-body { padding: 12px; overflow-y: auto; font-size: 12.5px; }
+  #panel .panel-body { padding: 12px; overflow-y: auto; overflow-x: hidden; font-size: 12.5px; }
+  /* Drag the left edge to widen the panel for long property names. */
+  #panel .panel-resize {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 6px; cursor: ew-resize; z-index: 1;
+  }
+  #panel .panel-resize:hover, #panel.resizing .panel-resize { background: var(--accent-dim); }
+  #panel.resizing { user-select: none; }
 
   .prop-type { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
   .prop-id {
     font-family: "SFMono-Regular", ui-monospace, Menlo, monospace;
     font-size: 11px; color: var(--accent); margin-bottom: 12px;
   }
-  .prop-row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-top: 1px solid var(--border); }
-  .prop-row .k { color: var(--text-muted); flex-shrink: 0; }
-  .prop-row .v { text-align: right; word-break: break-word; }
+  .prop-row { display: flex; align-items: baseline; gap: 10px; padding: 5px 0; border-top: 1px solid var(--border); }
+  .prop-row .k { color: var(--text-muted); flex: 0 1 auto; max-width: 48%; min-width: 0; overflow-wrap: anywhere; }
+  .prop-row .v { flex: 1 1 0; min-width: 0; text-align: right; overflow-wrap: anywhere; }
   .sec-head {
     font-size: 10.5px; letter-spacing: .06em; color: var(--text-dim);
     margin: 14px 0 4px; padding-top: 10px; border-top: 1px solid var(--border);
   }
   .pset-name { font-size: 11.5px; color: var(--accent); margin: 9px 0 2px; }
   .chk-row { display: flex; gap: 7px; padding: 4px 0; align-items: baseline; border-top: 1px solid #2e333c; }
-  .chk-row .ck { flex: 1; min-width: 0; }
+  .chk-row .ck { flex: 1; min-width: 0; overflow-wrap: anywhere; }
   .chk-row .ck small { display: block; color: var(--text-dim); font-size: 10.5px; }
-  .chk-row .cv { text-align: right; word-break: break-word; max-width: 45%; }
+  .chk-row .cv { text-align: right; overflow-wrap: anywhere; max-width: 40%; }
 
   /* ---------- Section cuts bar ---------- */
   #sections-bar {
@@ -716,7 +710,8 @@
     position: absolute; top: 60px; left: 354px;
     display: flex; flex-direction: column; gap: 6px; z-index: 20;
   }
-  #left.collapsed ~ #rail { left: 64px; }
+  #left.collapsed ~ #rail { left: 12px; }
+  #left.collapsed ~ #rail #tool-collapse svg { transform: scaleX(-1); }
   .rail-btn {
     width: 34px; height: 34px; background: var(--panel);
     border: 1px solid var(--border); border-radius: var(--radius);
@@ -779,7 +774,6 @@
   /* ---------- IFC editing ---------- */
   .btn.xs { padding: 2px 7px; font-size: 10.5px; line-height: 1.4; }
   .chk-row .btn.xs, .prop-row .btn.xs { margin-left: 6px; flex-shrink: 0; }
-  .prop-row .v .btn.xs { vertical-align: middle; }
   .edit-row {
     display: flex; gap: 6px; align-items: center; padding: 6px 0 8px 14px;
     border-top: 1px dashed var(--border);
@@ -877,7 +871,7 @@
     </svg>
     <div class="model-picker" id="model-picker">
       <button id="filename" class="filename" title="Loaded models">
-        <span class="fname">No model loaded</span><span class="caret">&#9660;</span>
+        <span class="fname">Add IFC file</span><span class="caret">&#9660;</span>
       </button>
       <div id="models" class="models-menu"></div>
     </div>
@@ -890,17 +884,14 @@
       </button>
       <div id="project-panel" class="project-panel"></div>
     </div>
+    <button class="btn" id="btn-dash" disabled>Dashboard</button>
     <div class="spacer"></div>
+    <span class="plan-badge" id="plan-badge"></span>
     <div class="mem" id="mem" title="Estimated tab memory">
       <span>Memory</span>
       <div class="mem-track"><div class="mem-fill" id="mem-fill"></div></div>
       <span class="mem-val" id="mem-val">—</span>
     </div>
-    <span class="plan-badge" id="plan-badge"></span>
-    <span class="ruleset-badge" id="ruleset-badge">Loading ruleset…</span>
-    <button class="btn" id="btn-dash" disabled>Dashboard</button>
-    <button class="btn" id="btn-reset" title="Reset view" disabled>Reset view</button>
-    <button class="btn primary" id="btn-open">Add IFC file</button>
     <input type="file" id="file-input" accept=".ifc" multiple />
   </div>
 
@@ -1038,6 +1029,7 @@
 
   <!-- Right info panel -->
   <div id="panel">
+    <div class="panel-resize" id="panel-resize" title="Drag to resize"></div>
     <div class="panel-head">
       <span>ELEMENT</span>
       <button class="panel-close" id="panel-close">&times;</button>

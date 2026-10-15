@@ -30,7 +30,7 @@ import { esc, hex } from './util/dom.js';
 import {
   FORMAT as PROJECT_FORMAT, VERSION as PROJECT_VERSION, emptyProject, parseProject,
   looksLikeProjectFile, fingerprint, labelOf, saveToDisk, openFromDisk,
-  recentProjects, rememberProject, forgetRecent, lastProject, clearLastProject,
+  rememberProject, lastProject, clearLastProject,
 } from './project.js';
 import {
   loadPresets, currentPresets, enabledPresets, savePresets, canSave,
@@ -128,8 +128,8 @@ let spacesVisible = false;        // IfcSpace volumes obscure everything by defa
 
 const $ = (id) => document.getElementById(id);
 const el = {
-  filename: $('filename'), modelPicker: $('model-picker'), badge: $('ruleset-badge'),
-  btnOpen: $('btn-open'), btnOpenEmpty: $('btn-open-empty'), btnReset: $('btn-reset'),
+  filename: $('filename'), modelPicker: $('model-picker'),
+  btnOpenEmpty: $('btn-open-empty'),
   fileInput: $('file-input'), dropzone: $('dropzone'),
   loading: $('loading'), barFill: $('bar-fill'), loadingLabel: $('loading-label'),
   toast: $('toast'), left: $('left'), models: $('models'),
@@ -250,19 +250,10 @@ async function init() {
       console.error('The IFC values check could not be loaded:', err);
     });
 
-    el.badge.innerHTML =
-      // Construction holds every component; counting all targets would list the
-      // Design Gateway ones twice.
-      `IFC-SG <b>${ruleset.meta.requirements}</b> rules · ` +
-      `<b>${ruleset.targets.filter((t) => t.gateway === GATEWAY.CONSTRUCTION).length}</b> components`;
-    el.badge.title =
-      `${ruleset.meta.source}\nSheet: ${ruleset.meta.sheet}\nGenerated ${ruleset.meta.generated}`;
     refreshFilters();
     await restoreLastProject();
   } catch (err) {
     console.error(err);
-    el.badge.textContent = 'Ruleset failed to load';
-    el.badge.classList.add('err');
     el.tree.innerHTML =
       `<div class="empty-note">Could not load <code>data/ifcsg-rules.json</code>.<br><br>
        This page must be served over http:// (not opened as a file). Run a static
@@ -303,7 +294,6 @@ const customInputApi = {
 // -------------------------------------------------------------------- UI wiring
 
 function wireUI() {
-  el.btnOpen.addEventListener('click', () => el.fileInput.click());
   el.btnOpenEmpty.addEventListener('click', () => el.fileInput.click());
   el.fileInput.addEventListener('change', (e) => {
     if (e.target.files.length) loadFiles([...e.target.files]);
@@ -342,7 +332,7 @@ function wireUI() {
   wireProjectUI();
 
   el.panelClose.addEventListener('click', closeElementPanel);
-  el.btnReset.addEventListener('click', () => viewer.fit());
+  wirePanelResize();
   el.toolFit.addEventListener('click', () => viewer.fit());
 
   el.toolCollapse.addEventListener('click', () => el.left.classList.toggle('collapsed'));
@@ -398,7 +388,12 @@ function wireUI() {
       el.fileInput.click();
       return;
     }
-    el.modelPicker.classList.toggle('open');
+    if (el.modelPicker.classList.contains('open')) {
+      el.modelPicker.classList.remove('open');
+    } else {
+      closeTopPanels('models');
+      el.modelPicker.classList.add('open');
+    }
   });
   el.models.addEventListener('click', (e) => e.stopPropagation());
   document.addEventListener('click', () => el.modelPicker.classList.remove('open'));
@@ -432,8 +427,12 @@ function wireUI() {
   wireEditingUI();
   wireBcfUI();
 
-  el.btnDash.addEventListener('click', openDashboard);
-  el.dashClose.addEventListener('click', () => el.dash.classList.remove('visible'));
+  // The Dashboard button toggles, like the two pickers beside it.
+  el.btnDash.addEventListener('click', () => {
+    if (el.dash.classList.contains('visible')) closeDashboard();
+    else openDashboard();
+  });
+  el.dashClose.addEventListener('click', closeDashboard);
   el.dashSeg.querySelectorAll('button').forEach((b) => {
     b.addEventListener('click', () => {
       el.dashSeg.querySelectorAll('button').forEach((x) => x.classList.remove('active'));
@@ -813,10 +812,34 @@ async function loadFiles(files) {
   }
   rebuildIndex();
   viewer.fit();
+  reportFarElements();
   refreshSurveyRail();
   setProgress(100, 'Done');
   if (skipped) toast(`${skipped} file${skipped > 1 ? 's were' : ' was'} skipped — not .ifc.`);
   setTimeout(() => el.loading.classList.remove('visible'), 250);
+}
+
+/**
+ * Says which elements the view left out because they sit far from the rest of
+ * the model. Geometry kilometres from the building is nearly always an export
+ * problem (a stray object, or elements left at Revit's internal origin while
+ * the rest uses shared coordinates), so it is named rather than silently framed.
+ */
+function reportFarElements() {
+  const far = viewer.farElements || [];
+  if (!far.length) return;
+  const label = (f) => {
+    const e = index && index.byId.get(`${f.modelID}:${f.expressID}`);
+    return e ? `${e.name || e.entity} (${e.entity})` : `element #${f.expressID}`;
+  };
+  const dist = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`);
+  const shown = far.slice(0, 3).map(label).join(', ');
+  console.warn('Elements left out of the view because they are far from the rest of the model:',
+    far.map((f) => ({ name: label(f), modelID: f.modelID, expressID: f.expressID, distance: dist(f.distance) })));
+  toast(`${far.length} element${far.length === 1 ? '' : 's'} ${far.length === 1 ? 'sits' : 'sit'} up to ` +
+    `${dist(far[0].distance)} from the rest of the model: ${shown}${far.length > 3 ? ', …' : ''}. ` +
+    'The view frames the model without them. Check the export: stray geometry, or elements ' +
+    'at the internal origin while the rest uses shared coordinates.');
 }
 
 /**
@@ -831,7 +854,7 @@ function refreshDashboardAvailability() {
   el.btnDash.disabled = !loaded && !hasRecords;
   if (!el.dash.classList.contains('visible')) return;
   if (loaded || hasRecords) openDashboard();
-  else el.dash.classList.remove('visible');
+  else closeDashboard();
 }
 
 /** Recomputes the merged index, target counts and all dependent UI. */
@@ -848,13 +871,12 @@ function rebuildIndex() {
   }
 
   const names = viewer.entries.map((e) => e.name);
-  el.filename.querySelector('.fname').textContent = names.length === 0 ? 'No model loaded'
+  el.filename.querySelector('.fname').textContent = names.length === 0 ? 'Add IFC file'
     : names.length === 1 ? names[0]
       : `${names.length} models`;
   el.filename.classList.toggle('has-file', names.length > 0);
   el.filename.title = names.length ? names.join('\n') : 'Add an IFC file';
   if (!names.length) el.modelPicker.classList.remove('open');
-  el.btnReset.disabled = !viewer.hasModels;
   // Check inputs such as the preset editor read from the index, so redraw them.
   renderCheckMenu();
   // The dashboard reports the project, not the session: what a file measured
@@ -889,7 +911,12 @@ function renderModels() {
         <span class="mname" title="${esc(e.name)}">${esc(e.name)}<small>${n} mapped elements</small></span>
         <button class="icon-btn" data-act="del" title="Close this model">&times;</button>
       </div>`;
-  }).join('');
+  }).join('') + '<button class="m-add" data-act="add">+ Add IFC file</button>';
+
+  el.models.querySelector('[data-act="add"]').addEventListener('click', () => {
+    el.modelPicker.classList.remove('open');
+    el.fileInput.click();
+  });
 
   el.models.querySelectorAll('.mrow').forEach((row) => {
     const modelID = +row.dataset.m;
@@ -2212,6 +2239,7 @@ function computeProjectDashboard(liveDash) {
     const byFile = [];
     const byLevel = new Map();
     const byType = new Map();
+    const byGroup = new Map();
     const subtotals = new Map();
     const sources = new Set();
     const near = new Map();
@@ -2231,6 +2259,7 @@ function computeProjectDashboard(liveDash) {
       if (m.count) byFile.push({ label: r.name, value: m.total || 0, count: m.count });
       addRows(byLevel, m.byLevel);
       addRows(byType, m.byType);
+      addRows(byGroup, m.byGroup);
       addRows(subtotals, m.subtotals);
       for (const n of m.nearMisses || []) near.set(n.label, (near.get(n.label) || 0) + n.count);
     }
@@ -2248,6 +2277,8 @@ function computeProjectDashboard(liveDash) {
       nearMisses: count ? [] : [...near.entries()].map(([label, n]) => ({ label, count: n }))
         .sort((a, b) => b.count - a.count),
       byType: [...byType.values()].sort(byValueDesc),
+      groupTitle: spec.groupBy ? spec.groupBy.title : null,
+      byGroup: [...byGroup.values()].sort(byValueDesc),
       // Files read as a list of submitted drawings, so they keep their own
       // order rather than being ranked by size.
       byFile: byFile.sort(byFileName),
@@ -2297,7 +2328,25 @@ function openDashboard() {
     (unloaded > 0 ? `${loaded} loaded, ${unloaded} from the project record · ` : 'all loaded · ') +
     `${dashResult.summary.present} of ${dashResult.summary.total} metrics found`;
   renderDashboard();
+  closeTopPanels('dash');
   el.dash.classList.add('visible');
+  el.btnDash.classList.add('active');
+}
+
+function closeDashboard() {
+  el.dash.classList.remove('visible');
+  el.btnDash.classList.remove('active');
+}
+
+/**
+ * The model list, the project panel and the dashboard share the top bar's
+ * left side; opening one closes the others.
+ * @param {'models'|'project'|'dash'} keep  the one being opened
+ */
+function closeTopPanels(keep) {
+  if (keep !== 'models') el.modelPicker.classList.remove('open');
+  if (keep !== 'project') el.projectPicker.classList.remove('open');
+  if (keep !== 'dash') closeDashboard();
 }
 
 function renderDashboard() {
@@ -2409,6 +2458,16 @@ function renderDashboard() {
         parts.push('</table>');
       }
 
+      if (m.groupTitle && m.byGroup.length) {
+        parts.push(`<div class="brk-title">${esc(m.groupTitle)}</div><table class="brk">`);
+        for (const r of m.byGroup) {
+          parts.push(`<tr><td class="k">${esc(r.label)}</td>
+            <td class="n">${esc(fmtNum(r.value, m.decimals))}${m.isCount ? '' : ' ' + esc(m.unit)}</td>
+            <td class="c">${r.count}</td></tr>`);
+        }
+        parts.push('</table>');
+      }
+
       if (rows.length) {
         parts.push(`<div class="brk-title">${brkTitle}</div><table class="brk">`);
         for (const r of rows) {
@@ -2466,7 +2525,7 @@ function showMetricInModel(metric) {
     `${esc(metric.title)}<small>${metric.count} elements · ${esc(fmtNum(metric.total, metric.decimals))} ${esc(metric.unit)}</small>`;
   renderLegend();
   applyOverlay();
-  el.dash.classList.remove('visible');
+  closeDashboard();
 }
 
 // ------------------------------------------------------------- element inspector
@@ -2592,7 +2651,7 @@ function showElement(item) {
         html += `
           <div class="chk-row">
             <span class="status-dot" style="background:${colour}" title="${esc(f.label)}"></span>
-            <span class="ck">${esc(f.message || f.label)}<small>${detail}</small></span>
+            <span class="ck">${breakAtDots(esc(f.message || f.label))}<small>${detail}</small></span>
             <span class="cv">${esc(f.value === undefined ? '' : f.value)}</span>${fix}
           </div>`;
       }
@@ -2609,7 +2668,7 @@ function showElement(item) {
         const pencil = editable
           ? `<button class="btn xs" data-edit data-pset="${esc(pn)}" data-prop="${esc(k)}" title="Change this value in the IFC">Edit</button>` : '';
         html += `<div class="prop-row"><span class="k">${esc(k)}</span>
-                 <span class="v">${esc(isEmptyValue(v) ? '—' : formatValue(v))}${pencil}</span></div>`;
+                 <span class="v">${esc(isEmptyValue(v) ? '—' : formatValue(v))}</span>${pencil}</div>`;
       }
     }
   }
@@ -2889,8 +2948,8 @@ function renderProjectChip() {
 }
 
 function openProjectPanel(focusCode = false) {
+  closeTopPanels('project');
   el.projectPicker.classList.add('open');
-  el.modelPicker.classList.remove('open');
   renderProjectPanel();
   if (focusCode) {
     const box = el.projectPanel.querySelector('[data-f="code"]');
@@ -3109,20 +3168,14 @@ function renderProjectPanel() {
   });
 }
 
-/** The start card's project row: open a file, start fresh, or pick a recent one. */
+/** The start card's project row: open a project file, or start a new one. */
 function renderStartProjects() {
   if (!el.startProjects) return;
-  const recent = recentProjects();
   el.startProjects.innerHTML = `
     <div class="sp-row">
       <button class="btn" data-act="open">Open project file…</button>
       <button class="btn" data-act="new">New project</button>
-    </div>
-    ${recent.length ? `<div class="sp-recent"><span>Recent</span>${recent.map((r) => `
-      <button class="sp-item" data-key="${esc(r.key)}" title="${esc(r.saved ? 'Saved ' + new Date(r.saved).toLocaleString() : 'Not saved to disk')}">
-        ${esc(r.label)}<small>${esc(r.project.submission.gateway === 'design' ? 'Design Gateway' : 'Construction Gateway')}</small>
-      </button>
-      <button class="sp-forget" data-forget="${esc(r.key)}" title="Remove from this list">&times;</button>`).join('')}</div>` : ''}`;
+    </div>`;
 
   // These open the project panel; the same click must not reach the document
   // listener that closes it.
@@ -3133,25 +3186,6 @@ function renderStartProjects() {
   el.startProjects.querySelector('[data-act="new"]').addEventListener('click', (e) => {
     e.stopPropagation();
     newProject();
-  });
-  el.startProjects.querySelectorAll('.sp-item').forEach((b) => {
-    b.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const hit = recentProjects().find((r) => r.key === b.dataset.key);
-      if (!hit) return;
-      try {
-        await applyProject(parseProject(JSON.stringify(hit.project)));
-      } catch (err) {
-        console.error(err);
-        toast('That project could not be restored: ' + err.message);
-      }
-    });
-  });
-  el.startProjects.querySelectorAll('[data-forget]').forEach((b) => {
-    b.addEventListener('click', () => {
-      forgetRecent(b.dataset.forget);
-      renderStartProjects();
-    });
   });
 }
 
@@ -3300,6 +3334,36 @@ function acceptedOptions(req) {
     return ruleset.spaceValues[req.prop].map((v) => v.value);
   }
   return null;
+}
+
+/** Let a long "Pset.Property" name wrap at its dots before anywhere else. */
+const breakAtDots = (html) => html.replace(/\./g, '.<wbr>');
+
+const PANEL_WIDTH_KEY = 'rsp.panelWidth';
+
+/** Drag the element panel's left edge to widen it; the width is remembered. */
+function wirePanelResize() {
+  const handle = $('panel-resize');
+  try {
+    const saved = +localStorage.getItem(PANEL_WIDTH_KEY);
+    if (saved) el.panel.style.width = saved + 'px';
+  } catch { /* ignore */ }
+
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    el.panel.classList.add('resizing');
+    const right = el.panel.getBoundingClientRect().right;
+    const move = (ev) => { el.panel.style.width = Math.round(right - ev.clientX) + 'px'; };
+    const up = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', up);
+      el.panel.classList.remove('resizing');
+      try { localStorage.setItem(PANEL_WIDTH_KEY, String(el.panel.offsetWidth)); } catch { /* ignore */ }
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', up);
+  });
 }
 
 /**
@@ -3776,6 +3840,7 @@ function dashboardForModel(dash) {
     valueSources: m.valueSources,
     subtotals: m.subtotals.map(recordedRow),
     byType: m.byType.map(recordedRow),
+    byGroup: (m.byGroup || []).map(recordedRow),
     byLevel: m.byLevel.map(recordedRow),
     nearMisses: m.nearMisses,
   }));
