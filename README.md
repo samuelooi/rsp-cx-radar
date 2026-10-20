@@ -72,6 +72,15 @@ indices rather than rebuilding the model, so it stays instant on large files, an
 it leaves the colour overlays untouched (they read from a separate pristine
 index cache).
 
+## Measuring
+
+**Measure** in the tool rail (shortcut **M**) measures between two clicked
+points. The pointer snaps to edge endpoints, midpoints and edges, as in Forma,
+and falls back to the face under it. Hold **Shift** to lock the second point to
+an axis. Labels give metres to the millimetre, plus the vertical and horizontal
+parts. Backspace removes the last measurement, Clear removes all of them, and
+Escape leaves the tool. See [Viewer and queries](wiki/03-Viewer-and-Queries.md#measuring).
+
 ## Model warnings
 
 The **Warnings** tab lists problems in how a file was exported that will make
@@ -756,6 +765,7 @@ in context.
 ```
 index.html                  shell, styles, panel markup
 js/viewer.js                three.js scene, multi-model loading, visibility, overlays
+js/measure.js               point-to-point measuring with edge, endpoint and midpoint snapping
 js/ifc-index.js             walks each IFC once into a queryable element index
 js/ifcsg.js                 ruleset indexing, element matching, value evaluation
 js/dashboard.js             project quantity metrics, totalled by file and level

@@ -57,6 +57,8 @@ The `Viewer` class. Selected methods (the full list is in the source and the
 | `refresh()` | Reconciles the scene with the current models, hidden set and query groups — the one place colouring and hiding actually apply. |
 | `elementPoints`, `elementHull`, `modelHull`, `groundLevel`, `elementYRange`, `sampleFloorY` | Geometry sampling for checks that ask about *where* things are (geo-referencing, storey floor levels). |
 | `fitElements(elements)` | Frames the camera on a set of elements, resolving through their parts. |
+| `elementTriangles(modelID, expressID, maxTriangles?)` | An element's triangles in scene coordinates through the pristine index, for edge snapping. |
+| `onFrame(cb)` | Runs a callback every frame before rendering; the measure tool lays out its labels here. |
 | `modelCentres()` | Each model's geometry centre (median of element centres) in its own IFC coordinates, for the warnings' origin and SVY21 placement tests. |
 | `cameraViewpoint()` / `setViewpoint(vp)` | Converts between the three.js camera and a BCF viewpoint (IFC project coordinates, metres, Z-up), via the coordination matrix. |
 | `snapshot(maxWidth?, type?, quality?)` | Renders the current view to a PNG/JPEG blob, used by BCF topics and the readiness report. |
@@ -176,6 +178,14 @@ key-values, page-breaking tables, signatures, footers) plus:
 | --- | --- |
 | `computeDashboard(index, modelNames?)` | Every headline metric (GFA, parking, planting, …) totalled and broken down by file, level and type, against the CORENET X mapping. |
 | `formatValue(value, decimals)` | Formats a metric total for display. |
+
+## `js/measure.js` — measuring
+
+| Export | Purpose |
+| --- | --- |
+| `MeasureTool(viewer)` | The measure tool: `setActive(on)`, `cancel()`, `clear()`, `remove(id)`, `invalidate()`, `snap(event)` → `{point, kind: 'vertex'\|'midpoint'\|'edge'\|'face'}`. |
+| `featureEdges(triangles, angleDeg?)` | Feature edges of a triangle soup, through three's EdgesGeometry. |
+| `formatLength(m)` | Metres to a label string, millimetre precision. |
 
 ## `js/warnings.js` — model warnings
 

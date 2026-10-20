@@ -13,6 +13,7 @@ import { Viewer } from './viewer.js';
 import { buildIndex, mergeIndexes } from './ifc-index.js';
 import { flattenArcs } from './ifc-arc-fix.js';
 import { computeWarnings } from './warnings.js';
+import { MeasureTool } from './measure.js';
 import { DASHBOARD_ENTITIES, computeDashboard, formatValue as fmtNum, METRICS as DASHBOARD_METRICS } from './dashboard.js';
 import { measure, project as projectMemory, formatBytes, LEVEL } from './memory.js';
 import {
@@ -110,6 +111,7 @@ let issuesOnly = false;
 /** Aborts an in-flight run when the model changes or a new run starts. */
 let checkAbort = null;
 
+let measurer = null;      // the measure tool (js/measure.js), created with the viewer
 let sectionArmed = false;  // a click on a model face places a new section cut
 let planActive = null;     // { name, y } while a plan view is showing
 
@@ -145,7 +147,7 @@ const el = {
   panel: $('panel'), panelBody: $('panel-body'), panelClose: $('panel-close'),
   toolCollapse: $('tool-collapse'), toolGhost: $('tool-ghost'), toolSpaces: $('tool-spaces'),
   toolShowAll: $('tool-showall'), toolFit: $('tool-fit'),
-  toolSection: $('tool-section'), toolLevels: $('tool-levels'),
+  toolSection: $('tool-section'), toolMeasure: $('tool-measure'), toolLevels: $('tool-levels'),
   sectionsBar: $('sections-bar'), levelsPanel: $('levels-panel'), planBadge: $('plan-badge'),
   toolSurvey: $('tool-survey'), railTip: $('rail-tip'),
   ctxmenu: $('ctxmenu'),
@@ -220,6 +222,7 @@ function renderMemory() {
 
 async function init() {
   viewer = new Viewer($('viewer-container'));
+  measurer = new MeasureTool(viewer);
   viewer.onPick(onPick);
   viewer.onContextMenu(openContextMenu);
 
@@ -353,6 +356,7 @@ function wireUI() {
   el.toolShowAll.addEventListener('click', showAll);
 
   wireSectionTool();
+  wireMeasureTool();
   wireLevelsTool();
 
   // A toggle: clears outlines that are drawn, otherwise draws the project's
@@ -451,6 +455,8 @@ function wireUI() {
     closeContextMenu();
     closeLevelsPanel();
     if (sectionArmed) setSectionArmed(false);
+    // Escape drops a half-placed measurement first, then leaves the tool.
+    if (measurer.active && !measurer.cancel()) setMeasureActive(false);
   });
 }
 
@@ -497,6 +503,7 @@ function setRailState(btn, text) {
 // ------------------------------------------------------------- section cuts
 
 function setSectionArmed(on) {
+  if (on && measurer.active) setMeasureActive(false);
   sectionArmed = on;
   el.toolSection.classList.toggle('active', on);
   setRailState(el.toolSection, on ? 'Placing cuts — click the tool again to stop' : '');
@@ -560,6 +567,28 @@ function wireSectionTool() {
     }
     const id = viewer.addSectionAtFace(face, viewer.activeCamera.position);
     if (id != null) renderSectionsBar();
+  });
+}
+
+// ------------------------------------------------------------------ measuring
+
+function setMeasureActive(on) {
+  if (on && sectionArmed) setSectionArmed(false);
+  measurer.setActive(on);
+  el.toolMeasure.classList.toggle('active', on);
+  setRailState(el.toolMeasure, on ? 'Measuring — click the tool again or press Esc to stop' : '');
+}
+
+/** The rail button and the M shortcut toggle Forma-style measuring (js/measure.js). */
+function wireMeasureTool() {
+  el.toolMeasure.addEventListener('click', () => setMeasureActive(!measurer.active));
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'm' && e.key !== 'M') return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if (!viewer.hasModels && !measurer.active) return;
+    setMeasureActive(!measurer.active);
   });
 }
 
@@ -1064,6 +1093,8 @@ function removeModel(modelID) {
   textScans.delete(modelID);
   renderEditsBar();
   viewer.removeModel(modelID);
+  measurer.invalidate();
+  if (!viewer.hasModels && measurer.active) setMeasureActive(false);
   clearQuery();
   clearCheckResults();
   rebuildIndex();
@@ -2668,7 +2699,7 @@ function pickedElement(hit) {
 function onPick(hit) {
   // A section drag ends with a click on the same element; while armed, that
   // click is drawing intent, not a pick.
-  if (sectionArmed) return;
+  if (sectionArmed || measurer.active) return;
   if (!hit || !index) {
     closeElementPanel();
     return;

@@ -223,6 +223,7 @@ export class Viewer {
     // element or pop the menu at wherever the drag happened to end. Track each
     // button's mousedown point and ignore the follow-up if it moved.
     this._downPos = {};
+    this.frameListeners = [];
     this.renderer.domElement.addEventListener('pointerdown', (e) => {
       this._downPos[e.button] = { x: e.clientX, y: e.clientY };
     });
@@ -269,6 +270,7 @@ export class Viewer {
     this._stepPivot();
     this.controls.update();
     this.controlsOrtho.update();
+    for (const cb of this.frameListeners) cb();
     this.renderer.render(this.scene, this.activeCamera);
   }
 
@@ -826,6 +828,45 @@ export class Viewer {
     }
     return points;
   }
+
+  /**
+   * An element's triangles in scene coordinates, three vertices per triangle,
+   * read through the pristine index so hiding other elements does not matter.
+   * Null when the element draws nothing or has more than `maxTriangles`.
+   * @returns {Float32Array|null}
+   */
+  elementTriangles(modelID, expressID, maxTriangles = Infinity) {
+    const entry = this.models.get(modelID);
+    if (!entry) return null;
+    const items = this._itemsMap(modelID);
+    const byMaterial = items && items.map.get(expressID);
+    if (!byMaterial) return null;
+
+    let count = 0;
+    for (const ranges of Object.values(byMaterial)) {
+      for (let p = 0; p < ranges.length; p += 2) count += ranges[p + 1] - ranges[p] + 1;
+    }
+    if (!count || count / 3 > maxTriangles) return null;
+
+    const pos = entry.mesh.geometry.attributes.position;
+    const cache = items.indexCache;
+    const m = entry.mesh.matrixWorld;
+    const v = new THREE.Vector3();
+    const out = new Float32Array(count * 3);
+    let o = 0;
+    for (const ranges of Object.values(byMaterial)) {
+      for (let p = 0; p < ranges.length; p += 2) {
+        for (let j = ranges[p]; j <= ranges[p + 1]; j++) {
+          v.fromBufferAttribute(pos, cache[j]).applyMatrix4(m);
+          out[o++] = v.x; out[o++] = v.y; out[o++] = v.z;
+        }
+      }
+    }
+    return out;
+  }
+
+  /** Registers a callback run every frame after the controls update, before rendering. */
+  onFrame(cb) { this.frameListeners.push(cb); }
 
   /**
    * Ground-plane convex hull over every vertex a callback yields, as `[[x, z], …]`

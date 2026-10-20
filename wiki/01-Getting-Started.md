@@ -44,7 +44,7 @@ Close a model before adding another when the meter goes amber.
   will fail the submission (multiple sites, no georeferencing, stray geometry,
   duplicate GlobalIds and more), with a count on the tab.
 - **Tool rail.** Collapse panel, spaces on/off, survey outlines, show all,
-  ghost context, fit, section cut, plan by level.
+  ghost context, fit, section cut, measure (M), plan by level.
 - **Right panel.** The element inspector: identity, aggregate host, live
   pass/fail for every loaded check, property sets with Edit buttons.
 - **Bottom centre.** The edits bar appears when there are pending IFC edits.
