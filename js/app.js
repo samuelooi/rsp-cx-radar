@@ -575,8 +575,9 @@ function wireSectionTool() {
 function setMeasureActive(on) {
   if (on && sectionArmed) setSectionArmed(false);
   measurer.setActive(on);
+  viewer.pickSuspended = on;
   el.toolMeasure.classList.toggle('active', on);
-  setRailState(el.toolMeasure, on ? 'Measuring — click the tool again or press Esc to stop' : '');
+  setRailState(el.toolMeasure, on ? 'Measuring — click the tool again or press Esc to stop; measurements stay until cleared' : '');
 }
 
 /** The rail button and the M shortcut toggle Forma-style measuring (js/measure.js). */
@@ -1094,7 +1095,10 @@ function removeModel(modelID) {
   renderEditsBar();
   viewer.removeModel(modelID);
   measurer.invalidate();
-  if (!viewer.hasModels && measurer.active) setMeasureActive(false);
+  if (!viewer.hasModels) {
+    if (measurer.active) setMeasureActive(false);
+    measurer.clear();
+  }
   clearQuery();
   clearCheckResults();
   rebuildIndex();
@@ -2699,7 +2703,7 @@ function pickedElement(hit) {
 function onPick(hit) {
   // A section drag ends with a click on the same element; while armed, that
   // click is drawing intent, not a pick.
-  if (sectionArmed || measurer.active) return;
+  if (sectionArmed) return;
   if (!hit || !index) {
     closeElementPanel();
     return;

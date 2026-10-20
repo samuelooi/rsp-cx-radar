@@ -50,9 +50,16 @@ green height, blue Y). Snapping to a roof edge with Shift held gives its height
 above the first point.
 
 Measurements stay on screen until removed with their ×, **Backspace** (the last
-one) or **Clear** in the bar at the bottom. **Escape** drops a half-placed
-measurement, then leaves the tool. Leaving the tool clears all of them. Clicks
-while measuring do not select elements.
+one, while measuring) or **Clear** in the bar at the bottom. **Escape** drops a
+half-placed measurement, then leaves the tool. Leaving the tool keeps the
+measurements on screen, and clicks select elements as usual again, so you can
+inspect what you measured. Clicks only place points while the tool is on.
+
+Hovering stays quick on large files because nothing is raycast against the
+whole model. The GPU draws the single pixel under the pointer with each
+element in its own colour to say which element it is. Only that element's
+triangles are then tested for the exact point. Clicking to select an element
+uses the same GPU pick.
 
 ## Queries
 

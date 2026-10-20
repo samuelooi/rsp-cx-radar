@@ -58,6 +58,7 @@ The `Viewer` class. Selected methods (the full list is in the source and the
 | `elementPoints`, `elementHull`, `modelHull`, `groundLevel`, `elementYRange`, `sampleFloorY` | Geometry sampling for checks that ask about *where* things are (geo-referencing, storey floor levels). |
 | `fitElements(elements)` | Frames the camera on a set of elements, resolving through their parts. |
 | `elementTriangles(modelID, expressID, maxTriangles?)` | An element's triangles in scene coordinates through the pristine index, for edge snapping. |
+| `pickElement(event)` | The element under the pointer, `{modelID, expressID}`, read back from a one-pixel GPU render coloured by expressID. Used by hover snapping and click selection; constant cost whatever the model size. Set `pickSuspended` to stop clicks picking while a tool owns them. |
 | `onFrame(cb)` | Runs a callback every frame before rendering; the measure tool lays out its labels here. |
 | `modelCentres()` | Each model's geometry centre (median of element centres) in its own IFC coordinates, for the warnings' origin and SVY21 placement tests. |
 | `cameraViewpoint()` / `setViewpoint(vp)` | Converts between the three.js camera and a BCF viewpoint (IFC project coordinates, metres, Z-up), via the coordination matrix. |

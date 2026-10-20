@@ -24,8 +24,10 @@ const SNAP_PX = { vertex: 12, midpoint: 10, edge: 8 };
 const EDGE_ANGLE_DEG = 20;
 /** Elements with more triangles than this snap to the triangle under the pointer only. */
 const MAX_TRIANGLES = 60000;
-/** Edge sets kept, most recently used last. */
+/** Elements whose triangles and edges are kept, most recently used last. */
 const CACHE_SIZE = 300;
+/** ...and the most floats they may hold between them (about 48 MB). */
+const CACHE_FLOATS = 12e6;
 
 const COLOUR = 0xffc94a;
 const PREVIEW_COLOUR = 0xffe9a8;
@@ -56,6 +58,19 @@ export function featureEdges(triangles, angleDeg = EDGE_ANGLE_DEG) {
   const out = edges.attributes.position.array.slice();
   geo.dispose();
   edges.dispose();
+  return out;
+}
+
+/** The three sides of one triangle (at float offset `i`) as edge segments. */
+function triangleEdges(tris, i) {
+  const out = new Float32Array(18);
+  if (i < 0) return new Float32Array(0);
+  [[0, 3], [3, 6], [6, 0]].forEach(([p, q], k) => {
+    for (let j = 0; j < 3; j++) {
+      out[k * 6 + j] = tris[i + p + j];
+      out[k * 6 + 3 + j] = tris[i + q + j];
+    }
+  });
   return out;
 }
 
@@ -130,12 +145,12 @@ export class MeasureTool {
     if (this.active === on) return;
     this.active = on;
     this.viewer.renderer.domElement.style.cursor = on ? 'crosshair' : '';
-    this._hintEl.hidden = !on;
+    // Leaving the tool keeps the measurements on screen, so the model can be
+    // clicked and inspected as usual with them still showing; Clear removes them.
     if (!on) {
       this.start = null;
       this._setCurrent(null);
-      this.clear();
-      this._edgeCache.clear();
+      this.invalidate();
     }
     this._refreshHint();
   }
@@ -162,6 +177,7 @@ export class MeasureTool {
   /** Forgets cached edges, e.g. after a model is closed. */
   invalidate() {
     this._edgeCache.clear();
+    this._cachedFloats = 0;
   }
 
   _dispose(m) {
@@ -171,7 +187,14 @@ export class MeasureTool {
   }
 
   _refreshHint() {
-    this._clearBtn.disabled = !this.measurements.length && !this.start;
+    const n = this.measurements.length;
+    this._hintEl.hidden = !this.active && !n;
+    this._hintEl.classList.toggle('idle', !this.active);
+    this._clearBtn.disabled = !n && !this.start;
+    if (!this.active) {
+      this._hintText.textContent = `${n} measurement${n === 1 ? '' : 's'}`;
+      return;
+    }
     this._hintText.textContent = this.start
       ? (this.shift ? 'Locked to an axis: click the second point' : 'Click the second point')
       : 'Click two points to measure';
@@ -206,7 +229,7 @@ export class MeasureTool {
       if (p.point.distanceToSquared(this.start.point) > 1e-10) this._add(this.start.point, p.point);
       this.start = null;
     }
-    this._setCurrent(this._resolve(e));
+    this._setCurrent(p.axis ? null : p);
     this._refreshHint();
   }
 
@@ -257,7 +280,7 @@ export class MeasureTool {
    */
   snap(event) {
     const viewer = this.viewer;
-    const hit = viewer._raycastVisible(event);
+    const hit = this._hitAt(event);
     if (!hit) return null;
 
     const camera = viewer.activeCamera;
@@ -284,7 +307,7 @@ export class MeasureTool {
     const visible = (v) => depth(v) <= hitDepth + slack &&
       planes.every((pl) => pl.distanceToPoint(v) >= -1e-4);
 
-    const edges = this._edgesAt(hit);
+    const edges = hit.edges;
     const candidates = [];
     const a = new THREE.Vector3();
     const b = new THREE.Vector3();
@@ -324,43 +347,70 @@ export class MeasureTool {
     return { kind: 'face', point: hit.point.clone() };
   }
 
-  /** Feature edges of the element under a raycast hit, cached per element. */
-  _edgesAt(hit) {
+  /**
+   * The exact point under the pointer. The GPU says which element it is (see
+   * Viewer.pickElement), and only that element's triangles are tested against
+   * the pointer's ray, so the cost does not grow with the size of the model.
+   * @returns {{point: THREE.Vector3, edges: Float32Array}|null}
+   */
+  _hitAt(event) {
     const viewer = this.viewer;
-    let expressID = null;
-    try {
-      expressID = viewer.loader.ifcManager.getExpressId(hit.object.geometry, hit.faceIndex);
-    } catch { /* not an IFC mesh */ }
-    const modelID = hit.object.modelID;
-    if (expressID == null || modelID == null) return this._triangleEdges(hit);
+    const picked = viewer.pickElement(event);
+    if (!picked) return null;
+    const el = this._element(picked.modelID, picked.expressID);
+    const tris = el && el.tris;
+    if (!tris) return null;
 
-    const key = `${modelID}:${expressID}`;
-    let edges = this._edgeCache.get(key);
-    if (edges) {
-      // Refresh its place as most recently used.
-      this._edgeCache.delete(key);
-      this._edgeCache.set(key, edges);
-    } else {
-      const tris = viewer.elementTriangles(modelID, expressID, MAX_TRIANGLES);
-      edges = tris ? featureEdges(tris) : null;
-      this._edgeCache.set(key, edges);
-      if (this._edgeCache.size > CACHE_SIZE) this._edgeCache.delete(this._edgeCache.keys().next().value);
+    const ray = viewer._pointerRay(event).ray;
+    const planes = viewer.renderer.clippingPlanes || [];
+    const a = new THREE.Vector3();
+    const b = new THREE.Vector3();
+    const c = new THREE.Vector3();
+    const p = new THREE.Vector3();
+    let best = Infinity;
+    let bestTri = -1;
+    const point = new THREE.Vector3();
+    for (let i = 0; i < tris.length; i += 9) {
+      a.fromArray(tris, i); b.fromArray(tris, i + 3); c.fromArray(tris, i + 6);
+      if (!ray.intersectTriangle(a, b, c, false, p)) continue;
+      const d = ray.origin.distanceToSquared(p);
+      if (d >= best || !planes.every((pl) => pl.distanceToPoint(p) >= -1e-4)) continue;
+      best = d;
+      bestTri = i;
+      point.copy(p);
     }
-    return edges || this._triangleEdges(hit);
+    // The pixel's centre can graze past a silhouette the ray just misses:
+    // take the element's vertex nearest the ray instead.
+    if (bestTri < 0) {
+      for (let i = 0; i < tris.length; i += 3) {
+        a.fromArray(tris, i);
+        const d = ray.distanceSqToPoint(a);
+        if (d < best) { best = d; bestTri = i - (i % 9); point.copy(a); }
+      }
+    }
+    return { point, edges: el.edges || triangleEdges(tris, bestTri) };
   }
 
-  /** The three sides of the triangle under the pointer: the fallback for very dense elements. */
-  _triangleEdges(hit) {
-    if (!hit.face) return new Float32Array(0);
-    const pos = hit.object.geometry.attributes.position;
-    const m = hit.object.matrixWorld;
-    const v = [hit.face.a, hit.face.b, hit.face.c].map((i) => new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(m));
-    const out = new Float32Array(18);
-    [[0, 1], [1, 2], [2, 0]].forEach(([i, j], k) => {
-      v[i].toArray(out, k * 6);
-      v[j].toArray(out, k * 6 + 3);
-    });
-    return out;
+  /** An element's triangles and feature edges, made on first hover and kept. */
+  _element(modelID, expressID) {
+    const key = `${modelID}:${expressID}`;
+    let el = this._edgeCache.get(key);
+    if (el) {
+      // Refresh its place as most recently used.
+      this._edgeCache.delete(key);
+      this._edgeCache.set(key, el);
+      return el;
+    }
+    const tris = this.viewer.elementTriangles(modelID, expressID);
+    el = { tris, edges: tris && tris.length / 9 <= MAX_TRIANGLES ? featureEdges(tris) : null };
+    this._edgeCache.set(key, el);
+    this._cachedFloats = (this._cachedFloats || 0) + (tris ? tris.length : 0) + (el.edges ? el.edges.length : 0);
+    while (this._edgeCache.size > 1 && (this._edgeCache.size > CACHE_SIZE || this._cachedFloats > CACHE_FLOATS)) {
+      const [oldKey, old] = this._edgeCache.entries().next().value;
+      this._edgeCache.delete(oldKey);
+      this._cachedFloats -= (old.tris ? old.tris.length : 0) + (old.edges ? old.edges.length : 0);
+    }
+    return el;
   }
 
   /**
@@ -431,7 +481,7 @@ export class MeasureTool {
 
   /** Puts the HTML markers and labels over their 3D points; runs every frame. */
   _layout() {
-    if (!this.active) return;
+    if (!this.active && !this.measurements.length) return;
     const camera = this.viewer.activeCamera;
     const canvas = this.viewer.renderer.domElement;
     const w = canvas.clientWidth;

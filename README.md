@@ -78,8 +78,9 @@ index cache).
 points. The pointer snaps to edge endpoints, midpoints and edges, as in Forma,
 and falls back to the face under it. Hold **Shift** to lock the second point to
 an axis. Labels give metres to the millimetre, plus the vertical and horizontal
-parts. Backspace removes the last measurement, Clear removes all of them, and
-Escape leaves the tool. See [Viewer and queries](wiki/03-Viewer-and-Queries.md#measuring).
+parts. Backspace removes the last measurement and Clear removes all of them.
+Escape leaves the tool; measurements stay on screen and clicks select elements
+again until you clear them. See [Viewer and queries](wiki/03-Viewer-and-Queries.md#measuring).
 
 ## Model warnings
 
