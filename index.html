@@ -204,7 +204,14 @@
     color: var(--text-muted); font-family: inherit; font-size: 11.5px;
     letter-spacing: .04em; padding: 10px 6px; cursor: pointer;
   }
+  .tabs button { padding: 10px 2px; font-size: 11px; letter-spacing: .03em; white-space: nowrap; }
   .tabs button:hover { color: var(--text); }
+  .tab-count {
+    display: inline-block; min-width: 16px; margin-left: 4px; padding: 0 4px; border-radius: 8px;
+    background: var(--warn-bg, #5a2a22); color: #ffb4a3; font-size: 10px; font-weight: 600;
+    line-height: 16px; letter-spacing: 0; vertical-align: 1px;
+  }
+  .tab-count.review { background: #4a3d1e; color: #f2cf7a; }
   .tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
 
   .filters {
@@ -705,6 +712,59 @@
   }
   .plan-badge button:hover { color: #fff; }
 
+  /* ---------- Measure tool ---------- */
+  .measure-layer { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+  .measure-layer > * { position: absolute; left: 0; top: 0; }
+  .measure-layer [hidden] { display: none !important; }
+  .m-snap { width: 12px; height: 12px; }
+  .m-snap i { position: absolute; inset: 0; border: 2px solid #3fd0ff; background: rgba(63,208,255,.18); }
+  .m-snap.vertex i { border-radius: 1px; }
+  .m-snap.midpoint i { border: none; background: none; }
+  .m-snap.midpoint i::before {
+    content: ''; position: absolute; left: -1px; top: -2px; border-left: 7px solid transparent;
+    border-right: 7px solid transparent; border-bottom: 13px solid #3fd0ff;
+  }
+  .m-snap.edge i { inset: 3px; border-radius: 50%; border-width: 0; background: #3fd0ff; }
+  .m-snap.face i { inset: 2px; border-radius: 50%; border-width: 1.5px; border-color: #fff; background: none; }
+  .m-snap.point i { inset: 3px; border-radius: 50%; border-width: 0; background: #fff; }
+  .m-snap.axis-x i { border-color: #f0625a; } .m-snap.axis-y i { border-color: #6ad16a; } .m-snap.axis-z i { border-color: #4f9cf0; }
+  .m-snap span {
+    position: absolute; left: 18px; top: -3px; white-space: nowrap; font-size: 10.5px; color: #fff;
+    background: rgba(20,22,26,.85); padding: 1px 5px; border-radius: 3px;
+  }
+  .m-dot { width: 8px; height: 8px; border-radius: 50%; background: #ffc94a; box-shadow: 0 0 0 2px rgba(0,0,0,.5); }
+  .m-label {
+    display: flex; align-items: center; gap: 4px; white-space: nowrap;
+    background: rgba(20,22,26,.92); border: 1px solid #ffc94a; border-radius: 4px;
+    padding: 2px 4px 2px 7px; font-size: 12px; color: #fff; font-variant-numeric: tabular-nums;
+  }
+  .m-label b { font-weight: 600; }
+  .m-label small { color: #c9ccd2; font-size: 10.5px; margin-left: 2px; }
+  .m-label.m-live { border-style: dashed; padding-right: 7px; }
+  .m-label button {
+    pointer-events: auto; background: none; border: none; color: #aab; cursor: pointer;
+    font-size: 14px; line-height: 1; padding: 0 2px;
+  }
+  .m-label button:hover { color: #fff; }
+  .m-hint {
+    left: 50% !important; top: auto !important; bottom: 16px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 12px; pointer-events: auto;
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 6px 8px 6px 12px; font-size: 12px; color: var(--text); white-space: nowrap;
+    box-shadow: 0 6px 22px rgba(0,0,0,.35);
+  }
+  .m-hint .m-keys { color: var(--text-dim); font-size: 11px; }
+  .m-hint.idle .m-keys { display: none; }
+  .m-hint kbd {
+    font: inherit; font-size: 10.5px; padding: 0 4px; border: 1px solid var(--border);
+    border-radius: 3px; background: var(--panel-2); color: var(--text-muted);
+  }
+  .m-hint button {
+    font: inherit; font-size: 11.5px; color: var(--text); background: var(--panel-2);
+    border: 1px solid var(--border); border-radius: 4px; padding: 3px 9px; cursor: pointer;
+  }
+  .m-hint button:disabled { opacity: .45; cursor: default; }
+
   /* ---------- Left tool rail ---------- */
   #rail {
     position: absolute; top: 60px; left: 354px;
@@ -808,6 +868,42 @@
   .sg-table th { color: var(--text-dim); font-weight: 600; font-size: 10px; letter-spacing: .03em; position: sticky; top: 0; background: var(--panel); }
   .sg-table tr:hover td { background: var(--panel-2); }
 
+  /* ---------- Warnings ---------- */
+  .warn-summary {
+    display: flex; gap: 6px; align-items: center; padding: 10px; border-bottom: 1px solid var(--border);
+    font-size: 12px; color: var(--text-muted); flex-wrap: wrap;
+  }
+  .warn-summary .pill { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .warn-summary .pill.fail { background: #5a2a22; color: #ffb4a3; }
+  .warn-summary .pill.warn { background: #4a3d1e; color: #f2cf7a; }
+  .warn-summary .pill.ok { background: #1f4029; color: #9fe0b0; }
+  .warn-group { padding: 10px 10px 4px; font-size: 10.5px; letter-spacing: .06em; color: var(--text-dim); }
+  .warn-item { border-bottom: 1px solid #2e333c; }
+  .warn-head {
+    display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; cursor: pointer;
+    background: none; border: none; width: 100%; text-align: left; color: var(--text); font: inherit;
+  }
+  .warn-head:hover { background: var(--panel-2); }
+  .warn-head .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .warn-item.fail .dot { background: #e0624f; }
+  .warn-item.warn .dot { background: #e0b84f; }
+  .warn-head .wt { flex: 1; min-width: 0; font-size: 12.5px; line-height: 1.4; }
+  .warn-head .wt small { display: block; color: var(--text-dim); font-size: 10.5px; margin-top: 2px; overflow-wrap: anywhere; }
+  .warn-head .chev { color: var(--text-dim); font-size: 10px; margin-top: 3px; transition: transform .15s; }
+  .warn-item.open .warn-head .chev { transform: rotate(90deg); }
+  .warn-body { display: none; padding: 0 10px 10px 26px; font-size: 12px; line-height: 1.55; color: var(--text-muted); }
+  .warn-item.open .warn-body { display: block; }
+  .warn-body .acts { display: flex; gap: 6px; margin: 8px 0 6px; }
+  .warn-els { display: flex; flex-direction: column; margin-top: 4px; }
+  .warn-els button {
+    display: flex; gap: 6px; justify-content: space-between; background: none; border: none; text-align: left;
+    color: var(--text); font: inherit; font-size: 11.5px; padding: 3px 4px; border-radius: 4px; cursor: pointer;
+  }
+  .warn-els button:hover { background: var(--panel-2); }
+  .warn-els button span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .warn-els button small { color: var(--text-dim); flex-shrink: 0; }
+  .warn-els .more { font-size: 11px; color: var(--text-dim); padding: 3px 4px; }
+
   /* ---------- Issues (BCF) ---------- */
   .issues-actions { display: flex; gap: 6px; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); }
   .issues-actions .spacer { flex: 1; }
@@ -901,6 +997,7 @@
       <button data-tab="query" class="active"><span>QUERIES</span></button>
       <button data-tab="check"><span>COMPLIANCE</span></button>
       <button data-tab="issues"><span>ISSUES</span></button>
+      <button data-tab="warnings"><span>WARNINGS</span><b class="tab-count" id="warn-count" hidden></b></button>
     </div>
 
     <!-- Query tab -->
@@ -956,6 +1053,12 @@
       <div class="scroll" id="bcf-list"><div class="empty-note">No issues yet. Import a BCF from the CORENET X Model Checker, raise a topic on a selected element, or turn check findings into topics with “To BCF” on the Compliance tab.</div></div>
       <div id="bcf-detail"></div>
     </div>
+
+    <!-- Warnings tab: export problems that will make the submission fail -->
+    <div id="tab-warnings" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="warn-summary" id="warn-summary"></div>
+      <div class="scroll" id="warn-list"><div class="empty-note">Load an IFC file to check it for export problems: spatial structure, georeferencing, stray geometry, GlobalIds and subtypes.</div></div>
+    </div>
   </div>
 
   <!-- Edits bar: pending IFC edits and the export that writes them -->
@@ -990,6 +1093,12 @@
         <rect x="3" y="5" width="18" height="14" rx="1"/>
         <path d="M3 15.5l18-8" stroke-dasharray="2.2 2.2"/>
         <path d="M16.5 5.5l3 2-3 2"/>
+      </svg>
+    </div>
+    <div class="rail-btn" id="tool-measure" aria-label="Measure" data-tip="Measure" data-desc="Click two points to measure between them. The pointer snaps to edge endpoints, midpoints and edges, as in Forma. Hold Shift to lock the second point to the X, Y or Z axis. Shortcut: M.">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M3.5 15.5l12-12 5 5-12 12z"/>
+        <path d="M7 12l1.8 1.8M9.5 9.5l1.8 1.8M12 7l1.8 1.8M14.5 4.5l1.8 1.8"/>
       </svg>
     </div>
     <div class="rail-btn" id="tool-levels" aria-label="Plan View" data-tip="Plan View" data-desc="Pick a storey to look straight down on it, with everything above that level cut away.">

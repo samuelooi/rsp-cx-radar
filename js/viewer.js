@@ -223,12 +223,14 @@ export class Viewer {
     // element or pop the menu at wherever the drag happened to end. Track each
     // button's mousedown point and ignore the follow-up if it moved.
     this._downPos = {};
+    this.frameListeners = [];
     this.renderer.domElement.addEventListener('pointerdown', (e) => {
       this._downPos[e.button] = { x: e.clientX, y: e.clientY };
     });
 
     this.renderer.domElement.addEventListener('click', (e) => {
-      if (this._wasDrag(0, e)) return;
+      // A tool that owns clicks (measuring) sets this, so no pick is wasted.
+      if (this.pickSuspended || this._wasDrag(0, e)) return;
       this.pickListeners.forEach((cb) => cb(this._pickAt(e)));
     });
     this.renderer.domElement.addEventListener('contextmenu', (e) => {
@@ -269,6 +271,7 @@ export class Viewer {
     this._stepPivot();
     this.controls.update();
     this.controlsOrtho.update();
+    for (const cb of this.frameListeners) cb();
     this.renderer.render(this.scene, this.activeCamera);
   }
 
@@ -828,6 +831,153 @@ export class Viewer {
   }
 
   /**
+   * An element's triangles in scene coordinates, three vertices per triangle,
+   * read through the pristine index so hiding other elements does not matter.
+   * Null when the element draws nothing or has more than `maxTriangles`.
+   * @returns {Float32Array|null}
+   */
+  elementTriangles(modelID, expressID, maxTriangles = Infinity) {
+    const entry = this.models.get(modelID);
+    if (!entry) return null;
+    const items = this._itemsMap(modelID);
+    const byMaterial = items && items.map.get(expressID);
+    if (!byMaterial) return null;
+
+    let count = 0;
+    for (const ranges of Object.values(byMaterial)) {
+      for (let p = 0; p < ranges.length; p += 2) count += ranges[p + 1] - ranges[p] + 1;
+    }
+    if (!count || count / 3 > maxTriangles) return null;
+
+    const pos = entry.mesh.geometry.attributes.position;
+    const cache = items.indexCache;
+    const m = entry.mesh.matrixWorld;
+    const v = new THREE.Vector3();
+    const out = new Float32Array(count * 3);
+    let o = 0;
+    for (const ranges of Object.values(byMaterial)) {
+      for (let p = 0; p < ranges.length; p += 2) {
+        for (let j = ranges[p]; j <= ranges[p + 1]; j++) {
+          v.fromBufferAttribute(pos, cache[j]).applyMatrix4(m);
+          out[o++] = v.x; out[o++] = v.y; out[o++] = v.z;
+        }
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Which element is under the pointer, read from the GPU rather than by
+   * raycasting. The raycaster tests every triangle of the model on the CPU,
+   * which is far too slow to run as the pointer moves over a large file. This
+   * draws one pixel instead, every visible mesh coloured by its expressID, and
+   * reads that pixel back. Hidden elements (collapsed triangles) and anything
+   * a section or plan cut discards draw nothing, so they are skipped as they
+   * are on screen.
+   * @returns {{modelID: number, expressID: number}|null}
+   */
+  pickElement(event) {
+    if (!this.hasModels) return null;
+    const canvas = this.renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    if (x < 0 || y < 0 || x >= rect.width || y >= rect.height) return null;
+
+    if (!this._pickTarget) {
+      this._pickTarget = new THREE.WebGLRenderTarget(1, 1);
+      this._pickPixel = new Uint8Array(4);
+      this._pickMaterials = [];
+    }
+    // Model handles are not small numbers, so each draw is tagged with its
+    // position in this list (in the alpha channel) instead.
+    const models = [];
+    const meshes = [];
+    const add = (mesh, modelID) => {
+      if (!mesh || !mesh.visible || modelID == null) return;
+      let i = models.indexOf(modelID);
+      if (i < 0) i = models.push(modelID) - 1;
+      if (i < 255) meshes.push({ mesh, i });
+    };
+    for (const entry of this.models.values()) if (entry.visible) add(entry.mesh, entry.modelID);
+    // Overlays and the highlight draw the same triangles as the base mesh, but
+    // can be all that is drawn while context is hidden.
+    for (const o of this.overlays) add(o.mesh, o.modelID);
+    if (this.selectionMesh) add(this.selectionMesh, this.selectionMesh.modelID);
+    if (!meshes.length) return null;
+
+    const r = this.renderer;
+    const camera = this.activeCamera;
+    const prevTarget = r.getRenderTarget();
+    const prevClear = r.getClearColor(new THREE.Color());
+    const prevAlpha = r.getClearAlpha();
+    const prevAuto = r.autoClear;
+
+    // Centred on the pointer, so the pixel read is the one the ray goes through.
+    camera.setViewOffset(rect.width, rect.height, x - 0.5, y - 0.5, 1, 1);
+    r.setRenderTarget(this._pickTarget);
+    r.setClearColor(0x000000, 0);
+    r.clear();
+    r.autoClear = false;
+    for (const { mesh, i } of meshes) {
+      const saved = mesh.material;
+      mesh.material = this._pickMaterial(i);
+      try {
+        r.render(mesh, camera);
+      } finally {
+        mesh.material = saved;
+      }
+    }
+    r.readRenderTargetPixels(this._pickTarget, 0, 0, 1, 1, this._pickPixel);
+    r.autoClear = prevAuto;
+    r.setRenderTarget(prevTarget);
+    r.setClearColor(prevClear, prevAlpha);
+    camera.clearViewOffset();
+
+    const [cr, cg, cb, ca] = this._pickPixel;
+    if (!ca) return null;
+    return { modelID: models[ca - 1], expressID: cr + cg * 256 + cb * 65536 };
+  }
+
+  /** The flat-colour material `pickElement` draws model `i` with. */
+  _pickMaterial(i) {
+    if (this._pickMaterials[i]) return this._pickMaterials[i];
+    const m = new THREE.ShaderMaterial({
+      uniforms: { modelTag: { value: (i + 1) / 255 } },
+      // web-ifc-three stores expressIDs as a Uint32 attribute, which three
+      // binds as an integer attribute: it must be declared uint here. The
+      // colour is worked out per vertex with integer maths, so all 24 bits
+      // survive (a float varying would round ids above 2^24).
+      vertexShader: `
+        in uint expressID;
+        out vec3 vId;
+        #include <clipping_planes_pars_vertex>
+        void main() {
+          vId = vec3(float(expressID & 255u), float((expressID >> 8) & 255u), float((expressID >> 16) & 255u)) / 255.0;
+          #include <begin_vertex>
+          #include <project_vertex>
+          #include <clipping_planes_vertex>
+        }`,
+      fragmentShader: `
+        uniform float modelTag;
+        in vec3 vId;
+        #include <clipping_planes_pars_fragment>
+        void main() {
+          #include <clipping_planes_fragment>
+          gl_FragColor = vec4(vId, modelTag);
+        }`,
+      side: THREE.DoubleSide,
+      clipping: true,
+      blending: THREE.NoBlending,
+    });
+    this._pickMaterials[i] = m;
+    return m;
+  }
+
+  /** Registers a callback run every frame after the controls update, before rendering. */
+  onFrame(cb) { this.frameListeners.push(cb); }
+
+  /**
    * Ground-plane convex hull over every vertex a callback yields, as `[[x, z], …]`
    * in scene coordinates.
    *
@@ -1088,6 +1238,28 @@ export class Viewer {
     this.controls.target.copy(center);
     this.controls.update();
     return true;
+  }
+
+  /**
+   * Where each model's geometry sits in its own IFC coordinates (metres, Z up):
+   * the median of its element centres, so one stray object does not move it.
+   * The scene is `M · (x, z, -y)` of those (see geo/georef.js), undone here.
+   * @returns {Map<number, {x: number, y: number, z: number}>}
+   */
+  modelCentres() {
+    const Minv = (this.coordinationMatrix || new THREE.Matrix4()).clone().invert();
+    const out = new Map();
+    for (const e of this.entries) {
+      const boxes = [...(e.boxes || new Map()).values()];
+      if (!boxes.length) continue;
+      const median = (axis) => {
+        const v = boxes.map((b) => (b[axis] + b[axis + 3]) / 2).sort((a, b) => a - b);
+        return v[Math.floor(v.length / 2)];
+      };
+      const q = new THREE.Vector3(median(0), median(1), median(2)).applyMatrix4(Minv);
+      out.set(e.modelID, { x: q.x, y: -q.z, z: q.y });
+    }
+    return out;
   }
 
   /**
@@ -1671,6 +1843,11 @@ export class Viewer {
 
   /** @returns {{modelID:number, expressID:number}|null} */
   _pickAt(event) {
+    try {
+      return this.pickElement(event);
+    } catch (err) {
+      console.warn('GPU picking failed; falling back to raycasting.', err);
+    }
     const hit = this._raycastVisible(event);
     if (!hit) return null;
 

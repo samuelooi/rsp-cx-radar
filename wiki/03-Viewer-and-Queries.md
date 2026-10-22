@@ -26,6 +26,41 @@ its axis. Dragging anywhere else still orbits, so the camera can be moved
 between cuts without leaving the tool. The sections bar lists each cut with its
 axis; flip and remove are there. Escape or clicking the tool disarms it.
 
+## Measuring
+
+Turn on **Measure** in the rail (or press **M**), then click two points. As the
+pointer moves it snaps, as in Forma, to the nearest:
+
+- **Endpoint** (square) of an edge,
+- **Midpoint** (triangle) of an edge,
+- point along an **edge** (dot), with the edge highlighted in cyan,
+- or else the **face** under the pointer (ring).
+
+Only real edges are offered: where two faces meet at more than 20°. The lines
+that split a flat face into triangles are ignored. Edges hidden behind the face
+under the pointer, or cut away by a section, are not snapped to. Elements with
+more than 60,000 triangles (topography, say) snap to the triangle under the
+pointer only.
+
+The label gives the distance in metres to the millimetre. When the two points
+differ in both height and plan position, it also gives the vertical (↕) and
+horizontal (↔) parts. Hold **Shift** while placing the second point to lock it
+to the X, Y or Z axis through the first; the line takes the axis colour (red X,
+green height, blue Y). Snapping to a roof edge with Shift held gives its height
+above the first point.
+
+Measurements stay on screen until removed with their ×, **Backspace** (the last
+one, while measuring) or **Clear** in the bar at the bottom. **Escape** drops a
+half-placed measurement, then leaves the tool. Leaving the tool keeps the
+measurements on screen, and clicks select elements as usual again, so you can
+inspect what you measured. Clicks only place points while the tool is on.
+
+Hovering stays quick on large files because nothing is raycast against the
+whole model. The GPU draws the single pixel under the pointer with each
+element in its own colour to say which element it is. Only that element's
+triangles are then tested for the exact point. Clicking to select an element
+uses the same GPU pick.
+
 ## Queries
 
 The QUERIES tab is driven by the CORENET X industry mapping workbook

@@ -72,6 +72,52 @@ indices rather than rebuilding the model, so it stays instant on large files, an
 it leaves the colour overlays untouched (they read from a separate pristine
 index cache).
 
+## Measuring
+
+**Measure** in the tool rail (shortcut **M**) measures between two clicked
+points. The pointer snaps to edge endpoints, midpoints and edges, as in Forma,
+and falls back to the face under it. Hold **Shift** to lock the second point to
+an axis. Labels give metres to the millimetre, plus the vertical and horizontal
+parts. Backspace removes the last measurement and Clear removes all of them.
+Escape leaves the tool; measurements stay on screen and clicks select elements
+again until you clear them. See [Viewer and queries](wiki/03-Viewer-and-Queries.md#measuring).
+
+## Model warnings
+
+The **Warnings** tab lists problems in how a file was exported that will make
+the submission fail, before any IFC-SG property is looked at. It updates every
+time a model is added or closed, and the tab shows how many will fail.
+
+**Will fail**
+
+- Schema is not IFC4.
+- No IfcSite, or more than one in a file.
+- No IfcBuilding, or no building storeys.
+- No IfcMapConversion, no IfcProjectedCRS, or a CRS that is not SVY21 (EPSG:3414).
+- The model lands outside Singapore once its map conversion is applied (usually
+  the survey offset applied twice).
+- Elements far from the rest of the model (stray geometry the view leaves out).
+- PredefinedType USERDEFINED with a blank ObjectType, so no IFC-SG subtype.
+- IfcSpace with no geometry.
+- GlobalIds missing, or shared by more than one element in a file.
+
+**Review**
+
+- More than one IfcBuilding in a file.
+- Storey names repeated or blank.
+- Map conversion scale that does more than convert the length unit to metres.
+- Geometry more than 5 km from the file's own origin.
+- IfcBuildingElementProxy with no ObjectType.
+- Elements or spaces not on any storey.
+- Files over 500 MB.
+- Across files: a different survey datum, the same storey name at different
+  heights, or the same GlobalId in two files.
+
+Open a warning to read why it matters and how to fix it. **Show in model**
+colours its elements, **Zoom to** frames them, and clicking one selects it.
+The element checks cover the elements the IFC-SG mapping indexes, which is
+every class it asks about, not every line in the file.
+
 ## Project settings file
 
 A project is "what we are submitting, to whom, at which gateway". Those three
@@ -720,9 +766,11 @@ in context.
 ```
 index.html                  shell, styles, panel markup
 js/viewer.js                three.js scene, multi-model loading, visibility, overlays
+js/measure.js               point-to-point measuring with edge, endpoint and midpoint snapping
 js/ifc-index.js             walks each IFC once into a queryable element index
 js/ifcsg.js                 ruleset indexing, element matching, value evaluation
 js/dashboard.js             project quantity metrics, totalled by file and level
+js/warnings.js              export problems that will fail a submission (Warnings tab)
 js/memory.js                tab memory estimate, budget and pre-load forecast
 js/util/dom.js              escaping and colour helpers shared with check modules
 js/geo/svy21.js             WGS84 <-> SVY21 (EPSG:3414) projection
