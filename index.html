@@ -8,12 +8,19 @@
 <script type="importmap">
 {
   "imports": {
-    "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/",
-    "three/examples/jsm/utils/BufferGeometryUtils": "https://unpkg.com/three@0.158.0/examples/jsm/utils/BufferGeometryUtils.js",
-    "three/examples/jsm/loaders/DRACOLoader": "https://unpkg.com/three@0.158.0/examples/jsm/loaders/DRACOLoader.js",
+    "three": "https://unpkg.com/three@0.182.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.182.0/examples/jsm/",
+    "three/examples/jsm/": "https://unpkg.com/three@0.182.0/examples/jsm/",
+    "three/examples/jsm/utils/BufferGeometryUtils": "https://unpkg.com/three@0.182.0/examples/jsm/utils/BufferGeometryUtils.js",
+    "three/examples/jsm/loaders/DRACOLoader": "https://unpkg.com/three@0.182.0/examples/jsm/loaders/DRACOLoader.js",
     "web-ifc-three/IFCLoader": "https://unpkg.com/web-ifc-three@0.0.126/IFCLoader.js",
-    "web-ifc": "https://unpkg.com/web-ifc@0.0.36/web-ifc-api.js"
+    "web-ifc": "https://unpkg.com/web-ifc@0.0.36/web-ifc-api.js",
+    "@thatopen/fragments": "https://unpkg.com/@thatopen/fragments@3.4.7/dist/index.mjs"
+  },
+  "scopes": {
+    "https://unpkg.com/@thatopen/fragments@3.4.7/": {
+      "web-ifc": "https://unpkg.com/web-ifc@0.0.77/web-ifc-api.js"
+    }
   }
 }
 </script>
@@ -988,7 +995,7 @@
       <div class="mem-track"><div class="mem-fill" id="mem-fill"></div></div>
       <span class="mem-val" id="mem-val">—</span>
     </div>
-    <input type="file" id="file-input" accept=".ifc" multiple />
+    <input type="file" id="file-input" accept=".ifc,.rspfrag" multiple />
   </div>
 
   <!-- Left panel -->
@@ -1124,7 +1131,7 @@
         <path d="M3 7l9 5 9-5M12 12v10M7.5 4.5l9 5M16.5 4.5l-9 5"/>
       </svg>
       <h1>Drop IFC files to check them</h1>
-      <p>Drag one or more .ifc files anywhere on this window, or choose them from your computer. Load several to check a federated model. Nothing is uploaded — everything is parsed locally in your browser and checked against the CORENET X IFC-SG mapping.</p>
+      <p>Drag one or more .ifc files anywhere on this window, or choose them from your computer. Load several to check a federated model. Nothing is uploaded — everything is parsed locally in your browser and checked against the CORENET X IFC-SG mapping. Files of 150 MB or more are converted once in the background and can be saved as a .rspfrag that opens in seconds.</p>
       <button class="btn primary" id="btn-open-empty">Choose file</button>
       <div class="start-projects" id="start-projects"></div>
     </div>
@@ -1134,6 +1141,7 @@
   <div id="loading">
     <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
     <div class="label" id="loading-label">Reading geometry…</div>
+    <button class="btn" id="loading-cancel" hidden>Cancel</button>
   </div>
 
   <!-- Right info panel -->

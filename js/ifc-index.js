@@ -62,12 +62,26 @@ function normaliseBoolean(value, label) {
   }
 }
 
-/** Unwraps a value handle and applies IFC type-aware normalisation. */
+/**
+ * Unwraps a value handle and applies IFC type-aware normalisation. The type is
+ * `label` in web-ifc 0.0.36 and `name` in 0.0.77 (the large-model converter).
+ */
 function unwrapTyped(v) {
   if (v && typeof v === 'object' && !Array.isArray(v) && 'value' in v) {
-    return normaliseBoolean(unwrap(v), v.label);
+    return normaliseBoolean(unwrap(v), v.label || v.name);
   }
   return unwrap(v);
+}
+
+/**
+ * The parts of an IfcCompoundPlaneAngleMeasure (degrees, minutes, seconds,
+ * millionths) as plain numbers. web-ifc 0.0.36 gives an array of handles,
+ * 0.0.77 one handle holding an array; the index keeps neither, so it reads the
+ * same whichever parsed the file and survives being stored as JSON.
+ */
+function compoundParts(v) {
+  const raw = Array.isArray(v) ? v : v && typeof v === 'object' && Array.isArray(v.value) ? v.value : null;
+  return raw ? raw.map((p) => Number(p && typeof p === 'object' && 'value' in p ? p.value : p)) : null;
 }
 
 /** Quantity lines carry their magnitude on a type-specific field. */
@@ -191,8 +205,8 @@ export function readGeoreference(api, modelID) {
       if (!line || (!line.RefLatitude && !line.RefLongitude)) continue;
       site = {
         name: unwrap(line.Name),
-        refLatitude: line.RefLatitude,
-        refLongitude: line.RefLongitude,
+        refLatitude: compoundParts(line.RefLatitude),
+        refLongitude: compoundParts(line.RefLongitude),
         refElevation: num(line.RefElevation),
       };
       break;
@@ -624,6 +638,54 @@ export function buildIndex(api, modelID, ruleset, onProgress = () => {}) {
     // themselves indexed (a stair's IfcMember stringers) are only reachable
     // through this, so a click on one can still resolve to the stair.
     hostOf: new Map([...hostOf].map(([part, host]) => [`${modelID}:${part}`, `${modelID}:${host}`])),
+  };
+}
+
+/**
+ * An index as plain data, for storing beside a converted model (see
+ * js/frag/store.js). The lookup maps are rebuilt by `reviveIndex`.
+ */
+export function serialiseIndex(index) {
+  return {
+    version: 1,
+    all: index.all,
+    georef: index.georef,
+    storeys: index.storeys,
+    spatial: index.spatial,
+    hostOf: [...index.hostOf],
+  };
+}
+
+/**
+ * The inverse of `serialiseIndex`, under the model handle the viewer gave the
+ * model this time: every `key`, `hostKey` and `hostOf` entry is rewritten, since
+ * handles are per session.
+ */
+export function reviveIndex(data, modelID) {
+  const rekey = (key) => `${modelID}:${String(key).split(':').pop()}`;
+  const all = data.all.map((el) => ({
+    ...el,
+    modelID,
+    key: `${modelID}:${el.expressID}`,
+    hostKey: el.hostKey ? rekey(el.hostKey) : null,
+  }));
+  const byExpressID = new Map(all.map((e) => [e.expressID, e]));
+  const byEntity = new Map();
+  for (const el of all) {
+    if (!byEntity.has(el.canonicalEntity)) byEntity.set(el.canonicalEntity, []);
+    byEntity.get(el.canonicalEntity).push(el);
+  }
+  return {
+    modelID,
+    byId: new Map(all.map((e) => [e.key, e])),
+    byExpressID,
+    byEntity,
+    all,
+    count: all.length,
+    georef: data.georef,
+    storeys: (data.storeys || []).map((s) => ({ ...s, modelID })),
+    spatial: data.spatial,
+    hostOf: new Map((data.hostOf || []).map(([part, host]) => [rekey(part), rekey(host)])),
   };
 }
 

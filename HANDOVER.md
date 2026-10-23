@@ -32,6 +32,34 @@ There is no build step and no Node. Everything is ES modules served by
 | BCF (zip, XML, topics) | `js/bcf/zip.js`, `bcf.js` |
 | Readiness report (PDF writer, layout, content) | `js/report/pdf.js`, `report.js` |
 | Dashboard, memory meter, geo maths | `js/dashboard.js`, `js/memory.js`, `js/geo/` |
+| Large models (Fragments conversion, cache, `.rspfrag`) | `js/frag/convert-worker.js`, `js/frag/store.js`, `loadFragments` in `js/viewer.js` |
+
+## Large models (October 2026)
+
+IFCs of 150 MB or more now open with That Open Fragments 3.4.7 instead of
+web-ifc-three; smaller files keep the old path. See README → Large models for
+how it behaves, and `poc/fragments/HANDOVER.md` and `RESULTS.md` on branch
+`claude/fragments-poc` for why, the test bench and the measurements.
+
+- **three.js went from 0.158 to 0.182** for everyone (Fragments needs it).
+  web-ifc-three 0.0.126 and web-ifc 0.0.36 still drive small files and work on
+  0.182; Fragments gets web-ifc 0.0.77 through an import-map scope.
+- **One index for both paths.** The worker runs `buildIndex` itself, under web-ifc
+  0.0.77. Two value shapes differ between the versions and are now read either
+  way in `ifc-index.js`: the type tag (`label` vs `name`) and compound angles
+  (site latitude/longitude). On a test model the checks give identical results
+  either way; only the model's ground extent differs by 1 m² in 13,185 m²
+  (tessellation).
+- **Both engines share one scene and datum.** A large model's own coordination
+  matrix is mapped onto the viewer's (`_placeFragments`); the same file opened
+  both ways lines up within 8 mm.
+- **Picking on large models is asynchronous** (Fragments raycasts in its
+  worker). The viewer raycasts on pointer move and keeps the latest answer for
+  the synchronous callers (`pickElement`, `raycastFace`, `elementTriangles`);
+  clicks wait for an exact answer. Measuring and the section preview may
+  therefore lag a frame on large models.
+- Not done: conversion progress inside a
+  geometry class, profiling the 590 MB conversion's geometry stage.
 
 ## What changed in the September 2026 session
 
