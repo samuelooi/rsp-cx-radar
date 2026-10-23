@@ -104,6 +104,21 @@ const SELECTION_ID = 'selection';
 /** How long the orbit pivot takes to glide onto a newly selected element. */
 const PIVOT_MS = 350;
 
+/**
+ * Large models are drawn by That Open Fragments instead of web-ifc-three (see
+ * loadFragments). Its worker is served from this repository, like the wasm.
+ */
+const FRAG_WORKER_URL = new URL('../vendor/fragments/worker.mjs', import.meta.url).href;
+
+/**
+ * Fragments models get handles from here up, so they never collide with
+ * web-ifc's (0, 1, 2, …) in `modelID:expressID` keys.
+ */
+const FRAG_ID_BASE = 1000;
+
+/** Elements per getItemsGeometry request while building a shadow mesh. */
+const FRAG_GEOMETRY_CHUNK = 2000;
+
 export class Viewer {
   constructor(container) {
     this.container = container;
@@ -133,6 +148,8 @@ export class Viewer {
     // A drag that starts while the pivot is still gliding to a selection takes
     // over from wherever the glide got to.
     this.controls.addEventListener('start', () => { this._pivotAnim = null; });
+    // Fragments streams detail by what the camera sees, so it is told each move.
+    this.controls.addEventListener('change', () => this.fragments && this.fragments.update());
 
     // Locked to top-down: no orbit, just pan/zoom, so plan mode can't be tilted
     // into a perspective view by accident. With nothing to orbit, left drag
@@ -144,6 +161,13 @@ export class Viewer {
     this.controlsOrtho.screenSpacePanning = true;
     this.controlsOrtho.enabled = false;
     this.controlsOrtho.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.PAN };
+    this.controlsOrtho.addEventListener('change', () => this.fragments && this.fragments.update());
+
+    /** That Open's FragmentsModels, created with the first large model (see loadFragments). */
+    this.fragments = null;
+    this._fragSeq = 0;
+    this._fragSync = null;   // the running Fragments reconcile, see _syncFragments
+    this._fragDirty = false;
 
     // Section cuts (axis-aligned, placed on a picked face) and the plan level
     // cut (horizontal), combined into one clipping-plane list on the renderer.
@@ -228,16 +252,28 @@ export class Viewer {
       this._downPos[e.button] = { x: e.clientX, y: e.clientY };
     });
 
-    this.renderer.domElement.addEventListener('click', (e) => {
+    this.renderer.domElement.addEventListener('click', async (e) => {
       // A tool that owns clicks (measuring) sets this, so no pick is wasted.
       if (this.pickSuspended || this._wasDrag(0, e)) return;
-      this.pickListeners.forEach((cb) => cb(this._pickAt(e)));
+      const hit = await this._pickAtAsync(e);
+      this.pickListeners.forEach((cb) => cb(hit));
     });
-    this.renderer.domElement.addEventListener('contextmenu', (e) => {
+    this.renderer.domElement.addEventListener('contextmenu', async (e) => {
       e.preventDefault();
       if (this._wasDrag(2, e)) return;
-      const hit = this._pickAt(e);
+      const hit = await this._pickAtAsync(e);
       this.menuListeners.forEach((cb) => cb(hit, e.clientX, e.clientY));
+    });
+
+    // Large models answer picks from their worker; see _probe.
+    this._fragTris = new Map();
+    this._probeHit = null;
+    this._probeRun = null;
+    this._probeWanted = null;
+    this._cameraVersion = 0;
+    for (const c of [this.controls, this.controlsOrtho]) c.addEventListener('change', () => { this._cameraVersion++; });
+    this.renderer.domElement.addEventListener('pointermove', (e) => {
+      if (this.fragments && !e.buttons && this._hasFragments()) this._probe(e);
     });
 
     window.addEventListener('resize', () => this.resize());
@@ -365,6 +401,394 @@ export class Viewer {
     }
   }
 
+  // ------------------------------------------------------------ large models
+
+  /** FragmentsModels, created on first use so small-model sessions never load it. */
+  async _fragmentsModels() {
+    if (this.fragments) return this.fragments;
+    const FRAGS = await import('@thatopen/fragments');
+    this._FRAGS = FRAGS;
+    const fm = new FRAGS.FragmentsModels(FRAG_WORKER_URL);
+    // Models are placed by this viewer's datum (see _placeFragments), not by
+    // Fragments' own "relative to the first model".
+    fm.settings.autoCoordinate = false;
+    // Coplanar faces from different elements flicker; a small random offset per
+    // material settles them (That Open's own examples do the same).
+    fm.models.materials.list.onItemSet.add(({ value: material }) => {
+      if (material.isLodMaterial) return;
+      material.polygonOffset = true;
+      material.polygonOffsetUnits = 1;
+      material.polygonOffsetFactor = Math.random();
+    });
+    this.fragments = fm;
+    return fm;
+  }
+
+  /**
+   * Opens a converted model (js/frag/store.js) alongside anything already open.
+   *
+   * Fragments draws it and answers picks (see _probe). Its full geometry never
+   * sits in this page: a large model's triangles run to tens of millions, which
+   * Fragments only gets away with by instancing and level of detail. Instead
+   * the geometry is streamed through once here and summarised per element: a
+   * bounding box and a ground-plane convex hull. Those answer everything that
+   * reads geometry rather than drawing it — framing, hulls, ground level, floor
+   * sampling, model centres — exactly (a hull of the elements' hulls is the hull
+   * of their vertices). Measuring fetches one element's triangles on demand.
+   *
+   * @param {Uint8Array} frag   the .frag bytes (Fragments takes the buffer over)
+   * @param {{ name: string, file?: File|null, bytes?: number }} info
+   *   `file` is the source IFC when there is one (editing needs it)
+   * @param {(pct: number) => void} [onProgress]
+   */
+  async loadFragments(frag, { name, file = null, bytes = 0 }, onProgress = () => {}) {
+    const fm = await this._fragmentsModels();
+    const modelID = FRAG_ID_BASE + (++this._fragSeq);
+    const fragSize = frag.byteLength;
+
+    const t0 = performance.now();
+    const model = await fm.load(frag, { modelId: `frag-${modelID}`, camera: this.activeCamera });
+    await this._placeFragments(model);
+    model.object.updateMatrixWorld(true);
+    // Picks must not land on what a section or plan cut is hiding.
+    model.getClippingPlanesEvent = () => this.renderer.clippingPlanes || [];
+    this.scene.add(model.object);
+    const openMs = performance.now() - t0;
+    onProgress(20);
+
+    const t1 = performance.now();
+    const summary = await this._summarise(model, (p) => onProgress(20 + p * 0.8));
+    const summaryMs = performance.now() - t1;
+
+    const entry = {
+      modelID,
+      kind: 'frag',
+      name,
+      bytes: bytes || (file && file.size) || 0,
+      file,
+      fragModel: model,
+      fragSize,
+      mesh: null,
+      geometryIds: summary.ids,
+      boxes: summary.boxes,
+      hulls: summary.hulls,
+      minY: summary.minY,
+      baseMaterials: [],
+      ghostMaterials: [],
+      visible: true,
+      // Nothing of the IFC is open in this page to release.
+      released: true,
+      timings: { openMs, summaryMs, triangles: summary.triangles },
+    };
+    this.models.set(modelID, entry);
+    this.refresh();
+    await this._fragSync;
+    return entry;
+  }
+
+  /**
+   * Puts a Fragments model where an IFC loaded here would be. Fragments keeps
+   * the model's own coordination matrix (raw IFC, Y up -> its scene); this
+   * viewer's datum is `coordinationMatrix`, so the model is moved by
+   * datum · own⁻¹. The first model of a session establishes the datum.
+   */
+  async _placeFragments(model) {
+    let own = null;
+    try { own = await model.getCoordinationMatrix(); } catch { own = null; }
+    if (!own) return;
+    if (!this.coordinationMatrix) {
+      this.coordinationMatrix = own.clone();
+      return;
+    }
+    const m = this.coordinationMatrix.clone().multiply(own.clone().invert());
+    model.object.matrixAutoUpdate = false;
+    model.object.matrix.copy(m);
+    model.object.matrixWorldNeedsUpdate = true;
+  }
+
+  /**
+   * Calls `cb(id, mesh, matrix)` for every mesh of the given elements, with
+   * the matrix that takes its positions to scene coordinates.
+   */
+  async _eachFragMesh(model, ids, cb, onChunk = () => {}) {
+    const world = model.object.matrixWorld;
+    const m = new THREE.Matrix4();
+    for (let c = 0; c < ids.length; c += FRAG_GEOMETRY_CHUNK) {
+      const chunk = ids.slice(c, c + FRAG_GEOMETRY_CHUNK);
+      const geoms = await model.getItemsGeometry(chunk);
+      chunk.forEach((id, k) => {
+        for (const mesh of geoms[k] || []) {
+          if (!mesh.positions || !mesh.indices || !mesh.indices.length) continue;
+          m.copy(mesh.transform || new THREE.Matrix4()).premultiply(world);
+          cb(id, mesh, m);
+        }
+      });
+      onChunk(Math.min(1, (c + chunk.length) / ids.length));
+    }
+  }
+
+  /**
+   * Per element of a Fragments model, in scene coordinates: its bounding box
+   * ([minX, minY, minZ, maxX, maxY, maxZ], as elementBoxes) and the convex hull
+   * of its vertices on the ground plane (flat [x, z, …]). See loadFragments.
+   */
+  async _summarise(model, onProgress) {
+    const ids = await model.getItemsIdsWithGeometry();
+    const boxes = new Map();
+    const hulls = new Map();
+    const v = new THREE.Vector3();
+    let triangles = 0;
+    let minY = Infinity;
+    let current = null; // { id, b, pts }
+    const flush = () => {
+      if (!current) return;
+      boxes.set(current.id, current.b);
+      const hull = convexHull(current.pts);
+      hulls.set(current.id, Float32Array.from(hull.flat()));
+      if (current.b[1] < minY) minY = current.b[1];
+      current = null;
+    };
+    await this._eachFragMesh(model, ids, (id, mesh, m) => {
+      if (!current || current.id !== id) {
+        flush();
+        current = { id, b: [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity], pts: [] };
+      }
+      const { b, pts } = current;
+      const p = mesh.positions;
+      for (let i = 0, n = p.length / 3; i < n; i++) {
+        v.set(p[i * 3], p[i * 3 + 1], p[i * 3 + 2]).applyMatrix4(m);
+        if (v.x < b[0]) b[0] = v.x; if (v.y < b[1]) b[1] = v.y; if (v.z < b[2]) b[2] = v.z;
+        if (v.x > b[3]) b[3] = v.x; if (v.y > b[4]) b[4] = v.y; if (v.z > b[5]) b[5] = v.z;
+        pts.push([v.x, v.z]);
+      }
+      // Keep the point list short on heavy elements: the hull so far plus
+      // whatever comes next is enough to finish the hull exactly.
+      if (pts.length > 4096) current.pts = convexHull(pts);
+      triangles += mesh.indices.length / 3;
+    }, (f) => onProgress(f * 100));
+    flush();
+    return { ids: [...boxes.keys()], boxes, hulls, minY: Number.isFinite(minY) ? minY : 0, triangles };
+  }
+
+  /**
+   * An element's triangles in scene coordinates (as elementTriangles), read
+   * from Fragments and kept in a small cache, since measuring asks for the
+   * element under the pointer on every move.
+   */
+  async _fetchFragTriangles(entry, expressID) {
+    const key = `${entry.modelID}:${expressID}`;
+    if (this._fragTris.has(key)) return this._fragTris.get(key);
+    const parts = [];
+    const v = new THREE.Vector3();
+    await this._eachFragMesh(entry.fragModel, [expressID], (id, mesh, m) => {
+      const p = mesh.positions;
+      const ix = mesh.indices;
+      const out = new Float32Array(ix.length * 3);
+      for (let i = 0; i < ix.length; i++) {
+        v.set(p[ix[i] * 3], p[ix[i] * 3 + 1], p[ix[i] * 3 + 2]).applyMatrix4(m);
+        out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z;
+      }
+      parts.push(out);
+    });
+    const total = parts.reduce((n, a) => n + a.length, 0);
+    const tris = total ? new Float32Array(total) : null;
+    let o = 0;
+    for (const a of parts) { tris.set(a, o); o += a.length; }
+    this._fragTris.set(key, tris);
+    while (this._fragTris.size > 64) this._fragTris.delete(this._fragTris.keys().next().value);
+    return tris;
+  }
+
+  _hasFragments() {
+    for (const e of this.models.values()) if (e.kind === 'frag') return true;
+    return false;
+  }
+
+  /** The nearest Fragments element under a screen point, across the visible large models. */
+  async _fragRaycast(x, y) {
+    const mouse = new THREE.Vector2(x, y);
+    const dom = this.renderer.domElement;
+    let best = null;
+    for (const e of this.models.values()) {
+      if (e.kind !== 'frag' || !e.visible) continue;
+      const hit = await e.fragModel.raycast({ camera: this.activeCamera, mouse, dom });
+      if (hit && (!best || hit.distance < best.distance)) {
+        best = { modelID: e.modelID, expressID: hit.localId, point: hit.point, normal: hit.normal || null, distance: hit.distance };
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Raycasts the large models under the pointer in the background and keeps
+   * the latest answer, for the synchronous callers (pickElement, raycastFace,
+   * elementTriangles): measuring and the section preview ask on every pointer
+   * move and get an answer at most a frame old. One raycast runs at a time;
+   * moves made meanwhile collapse into the newest. Resolves with the probe.
+   */
+  _probe(event) {
+    this._probeWanted = { x: event.clientX, y: event.clientY };
+    if (!this._probeRun) {
+      this._probeRun = (async () => {
+        try {
+          while (this._probeWanted) {
+            const { x, y } = this._probeWanted;
+            this._probeWanted = null;
+            const cam = this._cameraVersion;
+            const hit = await this._fragRaycast(x, y);
+            this._probeHit = { x, y, cam, hit };
+            if (hit) {
+              const entry = this.models.get(hit.modelID);
+              if (entry) this._fetchFragTriangles(entry, hit.expressID).catch(() => {});
+            }
+          }
+        } catch (err) {
+          console.warn('Could not raycast a large model', err);
+        } finally {
+          this._probeRun = null;
+        }
+        return this._probeHit;
+      })();
+    }
+    return this._probeRun;
+  }
+
+  /** The background raycast's answer for this pointer position, if it is current. */
+  _probeAt(event) {
+    const p = this._probeHit;
+    if (!p || p.cam !== this._cameraVersion) return null;
+    if (Math.abs(p.x - event.clientX) > 3 || Math.abs(p.y - event.clientY) > 3) return null;
+    return p.hit;
+  }
+
+  /** A pick for a click: waits for the large models to answer at exactly this point. */
+  async _pickAtAsync(event) {
+    if (this._hasFragments()) {
+      this._probe(event);
+      while (this._probeRun) await this._probeRun;
+    }
+    return this._pickAt(event);
+  }
+
+  /**
+   * Brings every Fragments model in line with the hidden set, the query
+   * groups, the context mode and the selection. Fragments applies each change
+   * in its worker, so this runs asynchronously; calls made while it runs fold
+   * into one more pass.
+   */
+  _syncFragments() {
+    if (!this.fragments) return Promise.resolve();
+    this._fragDirty = true;
+    if (!this._fragSync) {
+      this._fragSync = (async () => {
+        try {
+          while (this._fragDirty) {
+            this._fragDirty = false;
+            await this._applyFragments();
+          }
+        } catch (err) {
+          console.warn('Could not update a large model', err);
+        } finally {
+          this._fragSync = null;
+        }
+      })();
+    }
+    return this._fragSync;
+  }
+
+  /** What one Fragments model should show: { hidden, groups: [{ids, colour}], contextHidden }. */
+  _fragState(entry) {
+    const hidden = this.hiddenByModel.get(entry.modelID);
+    const grouped = new Set();
+    const groups = this.groups.map((g) => {
+      const ids = [];
+      for (const el of g.elements) {
+        if (el.modelID !== entry.modelID || this.isHidden(el)) continue;
+        for (const id of this._geometryIds(el)) {
+          if (hidden && hidden.has(id)) continue;
+          ids.push(id);
+          grouped.add(id);
+        }
+      }
+      return { ids, colour: g.colour };
+    });
+    const contextHidden = this.groups.length && this.contextMode === 'hidden'
+      ? entry.geometryIds.filter((id) => !grouped.has(id)) : [];
+    return { hidden, groups, contextHidden };
+  }
+
+  /**
+   * Applies only what changed since the last pass, per model: recolouring
+   * every element (ghosting the context) costs about half a second on 100,000
+   * elements, so a new selection or a hide must not redo it.
+   *  - query groups or context mode changed: everything again;
+   *  - the hidden set changed: visibility only;
+   *  - otherwise: the previous selection is put back as it was, the new one lit.
+   */
+  async _applyFragments() {
+    const FRAGS = this._FRAGS;
+    const faces = FRAGS.RenderedFaces.TWO;
+    const solid = (hex) => ({ color: new THREE.Color(hex), renderedFaces: faces, opacity: 1, transparent: false });
+    const ghost = { color: new THREE.Color(0xb8c0cc), renderedFaces: faces, opacity: 0.07, transparent: true };
+    for (const entry of this.models.values()) {
+      if (entry.kind !== 'frag') continue;
+      const model = entry.fragModel;
+      model.object.visible = entry.visible;
+      if (!entry.visible) {
+        entry.fragApplied = null; // a hidden model is not kept up to date
+        continue;
+      }
+
+      const { hidden, groups, contextHidden } = this._fragState(entry);
+      const applied = entry.fragApplied;
+      const look = applied && applied.groups === this.groups && applied.mode === this.contextMode;
+
+      if (!look || applied.hidden !== this.hiddenVersion) {
+        await model.resetVisible();
+        if (hidden && hidden.size) await model.setVisible([...hidden], false);
+        if (contextHidden.length) await model.setVisible(contextHidden, false);
+      }
+
+      const colourOf = new Map();
+      for (const { ids, colour } of groups) for (const id of ids) colourOf.set(id, colour);
+      if (!look) {
+        await model.resetHighlight();
+        if (groups.length && this.contextMode === 'ghost') await model.highlight(undefined, ghost);
+        for (const { ids, colour } of groups) if (ids.length) await model.highlight(ids, solid(colour));
+      } else if (applied.sel.length) {
+        // Put the previous selection back to its group colour, the ghost, or plain.
+        const plain = [];
+        const ghosted = [];
+        const byColour = new Map();
+        for (const id of applied.sel) {
+          if (colourOf.has(id)) {
+            const c = colourOf.get(id);
+            if (!byColour.has(c)) byColour.set(c, []);
+            byColour.get(c).push(id);
+          } else if (groups.length && this.contextMode === 'ghost') ghosted.push(id);
+          else plain.push(id);
+        }
+        if (plain.length) await model.resetHighlight(plain);
+        if (ghosted.length) await model.highlight(ghosted, ghost);
+        for (const [c, ids] of byColour) await model.highlight(ids, solid(c));
+      }
+
+      const sel = this.selection;
+      const selIds = sel && sel.modelID === entry.modelID
+        ? this._geometryIds(sel).filter((id) => !hidden || !hidden.has(id)) : [];
+      if (selIds.length) await model.highlight(selIds, solid(SELECTION_COLOUR));
+
+      entry.fragApplied = { groups: this.groups, mode: this.contextMode, hidden: this.hiddenVersion, sel: selIds };
+    }
+    await this.fragments.update(true);
+  }
+
+  /** Points Fragments' level-of-detail and culling at whichever camera is active. */
+  _fragCamera() {
+    for (const e of this.models.values()) if (e.kind === 'frag') e.fragModel.useCamera(this.activeCamera);
+    if (this.fragments) this.fragments.update(true);
+  }
+
   /**
    * Frees the parsed IFC held in the wasm heap, keeping the rendered mesh.
    *
@@ -398,7 +822,12 @@ export class Viewer {
     this.models.delete(modelID);
     this.hiddenByModel.delete(modelID);
 
-    if (entry.released) {
+    if (entry.kind === 'frag') {
+      this.scene.remove(entry.fragModel.object);
+      this.fragments.disposeModel(entry.fragModel.modelId).catch(() => {});
+      for (const key of [...this._fragTris.keys()]) if (key.startsWith(modelID + ':')) this._fragTris.delete(key);
+      this._probeHit = null;
+    } else if (entry.released) {
       // ifcManager.close would call CloseModel a second time; that throws, and
       // its catch-all would then skip disposing the mesh. Tear down directly.
       this.scene.remove(entry.mesh);
@@ -415,7 +844,7 @@ export class Viewer {
 
     // close() does not touch this, and it holds a full copy of the index buffer
     // (~147 MB on a large model), so drop it explicitly.
-    delete this.loader.ifcManager.subsets.items.map[modelID];
+    if (entry.kind !== 'frag') delete this.loader.ifcManager.subsets.items.map[modelID];
 
     entry.ghostMaterials.forEach((m) => m.dispose());
     // Keep the datum while anything is still open so the remaining models do not
@@ -460,7 +889,16 @@ export class Viewer {
       count(geometry.index);
     };
 
-    for (const entry of this.models.values()) countGeometry(entry.mesh.geometry);
+    for (const entry of this.models.values()) {
+      // A large model's geometry lives in Fragments' worker; this page holds
+      // only its per-element summaries (see loadFragments).
+      if (entry.kind === 'frag') {
+        for (const h of entry.hulls.values()) bytes += h.byteLength;
+        bytes += entry.boxes.size * 6 * 8;
+        continue;
+      }
+      countGeometry(entry.mesh.geometry);
+    }
     for (const o of this.overlays) if (o.mesh) countGeometry(o.mesh.geometry);
 
     // The pristine index copy kept for hiding and subsets, per model.
@@ -496,6 +934,8 @@ export class Viewer {
 
   /** `{ indexCache, map }` for a model: index ranges per expressID per material. */
   _itemsMap(modelID) {
+    const entry = this.models.get(modelID);
+    if (entry && entry.kind === 'frag') return null;
     const items = this.loader.ifcManager.subsets.items;
     items.generateGeometryIndexMap(modelID);
     return items.map[modelID];
@@ -648,6 +1088,9 @@ export class Viewer {
     const hasQuery = this.groups.length > 0;
 
     for (const entry of this.models.values()) {
+      // Fragments draws these itself; see _syncFragments, below.
+      if (entry.kind === 'frag') continue;
+
       this._applyHidden(entry);
 
       if (!entry.visible) {
@@ -738,10 +1181,12 @@ export class Viewer {
   /** Rebuilds the highlight subset, skipping anything the user has hidden. */
   _drawSelection() {
     this._clearSelectionMesh();
+    // Fragments models draw their highlight themselves, with everything else.
+    this._syncFragments();
     const sel = this.selection;
     if (!sel) return;
     const entry = this.models.get(sel.modelID);
-    if (!entry || !entry.visible) return;
+    if (!entry || !entry.visible || entry.kind === 'frag') return;
 
     const hidden = this.hiddenByModel.get(sel.modelID);
     const ids = this._geometryIds(sel).filter((id) => !hidden || !hidden.has(id));
@@ -807,6 +1252,14 @@ export class Viewer {
   elementPoints(modelID, expressID, limit = 20000) {
     const entry = this.models.get(modelID);
     if (!entry) return [];
+    if (entry.kind === 'frag') {
+      // The corners of its box: every caller wants extents, not the surface.
+      const b = entry.boxes.get(expressID);
+      if (!b) return [];
+      const out = [];
+      for (const x of [b[0], b[3]]) for (const y of [b[1], b[4]]) for (const z of [b[2], b[5]]) out.push(new THREE.Vector3(x, y, z));
+      return out;
+    }
     const items = this._itemsMap(modelID);
     const byMaterial = items && items.map.get(expressID);
     if (!byMaterial) return [];
@@ -839,6 +1292,17 @@ export class Viewer {
   elementTriangles(modelID, expressID, maxTriangles = Infinity) {
     const entry = this.models.get(modelID);
     if (!entry) return null;
+    if (entry.kind === 'frag') {
+      // Fetched from Fragments in the background (the pointer probe asks for
+      // the element it lands on), so the first ask may come back empty.
+      const key = `${modelID}:${expressID}`;
+      if (!this._fragTris.has(key)) {
+        this._fetchFragTriangles(entry, expressID).catch(() => {});
+        return null;
+      }
+      const tris = this._fragTris.get(key);
+      return tris && tris.length / 9 <= maxTriangles ? tris : null;
+    }
     const items = this._itemsMap(modelID);
     const byMaterial = items && items.map.get(expressID);
     if (!byMaterial) return null;
@@ -878,6 +1342,34 @@ export class Viewer {
    */
   pickElement(event) {
     if (!this.hasModels) return null;
+    const ifcHit = this._pickIfc(event);
+    // Large models answer from the background probe (see _probe).
+    const frag = this._hasFragments() ? this._probeAt(event) : null;
+    if (!frag) return ifcHit;
+    const fragHit = { modelID: frag.modelID, expressID: frag.expressID };
+    if (!ifcHit) return fragHit;
+    // Both engines have something under the pointer: the nearer one is in front.
+    const d = this._rayDistanceTo(event, ifcHit);
+    return d != null && d < frag.distance ? ifcHit : fragHit;
+  }
+
+  /** How far along the pointer ray an element's nearest triangle is, or null. */
+  _rayDistanceTo(event, el) {
+    const tris = this.elementTriangles(el.modelID, el.expressID);
+    if (!tris) return null;
+    const ray = this._pointerRay(event).ray;
+    const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), p = new THREE.Vector3();
+    let best = Infinity;
+    for (let i = 0; i < tris.length; i += 9) {
+      a.fromArray(tris, i); b.fromArray(tris, i + 3); c.fromArray(tris, i + 6);
+      if (ray.intersectTriangle(a, b, c, false, p)) best = Math.min(best, ray.origin.distanceTo(p));
+    }
+    return Number.isFinite(best) ? best : null;
+  }
+
+  /** pickElement for the web-ifc-three meshes only. */
+  _pickIfc(event) {
+    if (![...this.models.values()].some((e) => e.mesh)) return null;
     const canvas = this.renderer.domElement;
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
@@ -899,7 +1391,7 @@ export class Viewer {
       if (i < 0) i = models.push(modelID) - 1;
       if (i < 255) meshes.push({ mesh, i });
     };
-    for (const entry of this.models.values()) if (entry.visible) add(entry.mesh, entry.modelID);
+    for (const entry of this.models.values()) if (entry.visible && entry.mesh) add(entry.mesh, entry.modelID);
     // Overlays and the highlight draw the same triangles as the base mesh, but
     // can be all that is drawn while context is hidden.
     for (const o of this.overlays) add(o.mesh, o.modelID);
@@ -1033,16 +1525,21 @@ export class Viewer {
   /** Ground-plane hull of every visible model, in scene coordinates. */
   modelHull() {
     const meshes = [];
+    const hulls = [];
     for (const entry of this.models.values()) {
-      if (entry.visible) meshes.push(entry.mesh.geometry.attributes.position);
+      if (!entry.visible) continue;
+      if (entry.kind === 'frag') hulls.push(...entry.hulls.values());
+      else meshes.push(entry.mesh.geometry.attributes.position);
     }
-    if (!meshes.length) return [];
+    if (!meshes.length && !hulls.length) return [];
 
     return this._groundHull((cb) => {
       for (const position of meshes) {
         const arr = position.array;
         for (let i = 0, n = position.count; i < n; i++) cb(arr[i * 3], arr[i * 3 + 2]);
       }
+      // A large model's per-element hulls: their hull is the hull of its vertices.
+      for (const h of hulls) for (let i = 0; i < h.length; i += 2) cb(h[i], h[i + 1]);
     });
   }
 
@@ -1055,16 +1552,22 @@ export class Viewer {
     }
 
     const sources = [];
+    const hulls = [];
     for (const [modelID, ids] of perModel) {
       const entry = this.models.get(modelID);
       if (!entry) continue;
+      if (entry.kind === 'frag') {
+        for (const id of ids) if (entry.hulls.has(id)) hulls.push(entry.hulls.get(id));
+        continue;
+      }
       const items = this._itemsMap(modelID);
       if (!items) continue;
       sources.push({ position: entry.mesh.geometry.attributes.position, items, ids });
     }
-    if (!sources.length) return [];
+    if (!sources.length && !hulls.length) return [];
 
     return this._groundHull((cb) => {
+      for (const h of hulls) for (let i = 0; i < h.length; i += 2) cb(h[i], h[i + 1]);
       for (const { position, items, ids } of sources) {
         const arr = position.array;
         const cache = items.indexCache;
@@ -1089,6 +1592,10 @@ export class Viewer {
     let min = Infinity;
     for (const entry of this.models.values()) {
       if (!entry.visible) continue;
+      if (entry.kind === 'frag') {
+        if (entry.minY < min) min = entry.minY;
+        continue;
+      }
       const g = entry.mesh.geometry;
       if (!g.boundingBox) g.computeBoundingBox();
       if (g.boundingBox && g.boundingBox.min.y < min) min = g.boundingBox.min.y;
@@ -1373,7 +1880,7 @@ export class Viewer {
     if (!box) {
       // Too few elements to tell a stray from the model: frame everything.
       box = new THREE.Box3();
-      for (const e of visible) box.union(new THREE.Box3().setFromObject(e.mesh));
+      for (const e of visible) box.union(e.kind === 'frag' ? e.fragModel.box : new THREE.Box3().setFromObject(e.mesh));
       if (box.isEmpty()) box = null;
     }
     far.sort((a, b) => b.distance - a.distance);
@@ -1441,6 +1948,7 @@ export class Viewer {
     this.controls.enabled = false;
     this.controlsOrtho.enabled = true;
     this.groundY = box.min.y;
+    this._fragCamera();
     return true;
   }
 
@@ -1448,6 +1956,7 @@ export class Viewer {
     this.activeCamera = this.camera;
     this.controlsOrtho.enabled = false;
     this.controls.enabled = true;
+    this._fragCamera();
   }
 
   /** Horizontal clip plane: keeps geometry at or below `y`, hides above. */
@@ -1470,6 +1979,17 @@ export class Viewer {
   elementYRange(modelID, expressID, expressIDs = [expressID]) {
     const entry = this.models.get(modelID);
     if (!entry) return null;
+    if (entry.kind === 'frag') {
+      // Exact: a large model's boxes are taken from its vertices.
+      let min = Infinity, max = -Infinity;
+      for (const id of expressIDs) {
+        const b = entry.boxes.get(id);
+        if (!b) continue;
+        if (b[1] < min) min = b[1];
+        if (b[4] > max) max = b[4];
+      }
+      return isFinite(min) ? { min, max } : null;
+    }
     const items = this._itemsMap(modelID);
     if (!items) return null;
 
@@ -1521,11 +2041,16 @@ export class Viewer {
    * @returns {{point: THREE.Vector3, normal: THREE.Vector3, axis: 'x'|'y'|'z'}|null}
    */
   raycastFace(event) {
-    const hit = this._raycastVisible(event);
-    if (!hit || !hit.face) return null;
+    let hit = this._raycastVisible(event);
+    let normal = hit && hit.face ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld) : null;
+    // Large models answer from the background probe (see _probe), normal included.
+    const frag = this._hasFragments() ? this._probeAt(event) : null;
+    if (frag && frag.normal && (!normal || frag.distance < hit.distance)) {
+      hit = { point: frag.point };
+      normal = frag.normal.clone().normalize();
+    }
+    if (!normal) return null;
 
-    const normal = hit.face.normal.clone()
-      .transformDirection(hit.object.matrixWorld);
     const ax = Math.abs(normal.x), ay = Math.abs(normal.y), az = Math.abs(normal.z);
     const axis = ax >= ay && ax >= az ? 'x' : ay >= az ? 'y' : 'z';
     const snapped = new THREE.Vector3();
@@ -1813,7 +2338,8 @@ export class Viewer {
   _raycastVisible(event, includeOverlays = true) {
     if (!this.hasModels) return null;
     const targets = [];
-    for (const entry of this.models.values()) if (entry.visible) targets.push(entry.mesh);
+    for (const entry of this.models.values()) if (entry.visible && entry.mesh) targets.push(entry.mesh);
+    if (!targets.length) return null;
     // Overlay subsets live on the scene, not under a model, so both have to be
     // offered to the raycaster or picking would stop working during a query.
     if (includeOverlays) for (const o of this.overlays) if (o.mesh) targets.push(o.mesh);
