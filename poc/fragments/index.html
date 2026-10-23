@@ -1,19 +1,19 @@
-<title>Fragments Load Test</title>
+<title>Fragments Viewer Test</title>
 <style>
-  /* Full-window 3D view with one floating readout panel, top left. */
+  /* Full-window 3D view with one floating panel, top left. */
   :root {
     --bg: #eef1f4; --panel: #ffffff; --panel-2: #f1f3f6; --border: #d6dbe2;
-    --text: #1b222b; --muted: #4d5765; --dim: #6f7987; --accent: #2f7bd8; --on-accent: #ffffff;
+    --text: #1b222b; --muted: #4d5765; --dim: #6f7987; --accent: #2f7bd8; --on-accent: #ffffff; --bad: #c0392b;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #1b1e23; --panel: #23272e; --panel-2: #2b3038; --border: #353b45;
-      --text: #e6e8eb; --muted: #a3a9b3; --dim: #7c838e; --accent: #4f9cf0; --on-accent: #0d1420; color-scheme: dark;
+      --text: #e6e8eb; --muted: #a3a9b3; --dim: #7c838e; --accent: #4f9cf0; --on-accent: #0d1420; --bad: #f07a6c; color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #1b1e23; --panel: #23272e; --panel-2: #2b3038; --border: #353b45;
-    --text: #e6e8eb; --muted: #a3a9b3; --dim: #7c838e; --accent: #4f9cf0; --on-accent: #0d1420; color-scheme: dark;
+    --text: #e6e8eb; --muted: #a3a9b3; --dim: #7c838e; --accent: #4f9cf0; --on-accent: #0d1420; --bad: #f07a6c; color-scheme: dark;
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -22,7 +22,7 @@
   #view { position: absolute; inset: 0; }
   #view canvas { display: block; }
   .panel { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px));
-    width: min(340px, calc(100% - 32px)); max-height: calc(100% - 24px);
+    width: min(360px, calc(100% - 32px)); max-height: calc(100% - 24px);
     overflow: auto; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px;
     box-shadow: 0 6px 22px rgba(0,0,0,.3); }
   h1 { font-size: 14px; margin: 0 0 2px; }
@@ -30,20 +30,27 @@
   label.file { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px;
     background: var(--accent); color: var(--on-accent); cursor: pointer; font-weight: 600; font-size: 12.5px; }
   label.file input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-  label.file:focus-within, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  button { font: inherit; font-size: 12px; color: var(--text); background: var(--panel-2); border: 1px solid var(--border);
+  label.file:focus-within, button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button, select { font: inherit; font-size: 12px; color: var(--text); background: var(--panel-2); border: 1px solid var(--border);
     border-radius: 6px; padding: 5px 10px; cursor: pointer; }
   button:disabled { opacity: .45; cursor: default; }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
   .status { margin-top: 10px; color: var(--muted); font-size: 12px; min-height: 18px; }
+  .status.bad { color: var(--bad); }
   .bar { height: 4px; background: var(--panel-2); border-radius: 2px; margin-top: 6px; overflow: hidden; }
   .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; margin-top: 6px; font-variant-numeric: tabular-nums; }
   td { padding: 3px 0; border-top: 1px solid var(--border); font-size: 12px; vertical-align: top; }
-  td:first-child { color: var(--muted); width: 48%; }
-  .sec { margin-top: 12px; font-size: 10.5px; letter-spacing: .06em; color: var(--dim); }
-  #pick td:last-child { overflow-wrap: anywhere; }
-  .note { margin-top: 10px; font-size: 11.5px; color: var(--dim); }
+  td:first-child { color: var(--muted); width: 46%; padding-right: 6px; }
+  td:last-child { overflow-wrap: anywhere; }
+  .sec { margin-top: 14px; font-size: 10.5px; letter-spacing: .06em; color: var(--dim); }
+  .models label { display: flex; gap: 6px; align-items: center; font-size: 12px; padding: 3px 0; }
+  .models .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .models button { padding: 1px 7px; }
+  .legend { display: grid; grid-template-columns: 12px 1fr auto; gap: 3px 6px; margin-top: 6px; font-size: 12px; align-items: center; }
+  .legend i { width: 12px; height: 12px; border-radius: 3px; }
+  .legend span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .note { margin-top: 12px; font-size: 11.5px; color: var(--dim); }
   .drop { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none;
     color: var(--dim); font-size: 14px; }
 </style>
@@ -58,167 +65,154 @@
 }
 </script>
 <div id="view"></div>
-<div class="drop" id="drop">Open an IFC or a .frag file</div>
+<div class="drop" id="drop">Open IFC or .frag files</div>
 <div class="panel">
-  <h1>Fragments test</h1>
-  <p class="sub">Proof of concept for large models: IFC → Fragments → browser.</p>
+  <h1>Fragments viewer</h1>
+  <p class="sub">The FragmentsViewer module with the app's viewer interface. IFCs are converted in a background worker and cached.</p>
   <div class="row">
-    <label class="file">Open .ifc or .frag<input type="file" id="file" accept=".ifc,.frag" /></label>
+    <label class="file">Open .ifc / .frag<input type="file" id="file" accept=".ifc,.frag" multiple /></label>
     <button id="sample" title="A synthetic model: 40,000 walls, converted offline">Load sample</button>
-    <button id="save" hidden disabled title="Save the converted model so the next open skips conversion">Save .frag</button>
+    <button id="cancel" hidden>Cancel</button>
   </div>
   <div class="status" id="status">Nothing loaded.</div>
   <div class="bar"><i id="bar"></i></div>
+
+  <div id="loaded" hidden>
+    <div class="sec">MODELS</div>
+    <div class="models" id="models"></div>
+
+    <div class="sec">VIEW</div>
+    <div class="row">
+      <button id="fit">Fit</button>
+      <button id="hide" disabled>Hide selected</button>
+      <button id="isolate" disabled>Isolate class</button>
+      <button id="showAll">Show all</button>
+      <button id="save" hidden>Save .frag</button>
+    </div>
+    <div class="row">
+      <button id="colour">Colour by class</button>
+      <select id="context" aria-label="Everything else">
+        <option value="ghost">Others ghosted</option>
+        <option value="hidden">Others hidden</option>
+        <option value="normal">Others normal</option>
+      </select>
+      <button id="clearColour" disabled>Clear colours</button>
+    </div>
+    <div class="legend" id="legend"></div>
+  </div>
+
   <div class="sec">MEASURED</div>
   <table id="stats"></table>
   <div class="sec">SELECTED ELEMENT</div>
   <table id="pick"><tr><td>Click an element</td><td></td></tr></table>
-  <p class="note">An IFC is converted here in the browser first. That is slow and freezes the page on big files.
-    The same conversion can run offline with <code>poc/fragments/convert.mjs</code>, and a .frag then opens in seconds.</p>
+
+  <div class="sec">CONVERTED MODELS CACHE</div>
+  <div class="row"><span id="cacheInfo" class="sub" style="margin:0">…</span><button id="clearCache">Clear</button></div>
 </div>
 
 <script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import * as FRAGS from '@thatopen/fragments';
+import { FragmentsViewer } from './fragments-viewer.js';
+import { cacheEntries, clearCache, fragFor } from './frag-store.js';
 
 const $ = (id) => document.getElementById(id);
 const fmtMB = (n) => `${(n / 1048576).toFixed(1)} MB`;
 const fmtS = (ms) => `${(ms / 1000).toFixed(1)} s`;
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
 const stats = new Map();
 function stat(k, v) {
-  stats.set(k, v);
-  $('stats').innerHTML = [...stats].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
+  if (v == null) stats.delete(k); else stats.set(k, v);
+  $('stats').innerHTML = [...stats].map(([a, b]) => `<tr><td>${esc(a)}</td><td>${b}</td></tr>`).join('');
 }
-const status = (t, pct) => { $('status').textContent = t; if (pct != null) $('bar').style.width = `${pct}%`; };
-const nextFrame = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
-
-// ---------------------------------------------------------------- scene
-const view = $('view');
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-view.appendChild(renderer.domElement);
-const scene = new THREE.Scene();
-const themeBg = () => new THREE.Color(getComputedStyle(document.body).backgroundColor);
-scene.background = themeBg();
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { scene.background = themeBg(); });
-new MutationObserver(() => { scene.background = themeBg(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 20000);
-camera.position.set(30, 25, 30);
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 2.2));
-const sun = new THREE.DirectionalLight(0xffffff, 1.4);
-sun.position.set(50, 100, 30);
-scene.add(sun);
-function resize() {
-  renderer.setSize(view.clientWidth, view.clientHeight);
-  camera.aspect = view.clientWidth / view.clientHeight;
-  camera.updateProjectionMatrix();
+function status(t, pct, bad = false) {
+  $('status').textContent = t;
+  $('status').classList.toggle('bad', bad);
+  if (pct != null) $('bar').style.width = `${pct}%`;
 }
-addEventListener('resize', resize);
-resize();
 
-// The worker is served beside this page: the hosted page may only start
-// workers from its own files, so FragmentsModels.getWorker() (which fetches
-// from unpkg) is not used.
-const fragments = new FRAGS.FragmentsModels(new URL('./vendor/fragments-worker.mjs', import.meta.url).href);
-controls.addEventListener('change', () => fragments.update());
+const viewer = new FragmentsViewer($('view'));
+const themeBg = () => getComputedStyle(document.body).backgroundColor;
+const applyBg = () => viewer.scene.background.setStyle(themeBg());
+applyBg();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyBg);
 
+// Frame rate and heap, once a second.
 let frames = 0;
 let lastFps = performance.now();
-renderer.setAnimationLoop(() => {
-  controls.update();
-  renderer.render(scene, camera);
+viewer.onFrame(() => {
   frames++;
   const now = performance.now();
-  if (now - lastFps > 1000) {
-    if (stats.size) stat('Frame rate', `${Math.round(frames * 1000 / (now - lastFps))} fps`);
-    if (performance.memory && stats.size) stat('JS heap', fmtMB(performance.memory.usedJSHeapSize));
-    frames = 0;
-    lastFps = now;
+  if (now - lastFps < 1000) return;
+  if (viewer.hasModels) {
+    stat('Frame rate', `${Math.round(frames * 1000 / (now - lastFps))} fps`);
+    if (performance.memory) stat('JS heap (page)', fmtMB(performance.memory.usedJSHeapSize));
   }
+  frames = 0;
+  lastFps = now;
 });
 
 // ---------------------------------------------------------------- loading
-let current = null;
-let fragBytes = null;
-let fragName = 'model.frag';
+let abort = null;
+let queue = Promise.resolve();
 
-async function clearModel() {
-  if (!current) return;
-  scene.remove(current.object);
-  await fragments.disposeModel(current.modelId);
-  current = null;
+function openFiles(files) {
+  for (const file of files) queue = queue.then(() => openOne(file));
 }
 
-async function convertIfc(file) {
-  status(`Reading ${file.name}…`, 2);
-  await nextFrame();
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const importer = new FRAGS.IfcImporter();
-  importer.wasm = { path: new URL('./vendor/web-ifc/', import.meta.url).href, absolute: true };
+async function openOne(file) {
+  abort = new AbortController();
+  $('cancel').hidden = false;
+  $('drop').hidden = true;
+  const isIfc = /\.ifc$/i.test(file.name);
+  status(`Opening ${file.name}…`, 1);
+  // The converter reports once per IFC class, and one big class (thousands of
+  // curtain-wall plates) can take minutes, so a ticking clock shows it is alive.
   const t0 = performance.now();
-  const out = await importer.process({
-    bytes,
-    progressCallback: (p, d) => status(`Converting: ${d && d.process} ${Math.round(p * 100)}%`, 5 + p * 75),
-  });
-  stat('Conversion (in browser)', fmtS(performance.now() - t0));
-  return out;
-}
-
-async function open(file) {
+  let progress = { pct: 1, stage: '', done: '' };
+  const showProgress = () => {
+    const { pct, stage, done } = progress;
+    const elapsed = `${Math.floor((performance.now() - t0) / 1000)} s`;
+    if (stage === 'opening') status(`Opening the fragments… ${elapsed}`, pct);
+    else status(`Converting ${file.name}: ${stage || 'starting'} ${Math.round(pct / 0.9)}%, ${elapsed}` +
+      (stage === 'geometries' && done ? ` (finished ${done}; a large class can take minutes)` : ''), pct);
+  };
+  const ticker = setInterval(showProgress, 1000);
   try {
-    $('sample').disabled = true;
-    $('drop').hidden = true;
-    stats.clear();
-    $('pick').innerHTML = '<tr><td>Click an element</td><td></td></tr>';
-    await clearModel();
-    stat('File', `${file.name} (${fmtMB(file.size)})`);
-    const isFrag = /\.frag$/i.test(file.name);
-    fragBytes = isFrag ? new Uint8Array(await file.arrayBuffer()) : await convertIfc(file);
-    fragName = file.name.replace(/\.(ifc|frag)$/i, '') + '.frag';
-    stat('.frag size', fmtMB(fragBytes.byteLength));
-    $('save').disabled = isFrag;
-
-    status('Opening the fragments…', 85);
-    const t0 = performance.now();
-    const model = await fragments.load(fragBytes, { modelId: `m${Date.now()}`, camera });
-    scene.add(model.object);
-    await fragments.update(true);
-    const loadMs = performance.now() - t0;
-    stat('Open .frag (to first draw)', fmtS(loadMs));
-    current = model;
-
-    // Frame the model.
-    const box = model.box;
-    if (!box.isEmpty()) {
-      const c = box.getCenter(new THREE.Vector3());
-      const r = box.getSize(new THREE.Vector3()).length() / 2;
-      camera.position.copy(c).add(new THREE.Vector3(r, r * 0.8, r));
-      camera.near = Math.max(0.05, r / 2000);
-      camera.far = r * 20;
-      camera.updateProjectionMatrix();
-      controls.target.copy(c);
-      controls.update();
-      await fragments.update(true);
-    }
-    const cats = await model.getItemsOfCategories([/.*/]);
-    const counts = Object.entries(cats).map(([k, v]) => [k, v.length]).sort((a, b) => b[1] - a[1]);
-    stat('Items', counts.reduce((n, [, c]) => n + c, 0).toLocaleString());
-    stat('Largest classes', counts.slice(0, 4).map(([k, n]) => `${k} ${n.toLocaleString()}`).join('<br>'));
-    status(`Loaded. Orbit with the mouse; click an element to read its data.`, 100);
+    const entry = await viewer.load(file, (pct, stage, ifcClass) => {
+      progress = { pct, stage, done: ifcClass || (stage === progress.stage ? progress.done : '') };
+      showProgress();
+    }, { signal: abort.signal });
+    clearInterval(ticker);
+    const total = performance.now() - t0;
+    const t = entry.timings;
+    const label = viewer.models.size > 1 ? ` (${entry.name})` : '';
+    stat(`File${label}`, `${esc(file.name)}<br>${fmtMB(file.size)}`);
+    stat(`.frag${label}`, `${fmtMB(entry.fragSize)}, ${({ frag: 'opened directly', cache: 'from the cache', converted: 'converted now' })[entry.source]}`);
+    if (t.convertMs != null) stat(`Conversion, in a worker${label}`, fmtS(t.convertMs));
+    stat(`Open .frag to first draw${label}`, fmtS(t.openMs));
+    stat(`Element boxes${label}`, fmtS(t.boxesMs));
+    stat(`Total${label}`, fmtS(total));
+    stat(`Items with geometry${label}`, entry.geometryIds.length.toLocaleString());
+    if (viewer.models.size === 1) viewer.fit();
+    if (viewer.farElements.length) stat('Far elements left out of framing', viewer.farElements.length.toLocaleString());
+    renderModels();
+    $('loaded').hidden = false;
+    $('save').hidden = !/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || !isIfc;
+    status('Loaded. Orbit with the mouse; click an element to read its data.', 100);
+    refreshCacheInfo();
   } catch (err) {
-    console.error(err);
-    status(`Failed: ${err && err.message ? err.message : err}`, 0);
+    if (err && err.name === 'AbortError') status('Cancelled.', 0);
+    else { console.error(err); status(`Failed: ${err && err.message ? err.message : err}`, 0, true); }
   } finally {
-    $('sample').disabled = false;
+    clearInterval(ticker);
+    $('cancel').hidden = true;
+    abort = null;
   }
 }
 
-$('file').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) open(f); e.target.value = ''; });
+$('cancel').addEventListener('click', () => abort && abort.abort());
+$('file').addEventListener('change', (e) => { openFiles([...e.target.files]); e.target.value = ''; });
 addEventListener('dragover', (e) => e.preventDefault());
-addEventListener('drop', (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) open(f); });
+addEventListener('drop', (e) => { e.preventDefault(); openFiles([...e.dataTransfer.files]); });
 $('sample').addEventListener('click', async () => {
   status('Downloading the sample…', 2);
   // Stored as base64 text, because the hosted page only serves known file types.
@@ -226,46 +220,159 @@ $('sample').addEventListener('click', async () => {
   const bin = atob((await res.text()).trim());
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  open(new File([bytes], 'sample-40k.frag'));
+  openFiles([new File([bytes], 'sample-40k.frag')]);
 });
-// The hosted page cannot start downloads, so saving is offered only locally.
-$('save').hidden = !/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
-$('save').addEventListener('click', () => {
+
+// ?src=models/a.ifc,models/b.ifc opens files served beside the page (local testing).
+const src = new URLSearchParams(location.search).get('src');
+if (src) {
+  queue = queue.then(async () => {
+    for (const path of src.split(',')) {
+      status(`Fetching ${path}…`, 1);
+      const res = await fetch(new URL(path, location.href));
+      if (!res.ok) { status(`Could not fetch ${path}: ${res.status}`, 0, true); continue; }
+      const blob = await res.blob();
+      await openOne(new File([blob], path.split('/').pop(), { lastModified: Number(res.headers.get('x-mtime')) || 0 }));
+    }
+  });
+}
+
+$('save').addEventListener('click', async () => {
+  const entry = viewer.entries.at(-1);
+  if (!entry) return;
+  // The viewer handed its copy to Fragments; the cached one is read back.
+  const { bytes } = await fragFor(entry.file);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([fragBytes]));
-  a.download = fragName;
+  a.href = URL.createObjectURL(new Blob([bytes]));
+  a.download = entry.name.replace(/\.ifc$/i, '') + '.frag';
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 });
 
-// ---------------------------------------------------------------- picking
-let selected = null;
-let down = null;
-renderer.domElement.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
-renderer.domElement.addEventListener('click', async (e) => {
-  if (!current || (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5)) return;
+function renderModels() {
+  $('models').innerHTML = '';
+  for (const e of viewer.entries) {
+    const row = document.createElement('label');
+    row.innerHTML = `<input type="checkbox" ${e.visible ? 'checked' : ''}><span class="name" title="${esc(e.name)}">${esc(e.name)}</span><button title="Close this model">✕</button>`;
+    row.querySelector('input').addEventListener('change', (ev) => viewer.setModelVisible(e.modelID, ev.target.checked));
+    row.querySelector('button').addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      await viewer.removeModel(e.modelID);
+      renderModels();
+      if (!viewer.hasModels) { $('loaded').hidden = true; stats.clear(); stat('x', null); }
+    });
+    $('models').appendChild(row);
+  }
+}
+
+async function refreshCacheInfo() {
+  const list = await cacheEntries();
+  const total = list.reduce((n, e) => n + e.size, 0);
+  $('cacheInfo').textContent = list.length ? `${list.length} model${list.length > 1 ? 's' : ''}, ${fmtMB(total)}` : 'Empty';
+}
+$('clearCache').addEventListener('click', async () => { await clearCache(); refreshCacheInfo(); });
+refreshCacheInfo();
+
+// ---------------------------------------------------------------- view tools
+$('fit').addEventListener('click', () => viewer.fit());
+
+let selected = null; // { modelID, expressID, category }
+const hidden = [];
+$('hide').addEventListener('click', async () => {
+  if (!selected) return;
+  hidden.push(selected);
   const t0 = performance.now();
-  const hit = await current.raycast({ camera, mouse: new THREE.Vector2(e.clientX, e.clientY), dom: renderer.domElement });
-  const pickMs = performance.now() - t0;
-  if (selected != null) await current.resetHighlight([selected]);
+  await viewer.setHidden(hidden);
+  stat('Hide (last)', `${(performance.now() - t0).toFixed(0)} ms`);
+  select(null);
+});
+$('showAll').addEventListener('click', async () => {
+  hidden.length = 0;
+  const t0 = performance.now();
+  await viewer.showAll();
+  stat('Show all', `${(performance.now() - t0).toFixed(0)} ms`);
+  renderModels();
+});
+
+const PALETTE = [0xe8a33d, 0x4fb286, 0xd8615b, 0x8f7ad8, 0x3fa7c9, 0xc7b33b, 0xd86fa8, 0x7aa84f];
+
+/** Every class in every model with elements: category -> [{modelID, expressID}]. */
+async function classes() {
+  const out = new Map();
+  for (const e of viewer.entries) {
+    const cats = await e.model.getItemsOfCategories([/.*/]);
+    const withGeom = new Set(e.geometryIds);
+    for (const [cat, ids] of Object.entries(cats)) {
+      const els = ids.filter((id) => withGeom.has(id)).map((expressID) => ({ modelID: e.modelID, expressID }));
+      if (!els.length) continue;
+      if (!out.has(cat)) out.set(cat, []);
+      out.get(cat).push(...els);
+    }
+  }
+  return out;
+}
+
+async function applyGroups(groups) {
+  const t0 = performance.now();
+  await viewer.setQuery(groups, $('context').value);
+  stat('Colour / context change', `${(performance.now() - t0).toFixed(0)} ms`);
+  $('clearColour').disabled = !groups.length;
+  $('legend').innerHTML = groups.map((g) =>
+    `<i style="background:#${g.colour.toString(16).padStart(6, '0')}"></i><span>${esc(g.name)}</span><span>${g.elements.length.toLocaleString()}</span>`).join('');
+}
+
+$('colour').addEventListener('click', async () => {
+  status('Grouping by class…');
+  const top = [...(await classes())].sort((a, b) => b[1].length - a[1].length).slice(0, PALETTE.length);
+  await applyGroups(top.map(([name, elements], i) => ({ name, elements, colour: PALETTE[i] })));
+  status('Coloured by the largest classes.');
+});
+$('isolate').addEventListener('click', async () => {
+  if (!selected || !selected.category) return;
+  const els = (await classes()).get(selected.category) || [];
+  $('context').value = 'hidden';
+  await applyGroups([{ name: selected.category, elements: els, colour: PALETTE[0] }]);
+});
+$('context').addEventListener('change', async () => {
+  const t0 = performance.now();
+  await viewer.setContextMode($('context').value);
+  stat('Colour / context change', `${(performance.now() - t0).toFixed(0)} ms`);
+});
+$('clearColour').addEventListener('click', () => applyGroups([]));
+
+// ---------------------------------------------------------------- picking
+function select(el) {
+  selected = el;
+  $('hide').disabled = !el;
+  $('isolate').disabled = !el;
+}
+
+viewer.onPick(async (hit) => {
+  stat('Pick (last click)', `${viewer.lastPickMs.toFixed(0)} ms`);
   if (!hit) {
-    selected = null;
-    $('pick').innerHTML = `<tr><td>Nothing there</td><td>${pickMs.toFixed(0)} ms</td></tr>`;
-    await fragments.update(true);
+    select(null);
+    viewer.clearSelection();
+    $('pick').innerHTML = '<tr><td>Nothing there</td><td></td></tr>';
     return;
   }
-  selected = hit.localId;
-  await current.highlight([selected], {
-    color: new THREE.Color(0x2f8cff), renderedFaces: FRAGS.RenderedFaces.TWO, opacity: 1, transparent: false,
-  });
-  await fragments.update(true);
-  const [data] = await current.getItemsData([selected], { attributesDefault: true, relationsDefault: { attributes: false, relations: false } });
-  const val = (k) => (data && data[k] && 'value' in data[k] ? data[k].value : data && data[k]);
+  const t0 = performance.now();
+  await viewer.setSelection(hit);
+  const data = await viewer.itemData(hit);
+  const readMs = performance.now() - t0;
+  const val = (k) => (data && data[k] && typeof data[k] === 'object' && 'value' in data[k] ? data[k].value : data && data[k]);
+  const category = val('_category');
+  select({ ...hit, category });
+  const entry = viewer.models.get(hit.modelID);
   const rows = [
-    ['Class', val('_category')], ['Name', val('Name')], ['GlobalId', val('_guid') || val('GlobalId')],
-    ['ObjectType', val('ObjectType')], ['PredefinedType', val('PredefinedType')],
-    ['Point (m)', hit.point.toArray().map((n) => n.toFixed(3)).join(', ')], ['Pick time', `${pickMs.toFixed(0)} ms`],
+    ['Model', entry && entry.name], ['Class', category], ['Name', val('Name')], ['GlobalId', val('_guid') || val('GlobalId')],
+    ['ObjectType', val('ObjectType')], ['PredefinedType', val('PredefinedType')], ['Tag', val('Tag')],
+    ['expressID', hit.expressID],
+    ['Point (m)', hit.point.toArray().map((n) => n.toFixed(3)).join(', ')],
+    ['Highlight + read data', `${readMs.toFixed(0)} ms`],
   ].filter(([, v]) => v != null && v !== '');
-  $('pick').innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${String(v).replace(/</g, '&lt;')}</td></tr>`).join('');
+  $('pick').innerHTML = rows.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('');
 });
+
+// For checking from the console.
+window.viewer = viewer;
 </script>

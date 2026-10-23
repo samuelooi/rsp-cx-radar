@@ -72,6 +72,45 @@ indices rather than rebuilding the model, so it stays instant on large files, an
 it leaves the colour overlays untouched (they read from a separate pristine
 index cache).
 
+## Large models
+
+IFCs of **150 MB or more** open with a second engine, That Open
+[Fragments](https://docs.thatopen.com/) (MIT), because parsing them whole in
+the tab, as smaller files are, needs several gigabytes and can crash it. Once
+open they work like any other model: queries, colouring, hiding, the element
+panel, compliance checks, Warnings, Dashboard, BCF, sections, plan views and
+measuring. Only **editing** needs the IFC itself (see below).
+
+- **First open converts the file**, in a background worker, so the page stays
+  usable: the property index (the same `buildIndex` the direct path runs), then
+  the geometry. The label shows the stage and a running clock; the converter
+  reports geometry once per IFC class, so one big class (tens of thousands of
+  curtain-wall plates) is a long quiet step. Measured on this team's models:
+  226 MB in about 1 minute, 590 MB in 2 to 4 minutes, on a 64 GB laptop.
+  Converting needs memory (about 3 to 4 GB for the 590 MB file); a converted
+  model then runs in under 200 MB.
+- **Each revision is converted once.** The result is cached in the browser
+  (one revision per model, about 2 GB at most, least recently opened out
+  first), so opening the same file again takes seconds.
+- **Save it as a `.rspfrag`** with the save button beside the model under the
+  model name drop-down. The file holds the converted geometry, the property
+  index and the IFC header, so it opens on any machine, with no conversion and
+  no IFC. Open it like an IFC (drop it, or choose it). The IFC stays the master
+  copy: a `.rspfrag` made under different mapping rules opens with a warning,
+  and a model opened from one cannot be edited (open its IFC to edit).
+
+`localStorage['rsp.largeModelMB']` overrides the threshold (`0` sends every IFC
+through Fragments; remove it to go back to 150).
+
+How it is put together: `js/frag/convert-worker.js` does the conversion,
+`js/frag/store.js` the cache and the `.rspfrag` format, and `js/viewer.js`
+`loadFragments` puts the model in the same scene as web-ifc-three models,
+aligned on the same datum. Fragments draws the model and answers picks; the
+page keeps no copy of its triangles (tens of millions on a large model), only
+each element's bounding box and ground-plane hull, which is what framing,
+hulls, ground level and floor sampling need. Measuring fetches the triangles of
+the element under the pointer on demand.
+
 ## Measuring
 
 **Measure** in the tool rail (shortcut **M**) measures between two clicked
@@ -766,6 +805,8 @@ in context.
 ```
 index.html                  shell, styles, panel markup
 js/viewer.js                three.js scene, multi-model loading, visibility, overlays
+js/frag/convert-worker.js   large IFC -> Fragments geometry + property index, in a worker
+js/frag/store.js            large-model cache and the .rspfrag file format
 js/measure.js               point-to-point measuring with edge, endpoint and midpoint snapping
 js/ifc-index.js             walks each IFC once into a queryable element index
 js/ifcsg.js                 ruleset indexing, element matching, value evaluation
@@ -784,6 +825,9 @@ data/ura-vocabulary.json    values URA accepts that the workbook lacks (hand-mai
 data/value-presets.json     the team's value presets (written by the app)
 tools/build-ifcsg-rules.ps1 workbook -> ruleset
 tools/serve.ps1             local server: static files plus /api/presets
+vendor/web-ifc/             web-ifc 0.0.36 wasm (the direct path)
+vendor/web-ifc-0.0.77/      web-ifc 0.0.77 wasm (the large-model converter)
+vendor/fragments/worker.mjs That Open Fragments' worker, 3.4.7
 ```
 
 `ifc-index.js` walks the relationship tables once at load rather than querying

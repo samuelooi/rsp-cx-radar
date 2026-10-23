@@ -402,7 +402,10 @@ export class MeasureTool {
       return el;
     }
     const tris = this.viewer.elementTriangles(modelID, expressID);
-    el = { tris, edges: tris && tris.length / 9 <= MAX_TRIANGLES ? featureEdges(tris) : null };
+    // A large model's triangles arrive from its worker a moment after the
+    // first ask (see Viewer.elementTriangles), so "none yet" is not kept.
+    if (!tris) return { tris: null, edges: null };
+    el = { tris, edges: tris.length / 9 <= MAX_TRIANGLES ? featureEdges(tris) : null };
     this._edgeCache.set(key, el);
     this._cachedFloats = (this._cachedFloats || 0) + (tris ? tris.length : 0) + (el.edges ? el.edges.length : 0);
     while (this._edgeCache.size > 1 && (this._edgeCache.size > CACHE_SIZE || this._cachedFloats > CACHE_FLOATS)) {

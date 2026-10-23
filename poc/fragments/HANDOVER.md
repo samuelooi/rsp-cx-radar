@@ -123,6 +123,39 @@ directly. With Fragments it must come from the conversion pass instead
 keyed so that `modelID:expressID` and GlobalIds still resolve. Checks,
 Warnings, Dashboard, editing and BCF all read that index.
 
+## Progress since this handover (22 October 2026, later)
+
+- **Viewer built beside `viewer.js`:** `fragments-viewer.js` (`FragmentsViewer`)
+  implements models, visibility, hiding, query colour groups with the context
+  modes, selection with pivot, picking, framing with `farElements`, BCF
+  viewpoints and snapshots. Still to port: plan views, sections, the geometry
+  queries for checks, survey overlays, measuring. The app itself is unchanged.
+- **Conversion in a Web Worker** (`convert-worker.mjs`) reading the IFC in
+  chunks with `FileReaderSync`, with Cancel, and the worker terminated after.
+- **Per-revision cache** in OPFS (`frag-store.js`): one revision per model,
+  2 GB cap, least recently opened evicted, Clear button.
+- **Measured on real RSP models up to 590 MB** in the browser: see
+  `RESULTS.md`. The 590 MB model converts in 8.8 min (peak ~2.7 GB), reopens
+  from the cache in 26 s, and picks in 12–45 ms on the laptop GPU.
+- Open: why the 590 MB geometry stage is slow; selection/hide redraw cost
+  measured with the page in view; peak memory when opened through the file
+  picker; whether blob-URL imports work on the hosted artifact.
+
+## Now in the app (23 October 2026)
+
+The app itself opens IFCs of 150 MB or more with Fragments, with full parity
+(queries, checks, Warnings, Dashboard, BCF, sections, plans, measuring); see
+the main `README.md` → Large models and `HANDOVER.md`. Decided with the user:
+keep today's viewer for normal files, add Fragments beside it in one scene,
+rather than switching every file over. The app's code is in `js/frag/` and
+`loadFragments` in `js/viewer.js`; this folder stays as the test bench.
+
+One lesson from that work: a full in-page copy of a large model's triangles
+(to reuse the existing picking and geometry code) cost 577 MB on the 226 MB
+model, which holds 11.7 million triangles that Fragments draws through
+instancing and level of detail. The app keeps only per-element boxes and
+ground-plane hulls (11 MB) and asks Fragments for the rest.
+
 ## Suggested first steps
 
 1. Upgrade three / web-ifc on a branch and confirm the current app still

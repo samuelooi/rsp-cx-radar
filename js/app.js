@@ -10,7 +10,8 @@
  */
 
 import { Viewer } from './viewer.js';
-import { buildIndex, mergeIndexes } from './ifc-index.js';
+import { buildIndex, mergeIndexes, reviveIndex } from './ifc-index.js';
+import { largeModelFor, openBundle, BUNDLE_EXT } from './frag/store.js';
 import { flattenArcs } from './ifc-arc-fix.js';
 import { computeWarnings } from './warnings.js';
 import { MeasureTool } from './measure.js';
@@ -134,7 +135,7 @@ const el = {
   filename: $('filename'), modelPicker: $('model-picker'),
   btnOpenEmpty: $('btn-open-empty'),
   fileInput: $('file-input'), dropzone: $('dropzone'),
-  loading: $('loading'), barFill: $('bar-fill'), loadingLabel: $('loading-label'),
+  loading: $('loading'), barFill: $('bar-fill'), loadingLabel: $('loading-label'), loadingCancel: $('loading-cancel'),
   toast: $('toast'), left: $('left'), models: $('models'),
   gwBubbles: $('gw-bubbles'), agencyBubbles: $('agency-bubbles'), priorityBubbles: $('priority-bubbles'), priorityTier: $('priority-tier'),
   fSearch: $('f-search'), fPresent: $('f-present'),
@@ -736,18 +737,143 @@ function renderPlanBadge() {
 
 // ------------------------------------------------------------------ model load
 
+/**
+ * IFCs at least this big open with the large-model engine (js/frag/): converted
+ * once in a background worker to Fragments plus the property index, cached,
+ * and offered as a .rspfrag file that reopens without conversion. Smaller files
+ * keep the direct path, which is quicker for them.
+ */
+const LARGE_MODEL_BYTES = (() => {
+  // localStorage 'rsp.largeModelMB' overrides it: 0 sends every IFC through
+  // the large-model engine, a huge number none.
+  try {
+    const mb = Number(localStorage.getItem('rsp.largeModelMB'));
+    if (localStorage.getItem('rsp.largeModelMB') !== null && Number.isFinite(mb)) return mb * 1024 * 1024;
+  } catch { /* storage blocked */ }
+  return 150 * 1024 * 1024;
+})();
+
+const isBundle = (f) => f.name.toLowerCase().endsWith(BUNDLE_EXT);
+const isLarge = (f) => isBundle(f) || (f.size || 0) >= LARGE_MODEL_BYTES;
+
+/**
+ * Straightens the arcs web-ifc cannot draw (see js/ifc-arc-fix.js). Returns
+ * the file to hand to web-ifc: a patched copy, or the file itself.
+ */
+async function arcFixed(file, onProgress) {
+  try {
+    const fixed = await flattenArcs(file, onProgress);
+    if (fixed.file) {
+      console.info(`${file.name}: straightened ${fixed.arcsFixed} curved boundary ` +
+        `segment${fixed.arcsFixed === 1 ? '' : 's'} in ${fixed.curvesFixed} profile` +
+        `${fixed.curvesFixed === 1 ? '' : 's'} so web-ifc can draw them.`);
+      return fixed.file;
+    }
+  } catch (err) {
+    console.warn(`Could not check ${file.name} for curved boundaries; loading as-is.`, err);
+  }
+  return file;
+}
+
+/**
+ * Opens a large IFC or a saved .rspfrag with the Fragments engine, and sets up
+ * its index and identity exactly as the direct path does.
+ */
+async function loadLarge(file, { base, span, label }) {
+  let opened;
+  if (isBundle(file)) {
+    setProgress(base + span * 0.05, `Reading ${file.name}…`);
+    opened = await openBundle(file, ruleset);
+  } else {
+    // The converter reports geometry once per IFC class, and one big class can
+    // run for minutes, so the label carries a clock to show it is still going.
+    const t0 = performance.now();
+    let text = `Opening ${file.name}${label}`;
+    let pctNow = base + span * 0.02;
+    const show = () => setProgress(pctNow, `${text} · ${Math.floor((performance.now() - t0) / 1000)} s`);
+    const tick = setInterval(show, 1000);
+    // A conversion runs in a worker, so unlike a direct parse it can be stopped.
+    const abort = new AbortController();
+    el.loadingCancel.hidden = false;
+    el.loadingCancel.onclick = () => abort.abort();
+
+    // Only needed when there is no cached conversion of this revision.
+    const prepare = async () => {
+      text = `Checking curved boundaries${label}`;
+      const source = await arcFixed(file, (pct) => {
+        pctNow = base + span * (0.02 + 0.06 * (pct / 100));
+        show();
+      });
+      let header = null;
+      try { header = await readHeader(file); } catch (err) { console.warn(`Could not read the header of ${file.name}:`, err); }
+      text = `Starting the converter${label}`;
+      show();
+      return { source, header };
+    };
+    try {
+      opened = await largeModelFor(file, prepare, ruleset, {
+        signal: abort.signal,
+        onProgress: (stage, pct, detail) => {
+          if (stage === 'index') {
+            pctNow = base + span * (0.08 + 0.12 * (pct / 100));
+            text = `Indexing properties${label} (large model)`;
+          } else {
+            pctNow = base + span * (0.2 + 0.55 * (pct / 100));
+            const step = detail && detail.process;
+            text = step === 'attributes' ? `Reading attributes${label}`
+              : step === 'relations' ? `Reading relations${label}`
+              : `Converting geometry${label}: ${Math.round(pct)}%` +
+                (detail && detail.class ? `, finished ${detail.class}; large classes can take minutes` : '');
+          }
+          show();
+        },
+      });
+    } finally {
+      clearInterval(tick);
+      el.loadingCancel.hidden = true;
+      el.loadingCancel.onclick = null;
+    }
+  }
+
+  const { meta, frag, bundle } = opened;
+  const entry = await viewer.loadFragments(frag, {
+    name: meta.sourceName || file.name,
+    // Editing works from the IFC, which a .rspfrag does not carry.
+    file: isBundle(file) ? null : file,
+    bytes: meta.sourceSize,
+  }, (pct) => setProgress(base + span * (0.75 + 0.24 * (pct / 100)), `Opening${label}…`));
+  entry.bundle = bundle;
+  if (opened.source === 'converted') {
+    toast(`${entry.name} was converted in ${Math.round(opened.convertMs / 1000)} s. It reopens from this ` +
+      `browser's cache next time; to keep a copy, use the save button beside it under Models.`);
+  }
+
+  const idx = reviveIndex(meta.index, entry.modelID);
+  indexes.set(entry.modelID, idx);
+  indexedWith.set(entry.modelID, new Set(meta.entities || []));
+  if (meta.header) {
+    identities.set(entry.modelID, buildIdentity(meta.header, idx, { name: entry.name, bytes: entry.bytes }));
+  }
+  if (opened.stale) {
+    toast(`${file.name} was converted under different mapping rules. Some checks may miss elements; ` +
+      'open the IFC again to convert it under the current rules.');
+  }
+  return entry;
+}
+
 async function loadFiles(files) {
-  const ifcFiles = files.filter((f) => f.name.toLowerCase().endsWith('.ifc'));
+  const ifcFiles = files.filter((f) => f.name.toLowerCase().endsWith('.ifc') || isBundle(f));
   const skipped = files.length - ifcFiles.length;
   if (!ifcFiles.length) {
-    toast("No .ifc files in that selection.");
+    toast(`No .ifc or ${BUNDLE_EXT} files in that selection.`);
     return;
   }
 
   // Warn before parsing: a parse cannot be interrupted, and a file that does
   // not fit takes the whole tab down with it. The user can still go ahead.
+  // Large models are converted in a worker instead, so they are not counted.
   const now = measure(viewer);
-  const forecast = projectMemory(now, ifcFiles);
+  const forecast = projectMemory(now, ifcFiles.filter((f) => !isLarge(f)));
   if (forecast.level === LEVEL.DANGER) {
     toast(`${formatBytes(forecast.fileBytes)} of IFC is expected to need about ` +
       `${formatBytes(forecast.peak)} of memory against a ${formatBytes(now.budget)} budget. ` +
@@ -767,6 +893,26 @@ async function loadFiles(files) {
     const label = ifcFiles.length > 1 ? ` (${i + 1}/${ifcFiles.length})` : '';
     setProgress(base + span * 0.05, `Reading ${file.name}…`);
 
+    if (isLarge(file)) {
+      if (!ruleset) {
+        toast(`${file.name} needs the mapping rules to open as a large model, and they did not load.`);
+        continue;
+      }
+      try {
+        await loadLarge(file, { base, span, label });
+        renderMemory();
+        loaded++;
+      } catch (err) {
+        if (err && err.name === 'AbortError') {
+          toast(`Stopped converting ${file.name}.`);
+        } else {
+          console.error(err);
+          toast(`Could not open ${file.name}: ${err && err.message ? err.message : err}`);
+        }
+      }
+      continue;
+    }
+
     try {
       // A rounded corner in a floor or geographic-element boundary is stored as
       // an arc that web-ifc cannot tessellate (see js/ifc-arc-fix.js) — most of
@@ -775,19 +921,8 @@ async function loadFiles(files) {
       // this in-memory copy is affected: entry.file below is put back to the
       // real upload once parsing is done, so editing, export and identity
       // still see the bytes the user actually gave us.
-      let loadFile = file;
-      try {
-        const fixed = await flattenArcs(file, (pct) =>
-          setProgress(base + span * 0.02 + span * 0.08 * (pct / 100), `Checking curved boundaries${label}…`));
-        if (fixed.file) {
-          loadFile = fixed.file;
-          console.info(`${file.name}: straightened ${fixed.arcsFixed} curved boundary ` +
-            `segment${fixed.arcsFixed === 1 ? '' : 's'} in ${fixed.curvesFixed} profile` +
-            `${fixed.curvesFixed === 1 ? '' : 's'} so web-ifc can draw them.`);
-        }
-      } catch (err) {
-        console.warn(`Could not check ${file.name} for curved boundaries; loading as-is.`, err);
-      }
+      const loadFile = await arcFixed(file, (pct) =>
+        setProgress(base + span * 0.02 + span * 0.08 * (pct / 100), `Checking curved boundaries${label}…`));
 
       const entry = await viewer.load(loadFile, (pct) =>
         setProgress(base + span * 0.1 + span * (pct / 100) * 0.5, `Parsing geometry${label}…`));
@@ -1058,7 +1193,12 @@ function renderModels() {
             <path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/>
           </svg>
         </button>
-        <span class="mname" title="${esc(e.name)}">${esc(e.name)}<small>${n} mapped elements</small></span>
+        <span class="mname" title="${esc(e.name)}">${esc(e.name)}<small>${n} mapped elements${e.kind === 'frag' ? ' · large model' : ''}</small></span>
+        ${e.kind === 'frag' && e.bundle ? `<button class="icon-btn" data-act="save" title="Save the converted model (${BUNDLE_EXT}) so it opens without converting again">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5"/><path d="M4.5 16.5v3h15v-3"/>
+          </svg>
+        </button>` : ''}
         <button class="icon-btn" data-act="del" title="Close this model">&times;</button>
       </div>`;
   }).join('') + '<button class="m-add" data-act="add">+ Add IFC file</button>';
@@ -1076,7 +1216,23 @@ function renderModels() {
       renderModels();
     });
     row.querySelector('[data-act="del"]').addEventListener('click', () => removeModel(modelID));
+    const save = row.querySelector('[data-act="save"]');
+    if (save) save.addEventListener('click', () => saveConverted(modelID));
   });
+}
+
+/** Saves a large model's converted copy, to open next time without converting. */
+async function saveConverted(modelID) {
+  const entry = viewer.models.get(modelID);
+  if (!entry || !entry.bundle) return;
+  try {
+    await saveBlob(entry.bundle, entry.name.replace(/\.ifc$/i, '') + BUNDLE_EXT,
+      [{ description: 'Converted model', accept: { 'application/octet-stream': [BUNDLE_EXT] } }]);
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;
+    console.error(err);
+    toast(`Could not save ${entry.name}: ${err && err.message ? err.message : err}`);
+  }
 }
 
 function removeModel(modelID) {
