@@ -498,6 +498,37 @@
   .ilist .irow .iv { color: var(--text-dim); font-variant-numeric: tabular-nums; }
   .status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
 
+  /* ---------- Model tab: hierarchy tree and search results ---------- */
+  .mtree { font-size: 12px; padding: 4px 0; }
+  .mt-row {
+    display: flex; align-items: center; gap: 4px; padding: 3px 8px 3px 0; cursor: pointer;
+    min-height: 24px;
+  }
+  .mt-row:hover { background: var(--panel-2); }
+  .mt-row.sel { background: var(--accent-dim); color: #fff; }
+  .mt-row.off .mt-label { opacity: .45; }
+  .mt-tw { width: 16px; flex-shrink: 0; text-align: center; color: var(--text-dim); font-size: 9px; }
+  .mt-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mt-label small { color: var(--text-dim); font-size: 10.5px; margin-left: 6px; }
+  .mt-row.sel .mt-label small { color: #d6e6f0; }
+  .mt-n { color: var(--text-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+  .mt-act {
+    background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 0 3px;
+    font: inherit; font-size: 10.5px; visibility: hidden;
+  }
+  .mt-act:hover { color: var(--text); }
+  .mt-row:hover .mt-act, .mt-row.off .mt-act[data-act="vis"] { visibility: visible; }
+  .mt-more { padding: 6px 14px; color: var(--text-dim); font-size: 11px; }
+  .mt-hit { padding: 5px 10px; cursor: pointer; border-bottom: 1px solid #2e333c; }
+  .mt-hit:hover { background: var(--panel-2); }
+  .mt-hit.sel { background: var(--accent-dim); color: #fff; }
+  .mt-hit .mh-sub { color: var(--text-dim); font-size: 10.5px; margin-top: 1px; }
+  .mt-hit.sel .mh-sub { color: #d6e6f0; }
+  .mt-hit mark { background: none; color: var(--accent); }
+  .mt-hit.sel mark { color: #fff; text-decoration: underline; }
+  .mt-head { display: flex; align-items: center; gap: 8px; padding: 7px 10px; color: var(--text-muted); font-size: 11px; border-bottom: 1px solid var(--border); }
+  .mt-head .spacer { flex: 1; }
+
   .empty-note { padding: 18px 14px; color: var(--text-dim); font-size: 12px; line-height: 1.55; }
 
   /* ---------- Loaded models (rows inside the top-bar picker) ---------- */
@@ -549,7 +580,8 @@
   .dash-alert b { font-weight: 600; }
   .dash-alert ul { margin: 6px 0 0; padding-left: 18px; color: var(--text-muted); }
 
-  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+  /* Cards keep their own height, so one long card does not stretch its row. */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; align-items: start; }
   .card {
     background: var(--panel); border: 1px solid var(--border);
     border-radius: var(--radius); display: flex; flex-direction: column; overflow: hidden;
@@ -587,6 +619,24 @@
   .brk td.k { color: var(--text-muted); }
   .brk td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .brk td.c { text-align: right; color: var(--text-dim); font-size: 11px; width: 52px; }
+  .brk-title.unset { color: #d9b968; }
+  .brk-toggle {
+    display: block; width: 100%; text-align: left; background: none; border: none;
+    font-family: inherit; cursor: pointer;
+  }
+  .brk-toggle:hover { background: var(--panel-2); }
+  .brk-scroll { max-height: 240px; overflow-y: auto; }
+  .brk-scroll[hidden] { display: none; }
+  .card-fold {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 11px; padding: 0 2px 0 4px; line-height: 1;
+  }
+  .card-fold:hover { color: var(--text); }
+  /* Folded: the headline figure only. */
+  .card.collapsed > :not(.card-head) { display: none; }
+  .card.collapsed .card-head { border-bottom: none; }
+  .brk td.k small { display: block; font-size: 10.5px; color: var(--text-dim); }
+  .brk tr.pick { cursor: pointer; }
   .card-actions { padding: 8px 14px 12px; display: flex; gap: 6px; }
   .card-empty { padding: 12px 14px 14px; font-size: 12px; color: var(--text-dim); line-height: 1.5; }
 
@@ -1005,6 +1055,7 @@
       <button data-tab="check"><span>COMPLIANCE</span></button>
       <button data-tab="issues"><span>ISSUES</span></button>
       <button data-tab="warnings"><span>WARNINGS</span><b class="tab-count" id="warn-count" hidden></b></button>
+      <button data-tab="model"><span>MODEL</span></button>
     </div>
 
     <!-- Query tab -->
@@ -1059,6 +1110,15 @@
       <label class="issues-author"><span>Author</span><input id="bcf-author" placeholder="Your name, for comments and new topics" /></label>
       <div class="scroll" id="bcf-list"><div class="empty-note">No issues yet. Import a BCF from the CORENET X Model Checker, raise a topic on a selected element, or turn check findings into topics with “To BCF” on the Compliance tab.</div></div>
       <div id="bcf-detail"></div>
+    </div>
+
+    <!-- Model tab: the spatial hierarchy of every loaded file, and search -->
+    <div id="tab-model" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="filters">
+        <input type="search" id="mt-search" placeholder="Search name, GlobalId, class, type, level…" />
+        <label><input type="checkbox" id="mt-props" /> Include property values</label>
+      </div>
+      <div class="scroll mtree" id="mt-body"><div class="empty-note">Load an IFC file to browse its levels, classes and elements.</div></div>
     </div>
 
     <!-- Warnings tab: export problems that will make the submission fail -->
@@ -1131,7 +1191,7 @@
         <path d="M3 7l9 5 9-5M12 12v10M7.5 4.5l9 5M16.5 4.5l-9 5"/>
       </svg>
       <h1>Drop IFC files to check them</h1>
-      <p>Drag one or more .ifc files anywhere on this window, or choose them from your computer. Load several to check a federated model. Nothing is uploaded — everything is parsed locally in your browser and checked against the CORENET X IFC-SG mapping. Files of 150 MB or more are converted once in the background and can be saved as a .rspfrag that opens in seconds.</p>
+      <p>Drag one or more .ifc files anywhere on this window, or choose them from your computer. Load several to check a federated model. Nothing is uploaded — everything is parsed locally in your browser and checked against the CORENET X IFC-SG mapping. Files of 30 MB or more are converted once in the background and can be saved as a .rspfrag that opens in seconds.</p>
       <button class="btn primary" id="btn-open-empty">Choose file</button>
       <div class="start-projects" id="start-projects"></div>
     </div>

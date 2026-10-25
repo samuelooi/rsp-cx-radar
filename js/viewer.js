@@ -953,6 +953,16 @@ export class Viewer {
 
   // ------------------------------------------------------------- visibility
 
+  /**
+   * Every expressID one model draws, mapped or not. The index only holds what
+   * the mapping covers, so this is how an isolate reaches the rest (furniture,
+   * annotation, anything the ruleset never asks about).
+   */
+  drawnIds(modelID) {
+    const entry = this.models.get(modelID);
+    return entry && entry.boxes ? [...entry.boxes.keys()] : [];
+  }
+
   hiddenSet(modelID) {
     let s = this.hiddenByModel.get(modelID);
     if (!s) {

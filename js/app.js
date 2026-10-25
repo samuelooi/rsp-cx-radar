@@ -41,6 +41,7 @@ import {
 import * as WebIFC from 'web-ifc';
 import { WASM_PATH } from './viewer.js';
 import { scanFile } from './ifc-text.js';
+import { buildModelTree, searchElements, elementLabel } from './model-tree.js';
 import { IfcEditor } from './ifc-edit/editor.js';
 import {
   readBcf, writeBcf, newTopic, newComment, newViewpoint, touch as touchTopic,
@@ -126,6 +127,14 @@ let priorityFilter = '';
 
 // Visibility policy. The viewer holds the resulting set; these two own the intent.
 const manualHidden = new Set();   // element keys hidden via the context menu
+/**
+ * While an isolate is on: modelID -> the expressIDs left drawing. manualHidden
+ * only reaches indexed elements, so this is what hides the geometry the mapping
+ * never indexed. Only the models open at the time are isolated; one loaded
+ * afterwards shows in full.
+ * @type {Map<number, Set<number>>|null}
+ */
+let isolation = null;
 let spacesVisible = false;        // IfcSpace volumes obscure everything by default
 
 // --------------------------------------------------------------------- elements
@@ -158,6 +167,7 @@ const el = {
   projectPicker: $('project-picker'), projectChip: $('project-chip'), projectPanel: $('project-panel'),
   startProjects: $('start-projects'),
   btnSetValue: $('btn-set-value'), legendEdit: $('legend-edit'),
+  mtSearch: $('mt-search'), mtProps: $('mt-props'), mtBody: $('mt-body'),
   editsBar: $('edits-bar'), editsText: $('edits-text'),
   btnDiscardEdits: $('btn-discard-edits'), btnExportIfc: $('btn-export-ifc'),
   btnToBcf: $('btn-to-bcf'), btnReport: $('btn-report'), btnBcfImport: $('btn-bcf-import'), btnBcfNew: $('btn-bcf-new'),
@@ -299,8 +309,56 @@ const customInputApi = {
 
 // -------------------------------------------------------------------- UI wiring
 
+/**
+ * Where each opened file came from, where the browser will say. A page is never
+ * told a file's folder, but a handle to the file lets the save dialog for its
+ * converted copy open in that same folder (see saveConverted).
+ * @type {WeakMap<File, FileSystemFileHandle>}
+ */
+const sourceHandles = new WeakMap();
+
+/**
+ * Opens IFCs through the native picker where it exists, so their handles are
+ * kept; anything else falls back to the plain file input.
+ */
+async function chooseModelFiles() {
+  if (typeof window.showOpenFilePicker !== 'function') {
+    el.fileInput.click();
+    return;
+  }
+  let handles;
+  try {
+    handles = await window.showOpenFilePicker({
+      multiple: true,
+      types: [{ description: 'IFC model', accept: { 'application/octet-stream': ['.ifc', BUNDLE_EXT] } }],
+    });
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;
+    console.error(err);
+    el.fileInput.click();
+    return;
+  }
+  const files = await Promise.all(handles.map(async (h) => {
+    const f = await h.getFile();
+    sourceHandles.set(f, h);
+    return f;
+  }));
+  if (files.length) loadFiles(files);
+}
+
+/**
+ * The handles behind a drop. They have to be asked for while the drop event is
+ * still running, so this starts them at once and pairs them up afterwards.
+ */
+function dropHandles(dataTransfer) {
+  const pending = [...(dataTransfer.items || [])]
+    .filter((i) => i.kind === 'file' && typeof i.getAsFileSystemHandle === 'function')
+    .map((i) => i.getAsFileSystemHandle().catch(() => null));
+  return Promise.all(pending).then((hs) => hs.filter((h) => h && h.kind === 'file'));
+}
+
 function wireUI() {
-  el.btnOpenEmpty.addEventListener('click', () => el.fileInput.click());
+  el.btnOpenEmpty.addEventListener('click', () => chooseModelFiles());
   el.fileInput.addEventListener('change', (e) => {
     if (e.target.files.length) loadFiles([...e.target.files]);
     e.target.value = '';
@@ -326,13 +384,22 @@ function wireUI() {
     // applied first so the gateway and check selection are in place before the
     // models index.
     const files = [...e.dataTransfer.files];
+    const handles = dropHandles(e.dataTransfer);
     const isBcf = (f) => /\.(bcf|bcfzip)$/i.test(f.name);
     const projects = files.filter((f) => looksLikeProjectFile(f.name));
     const bcfs = files.filter(isBcf);
     const models = files.filter((f) => !looksLikeProjectFile(f.name) && !isBcf(f));
     if (projects.length) openProjectFile(projects[0]);
     for (const f of bcfs) importBcfFile(f);
-    if (models.length) loadFiles(models);
+    if (models.length) {
+      // A drop holds one file per name, so the name pairs a handle with its file.
+      handles.then((hs) => {
+        for (const f of models) {
+          const h = hs.find((x) => x.name === f.name);
+          if (h) sourceHandles.set(f, h);
+        }
+      }).finally(() => loadFiles(models));
+    }
   });
 
   wireProjectUI();
@@ -392,7 +459,7 @@ function wireUI() {
   el.filename.addEventListener('click', (e) => {
     e.stopPropagation();
     if (!viewer.hasModels) {
-      el.fileInput.click();
+      chooseModelFiles();
       return;
     }
     if (el.modelPicker.classList.contains('open')) {
@@ -422,6 +489,8 @@ function wireUI() {
       showTab(b.dataset.tab);
     });
   });
+
+  wireModelTab();
 
   el.btnRunCheck.addEventListener('click', doRunCheck);
   el.checkMenuBar.addEventListener('click', () => {
@@ -750,7 +819,7 @@ const LARGE_MODEL_BYTES = (() => {
     const mb = Number(localStorage.getItem('rsp.largeModelMB'));
     if (localStorage.getItem('rsp.largeModelMB') !== null && Number.isFinite(mb)) return mb * 1024 * 1024;
   } catch { /* storage blocked */ }
-  return 150 * 1024 * 1024;
+  return 30 * 1024 * 1024;
 })();
 
 const isBundle = (f) => f.name.toLowerCase().endsWith(BUNDLE_EXT);
@@ -843,6 +912,7 @@ async function loadLarge(file, { base, span, label }) {
     bytes: meta.sourceSize,
   }, (pct) => setProgress(base + span * (0.75 + 0.24 * (pct / 100)), `Opening${label}…`));
   entry.bundle = bundle;
+  entry.sourceHandle = sourceHandles.get(file) || null;
   if (opened.source === 'converted') {
     toast(`${entry.name} was converted in ${Math.round(opened.convertMs / 1000)} s. It reopens from this ` +
       `browser's cache next time; to keep a copy, use the save button beside it under Models.`);
@@ -1169,6 +1239,7 @@ function rebuildIndex() {
 
   renderModels();
   renderTree();
+  mtRoots = null;
   applyVisibility();
   renderMemory();
   refreshWarnings();
@@ -1205,7 +1276,7 @@ function renderModels() {
 
   el.models.querySelector('[data-act="add"]').addEventListener('click', () => {
     el.modelPicker.classList.remove('open');
-    el.fileInput.click();
+    chooseModelFiles();
   });
 
   el.models.querySelectorAll('.mrow').forEach((row) => {
@@ -1226,8 +1297,11 @@ async function saveConverted(modelID) {
   const entry = viewer.models.get(modelID);
   if (!entry || !entry.bundle) return;
   try {
+    // The dialog opens in the IFC's own folder when the browser handed over
+    // its handle, so the copy lands beside the model with one click.
     await saveBlob(entry.bundle, entry.name.replace(/\.ifc$/i, '') + BUNDLE_EXT,
-      [{ description: 'Converted model', accept: { 'application/octet-stream': [BUNDLE_EXT] } }]);
+      [{ description: 'Converted model', accept: { 'application/octet-stream': [BUNDLE_EXT] } }],
+      entry.sourceHandle);
   } catch (err) {
     if (err && err.name === 'AbortError') return;
     console.error(err);
@@ -1243,6 +1317,8 @@ function removeModel(modelID) {
   indexes.delete(modelID);
   indexedWith.delete(modelID);
   identities.delete(modelID);
+  // Handles are reused, so a model opened later must not inherit this one's isolate.
+  if (isolation) isolation.delete(modelID);
   if (editors.has(modelID) && editors.get(modelID).hasEdits) {
     toast(`Unsaved edits to ${viewer.models.get(modelID)?.name || 'the model'} were dropped with it.`);
   }
@@ -1278,6 +1354,9 @@ function applyVisibility() {
     if (!spacesVisible) {
       for (const e of spaceElements()) if (!manualHidden.has(e.key)) hidden.push(e);
     }
+    for (const [modelID, keep] of isolation || []) {
+      for (const id of viewer.drawnIds(modelID)) if (!keep.has(id)) hidden.push({ modelID, expressID: id });
+    }
     viewer.setHidden(hidden);
   }
 
@@ -1292,6 +1371,7 @@ function applyVisibility() {
   setRailState(el.toolShowAll, hiddenCount
     ? `${hiddenCount} element${hiddenCount > 1 ? 's' : ''} hidden`
     : 'Nothing is hidden');
+  renderModelTab();
 }
 
 function setSpacesVisible(on) {
@@ -1301,6 +1381,7 @@ function setSpacesVisible(on) {
 
 function showAll() {
   manualHidden.clear();
+  isolation = null;
   spacesVisible = true;
   for (const e of viewer.entries) viewer.setModelVisible(e.modelID, true);
   applyVisibility();
@@ -1318,9 +1399,19 @@ function isolateElements(elements) {
   const keep = new Set(elements.map((e) => e.key));
   manualHidden.clear();
   for (const e of index.all) if (!keep.has(e.key)) manualHidden.add(e.key);
+  isolation = new Map(viewer.entries.map((e) => [e.modelID, new Set()]));
+  for (const e of elements) keepDrawing(e);
   // An explicit isolate overrides the space rule, or isolating a space shows nothing.
   spacesVisible = true;
   applyVisibility();
+}
+
+/** Lets an element (and the parts that draw it) through an isolate. */
+function keepDrawing(e) {
+  const keep = isolation && isolation.get(e.modelID);
+  if (!keep) return;
+  keep.add(e.expressID);
+  for (const id of e.parts || []) keep.add(id);
 }
 
 // ---------------------------------------------------------------- context menu
@@ -2515,6 +2606,23 @@ function colourByStatus() {
 
 let dashResult = null;
 
+/** Cards folded down to their headline, remembered in this browser. */
+const DASH_FOLDS_KEY = 'rsp.dashCollapsed';
+const dashCollapsed = (() => {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(DASH_FOLDS_KEY) || '[]'));
+  } catch {
+    return new Set();
+  }
+})();
+function saveDashFolds() {
+  try {
+    localStorage.setItem(DASH_FOLDS_KEY, JSON.stringify([...dashCollapsed]));
+  } catch { /* storage blocked */ }
+}
+/** Cards whose "not set" list is open; closed again each session. */
+const dashUnsetOpen = new Set();
+
 /** Sums recorded breakdown rows into a map keyed by label. */
 function addRows(into, rows) {
   for (const r of rows || []) {
@@ -2558,6 +2666,7 @@ function computeProjectDashboard(liveDash) {
     let count = 0;
     let candidates = 0;
     let missingValue = 0;
+    const unset = [];
 
     for (const r of records) {
       const m = (r.dashboard || []).find((x) => x.id === spec.id);
@@ -2572,6 +2681,9 @@ function computeProjectDashboard(liveDash) {
       addRows(byType, m.byType);
       addRows(byGroup, m.byGroup);
       addRows(subtotals, m.subtotals);
+      // The record's name, not the one stored with the row, so a renamed file
+      // lists its spaces under the name shown everywhere else.
+      for (const u of m.unset || []) unset.push({ ...u, file: r.name });
       for (const n of m.nearMisses || []) near.set(n.label, (near.get(n.label) || 0) + n.count);
     }
 
@@ -2594,12 +2706,18 @@ function computeProjectDashboard(liveDash) {
       // order rather than being ranked by size.
       byFile: byFile.sort(byFileName),
       byLevel: [...byLevel.values()].sort(byValueDesc),
+      requiredLabel: spec.required ? spec.required.label : null,
+      // In the order they would be fixed: file by file, level by level.
+      unset: unset.sort((a, b) => byFileName({ label: a.file }, { label: b.file })
+        || String(a.storey).localeCompare(String(b.storey), undefined, { numeric: true })
+        || String(a.name).localeCompare(String(b.name), undefined, { numeric: true })),
       live: liveById.get(spec.id) || null,
     };
   });
 
   const missing = metrics.filter((m) => !m.present);
   const incomplete = metrics.filter((m) => m.present && m.missingValue > 0);
+  const unsetRequired = metrics.filter((m) => m.unset.length);
   return {
     metrics,
     summary: {
@@ -2607,6 +2725,8 @@ function computeProjectDashboard(liveDash) {
       present: metrics.length - missing.length,
       missing: missing.map((m) => m.title),
       incomplete: incomplete.map((m) => ({ title: m.title, missing: m.missingValue, of: m.count })),
+      unsetRequired: unsetRequired.map((m) =>
+        ({ title: m.title, property: m.requiredLabel, missing: m.unset.length, of: m.count })),
     },
   };
 }
@@ -2692,6 +2812,14 @@ function renderDashboard() {
           `<li>${esc(m.title)}: ${m.missing} of ${m.of} elements have no value</li>`).join('')}</ul>
       </div>`);
   }
+  if (summary.unsetRequired.length) {
+    parts.push(`
+      <div class="dash-alert warn">
+        <b>Required property not set —</b> these elements are counted in the total but cannot be attributed.
+        <ul>${summary.unsetRequired.map((m) =>
+          `<li>${esc(m.title)}: ${m.missing} of ${m.of} elements have no <code>${esc(m.property)}</code></li>`).join('')}</ul>
+      </div>`);
+  }
 
   parts.push('<div class="cards">');
   for (const m of metrics) {
@@ -2702,11 +2830,15 @@ function renderDashboard() {
       ? '<span class="flag">Not found</span>'
       : m.missingValue
         ? `<span class="flag partial">${m.missingValue} without value</span>`
-        : '<span class="flag ok">OK</span>';
+        : m.unset.length
+          ? `<span class="flag partial">${m.unset.length} not set</span>`
+          : '<span class="flag ok">OK</span>';
 
-    parts.push(`<div class="card${m.present ? '' : ' absent'}" data-m="${esc(m.id)}">
+    const folded = dashCollapsed.has(m.id);
+    parts.push(`<div class="card${m.present ? '' : ' absent'}${folded ? ' collapsed' : ''}" data-m="${esc(m.id)}">
       <div class="card-head">
-        <div class="ct"><h3>${esc(m.title)}</h3>${flag}</div>
+        <div class="ct"><h3>${esc(m.title)}</h3>${flag}<button class="card-fold" data-act="fold"
+          title="${folded ? 'Expand' : 'Collapse'} this card" aria-expanded="${!folded}">${folded ? '&#9656;' : '&#9662;'}</button></div>
         <div class="card-val${m.present ? '' : ' none'}">${
           m.present ? esc(fmtNum(m.total, m.decimals)) : '—'
         }<small>${esc(m.unit)}</small></div>
@@ -2779,6 +2911,28 @@ function renderDashboard() {
         parts.push('</table>');
       }
 
+      if (m.unset.length) {
+        // Each space by name, so the missing ones can be found and fixed rather
+        // than only counted. A loaded one is selected in the 3D view on click.
+        const unsetTotal = m.unset.reduce((t, u) => t + (u.value || 0), 0);
+        const liveIds = new Set(((m.live && m.live.unset) || []).map((u) => u.globalId).filter(Boolean));
+        const multiFile = new Set(m.unset.map((u) => u.file)).size > 1;
+        // Folded by default: hundreds of rooms would push every other card off
+        // screen. Opened, the list scrolls inside the card for the same reason.
+        const listOpen = dashUnsetOpen.has(m.id);
+        parts.push(`<button class="brk-title unset brk-toggle" data-act="unset-list" aria-expanded="${listOpen}">
+          <span>${listOpen ? '&#9662;' : '&#9656;'}</span> ${esc(m.requiredLabel)} NOT SET · ${m.unset.length} element${
+          m.unset.length > 1 ? 's' : ''} · ${esc(fmtNum(unsetTotal, m.decimals))} ${esc(m.unit)}</button>
+          <div class="brk-scroll"${listOpen ? '' : ' hidden'}><table class="brk">`);
+        for (const u of m.unset) {
+          const live = u.globalId && liveIds.has(u.globalId);
+          parts.push(`<tr${live ? ` class="pick" data-gid="${esc(u.globalId)}" title="Select in the 3D view"` : ''}>
+            <td class="k">${esc(u.name)}<small>${esc(u.storey)}${multiFile ? ` · ${esc(u.file)}` : ''}</small></td>
+            <td class="n">${esc(fmtNum(u.value || 0, m.decimals))} ${esc(m.unit)}</td></tr>`);
+        }
+        parts.push('</table></div>');
+      }
+
       if (rows.length) {
         parts.push(`<div class="brk-title">${brkTitle}</div><table class="brk">`);
         for (const r of rows) {
@@ -2795,7 +2949,9 @@ function renderDashboard() {
         parts.push(`<div class="card-actions">
           <button class="btn sm" data-act="show">Show in model${
             m.live.count < m.count ? ` (${m.live.count} of ${m.count} loaded)` : ''
-          }</button></div>`);
+          }</button>${m.live.unsetElements && m.live.unsetElements.length
+            ? `<button class="btn sm" data-act="show-unset">Show not set (${m.live.unsetElements.length})</button>`
+            : ''}</div>`);
       }
     }
 
@@ -2808,12 +2964,77 @@ function renderDashboard() {
 
   el.dashBody.innerHTML = parts.join('');
 
+  // Folding toggles in place: a re-render would lose the scroll position.
+  el.dashBody.querySelectorAll('[data-act="fold"]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const card = b.closest('.card');
+      const folded = card.classList.toggle('collapsed');
+      if (folded) dashCollapsed.add(card.dataset.m);
+      else dashCollapsed.delete(card.dataset.m);
+      b.innerHTML = folded ? '&#9656;' : '&#9662;';
+      b.title = `${folded ? 'Expand' : 'Collapse'} this card`;
+      b.setAttribute('aria-expanded', String(!folded));
+      saveDashFolds();
+    });
+  });
+  el.dashBody.querySelectorAll('[data-act="unset-list"]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const id = b.closest('.card').dataset.m;
+      const list = b.nextElementSibling;
+      list.hidden = !list.hidden;
+      if (list.hidden) dashUnsetOpen.delete(id);
+      else dashUnsetOpen.add(id);
+      b.querySelector('span').innerHTML = list.hidden ? '&#9656;' : '&#9662;';
+      b.setAttribute('aria-expanded', String(!list.hidden));
+    });
+  });
+
   el.dashBody.querySelectorAll('[data-act="show"]').forEach((b) => {
     b.addEventListener('click', () => {
       const m = metrics.find((x) => x.id === b.closest('.card').dataset.m);
       if (m && m.live) showMetricInModel(m.live);
     });
   });
+  el.dashBody.querySelectorAll('[data-act="show-unset"]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const m = metrics.find((x) => x.id === b.closest('.card').dataset.m);
+      if (m && m.live) showUnsetInModel(m.live);
+    });
+  });
+  el.dashBody.querySelectorAll('tr.pick[data-gid]').forEach((tr) => {
+    tr.addEventListener('click', () => {
+      const m = metrics.find((x) => x.id === tr.closest('.card').dataset.m);
+      const item = m && m.live && m.live.unsetElements.find((e) => e.globalId === tr.dataset.gid);
+      if (!item) return;
+      if (m.entity === 'IFCSPACE' && !spacesVisible) setSpacesVisible(true);
+      closeDashboard();
+      showElement(item);
+    });
+  });
+}
+
+/**
+ * Colours a metric's elements by whether its required property is set, so the
+ * spaces still missing it stand out against the ones already done.
+ */
+function showUnsetInModel(metric) {
+  const unset = new Set(metric.unsetElements);
+  const done = metric.elements.filter((e) => !unset.has(e));
+  legend = [
+    { label: `${metric.requiredLabel} not set`, colour: PALETTE[0], elements: metric.unsetElements, missing: false },
+    ...(done.length
+      ? [{ label: `${metric.requiredLabel} set`, colour: PALETTE[1], elements: done, missing: false }]
+      : []),
+  ];
+
+  selection = null;
+  soloIndex = -1;
+  if (metric.entity === 'IFCSPACE' && !spacesVisible) setSpacesVisible(true);
+  el.legendTitle.innerHTML =
+    `${esc(metric.title)}<small>${metric.unsetElements.length} of ${metric.count} without ${esc(metric.requiredLabel)}</small>`;
+  renderLegend();
+  applyOverlay();
+  closeDashboard();
 }
 
 /** Colours a metric's elements in the 3D view and closes the overlay. */
@@ -2880,6 +3101,10 @@ function onPick(hit) {
 function closeElementPanel() {
   el.panel.classList.remove('visible');
   viewer.clearSelection();
+  if (mtSelected) {
+    mtSelected = null;
+    renderModelTab();
+  }
 }
 
 function showElement(item) {
@@ -2898,6 +3123,7 @@ function showElement(item) {
   const sel = viewer.selection;
   viewer.setSelection(item, { pivot: !sel || sel.modelID !== item.modelID || sel.expressID !== item.expressID });
   lastPicked = item;
+  revealInModelTree(item);
   const editable = canEdit(item);
   const fixable = []; // requirements behind the "Fix" buttons, by index
   let html = `<div class="prop-type">${esc(item.name || item.entity)}${editable
@@ -3518,13 +3744,284 @@ function wireProjectUI() {
   });
 }
 
+// -------------------------------------------------------------------- model tab
+
+/** The hierarchy of the loaded models (js/model-tree.js), rebuilt when the set changes. */
+let mtRoots = null;
+/** Node id -> node, for the rows on screen. */
+const mtNodes = new Map();
+/** Element key -> ids of the nodes above it, so a 3D pick can open its branch. */
+const mtPathOf = new Map();
+const mtExpanded = new Set();
+/** Node id -> how many children are listed; a big class is shown a page at a time. */
+const mtShown = new Map();
+const MT_PAGE = 500;
+/** The element selected from the tree or the 3D view, highlighted in both. */
+let mtSelected = null;
+
+const mtVisible = () => $('tab-model').style.display !== 'none';
+
+function ensureModelTree() {
+  if (mtRoots) return;
+  mtRoots = buildModelTree(indexes, new Map(viewer.entries.map((e) => [e.modelID, e.name])));
+  mtNodes.clear();
+  mtPathOf.clear();
+  const walk = (node, path) => {
+    mtNodes.set(node.id, node);
+    if (node.element) mtPathOf.set(node.element.key, path);
+    for (const c of node.children) walk(c, [...path, node.id]);
+  };
+  for (const r of mtRoots) walk(r, []);
+  // A lone model opens on its levels rather than on one closed row.
+  if (mtRoots.length === 1) mtExpanded.add(mtRoots[0].id);
+}
+
+/** Hidden when every element in it that draws anything is hidden. */
+function mtHidden(elements) {
+  let drawn = 0;
+  for (const e of elements) {
+    // A stair draws through its parts, so its parts are what gets hidden.
+    const ids = e.hasGeometry === false ? e.parts || [] : [e.expressID];
+    if (!ids.length) continue;
+    drawn++;
+    if (!viewer.isHidden({ modelID: e.modelID, expressID: ids[0] })) return false;
+  }
+  return drawn > 0;
+}
+
+function renderModelTab() {
+  if (!viewer || !mtVisible()) return;
+  if (!index) {
+    mtRoots = null;
+    el.mtBody.innerHTML = '<div class="empty-note">Load an IFC file to browse its levels, classes and elements.</div>';
+    return;
+  }
+  const q = el.mtSearch.value.trim();
+  if (q) renderModelSearch(q);
+  else renderModelHierarchy();
+}
+
+function renderModelHierarchy() {
+  ensureModelTree();
+  const parts = [];
+  const row = (node, depth) => {
+    const open = mtExpanded.has(node.id);
+    const leaf = !node.children.length;
+    const sel = node.element && mtSelected === node.element.key;
+    const off = mtHidden(node.elements);
+    parts.push(`<div class="mt-row${sel ? ' sel' : ''}${off ? ' off' : ''}" data-id="${esc(node.id)}"
+        style="padding-left:${4 + depth * 14}px">
+      <span class="mt-tw">${leaf ? '' : open ? '&#9662;' : '&#9656;'}</span>
+      <span class="mt-label" title="${esc(node.label)}">${esc(node.label)}${node.sub ? `<small>${esc(node.sub)}</small>` : ''}</span>
+      ${node.element && leaf ? '' : `<span class="mt-n">${node.elements.length}</span>`}
+      <button class="mt-act" data-act="fit" title="Zoom to">Zoom</button>
+      <button class="mt-act" data-act="iso" title="Hide everything else">Isolate</button>
+      <button class="mt-act" data-act="vis" title="${off ? 'Show' : 'Hide'}">${off ? 'Show' : 'Hide'}</button>
+    </div>`);
+    if (!open || leaf) return;
+    const limit = mtShown.get(node.id) || MT_PAGE;
+    for (const c of node.children.slice(0, limit)) row(c, depth + 1);
+    if (node.children.length > limit) {
+      parts.push(`<div class="mt-more" style="padding-left:${22 + depth * 14}px">
+        <button class="btn xs" data-more="${esc(node.id)}">Show ${Math.min(MT_PAGE, node.children.length - limit)} more</button>
+        of ${node.children.length - limit} not listed</div>`);
+    }
+  };
+  for (const r of mtRoots) row(r, 0);
+  if (!mtRoots.some((r) => r.elements.length)) {
+    parts.push('<div class="empty-note">No mapped elements in the loaded models.</div>');
+  }
+  parts.push(`<div class="mt-more">Lists the elements the IFC-SG mapping covers, by file, level and class.</div>`);
+  const top = el.mtBody.scrollTop;
+  el.mtBody.innerHTML = parts.join('');
+  el.mtBody.scrollTop = top;
+}
+
+/** The current search, kept so its rows and buttons can act on what was found. */
+let mtHits = { results: [], total: 0 };
+
+function renderModelSearch(q) {
+  const modelName = (e) => viewer.models.get(e.modelID)?.name || '';
+  mtHits = searchElements(index.all, q, { properties: el.mtProps.checked, modelName });
+  const { results, total } = mtHits;
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean)
+    .map((w) => w.replace(/[.*+?^$|()[\]{}\\]/g, '\\$&'));
+  const re = new RegExp('(' + words.join('|') + ')', 'gi');
+  const mark = (text) =>
+    String(text).split(re).map((piece, i) => (i % 2 ? `<mark>${esc(piece)}</mark>` : esc(piece))).join('');
+  const multi = viewer.entries.length > 1;
+
+  const parts = [`<div class="mt-head"><span>${total} result${total === 1 ? '' : 's'}${
+    total > results.length ? ` · first ${results.length} listed` : ''}</span><span class="spacer"></span>${
+    total ? `<button class="btn xs" data-hits="show" title="Colour every result in the 3D view">Show in model</button>
+      <button class="btn xs" data-hits="iso" title="Hide everything else">Isolate</button>` : ''}</div>`];
+  if (!total) {
+    parts.push(`<div class="empty-note">Nothing matches every word.${el.mtProps.checked ? ''
+      : ' Tick “Include property values” to search property sets as well.'}</div>`);
+  }
+  for (const { element: e, matched } of results) {
+    const sub = [e.entity, e.storey, multi ? modelName(e) : null, ...matched].filter(Boolean);
+    parts.push(`<div class="mt-hit${mtSelected === e.key ? ' sel' : ''}" data-key="${esc(e.key)}">
+      <div>${mark(elementLabel(e))}</div>
+      <div class="mh-sub">${sub.map(mark).join(' · ')}</div></div>`);
+  }
+  el.mtBody.innerHTML = parts.join('');
+}
+
+/** Spaces start hidden; acting on one from the tree means it should be seen. */
+function revealSpaces(elements) {
+  if (!spacesVisible && elements.some((e) => e.canonicalEntity === 'IFCSPACE')) setSpacesVisible(true);
+}
+
+function selectFromModelTab(element) {
+  revealSpaces([element]);
+  mtSelected = element.key;
+  showElement(element);
+}
+
+/** Opens the branch holding an element picked anywhere, and scrolls it into view. */
+function revealInModelTree(item) {
+  mtSelected = item.key;
+  if (!mtVisible()) return;
+  if (!el.mtSearch.value.trim()) {
+    ensureModelTree();
+    for (const id of mtPathOf.get(item.key) || []) {
+      mtExpanded.add(id);
+      // A pick deep in a big class must not be on a page that is not shown.
+      const node = mtNodes.get(id);
+      const at = node ? node.children.findIndex((c) => c.elements.some((x) => x.key === item.key)) : -1;
+      if (at >= (mtShown.get(id) || MT_PAGE)) mtShown.set(id, at + 1);
+    }
+  }
+  renderModelTab();
+  const rowEl = el.mtBody.querySelector('.mt-row.sel, .mt-hit.sel');
+  if (rowEl) rowEl.scrollIntoView({ block: 'nearest' });
+}
+
+function showHiddenElements(elements) {
+  for (const e of elements) {
+    manualHidden.delete(e.key);
+    keepDrawing(e);
+  }
+  revealSpaces(elements);
+  applyVisibility();
+}
+
+function wireModelTab() {
+  let timer;
+  el.mtSearch.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(renderModelTab, 160);
+  });
+  el.mtSearch.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      el.mtSearch.value = '';
+      renderModelTab();
+    } else if (e.key === 'Enter' && mtHits.results.length) {
+      selectFromModelTab(mtHits.results[0].element);
+    }
+  });
+  el.mtProps.addEventListener('change', renderModelTab);
+
+  // "/" jumps to the search from anywhere outside a text field, as on most sites.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    e.preventDefault();
+    el.left.classList.remove('collapsed');
+    showTab('model');
+    el.mtSearch.focus();
+    el.mtSearch.select();
+  });
+
+  el.mtBody.addEventListener('click', (e) => {
+    const more = e.target.closest('[data-more]');
+    if (more) {
+      const id = more.dataset.more;
+      mtShown.set(id, (mtShown.get(id) || MT_PAGE) + MT_PAGE);
+      renderModelTab();
+      return;
+    }
+
+    const hitsBtn = e.target.closest('[data-hits]');
+    if (hitsBtn) {
+      // Every match, not only the listed page.
+      const all = searchElements(index.all, el.mtSearch.value, {
+        properties: el.mtProps.checked, limit: Infinity,
+        modelName: (x) => viewer.models.get(x.modelID)?.name || '',
+      }).results.map((r) => r.element);
+      if (hitsBtn.dataset.hits === 'show') {
+        shellActions.showInModel([{ label: 'Search results', colour: SINGLE_COLOUR, elements: all }],
+          'Search', `“${el.mtSearch.value.trim()}” · ${all.length} elements`);
+      } else {
+        isolateElements(all);
+        viewer.fitElements(all);
+      }
+      return;
+    }
+
+    const hit = e.target.closest('.mt-hit');
+    if (hit) {
+      const item = index.byId.get(hit.dataset.key);
+      if (item) selectFromModelTab(item);
+      return;
+    }
+
+    const rowEl = e.target.closest('.mt-row');
+    const node = rowEl && mtNodes.get(rowEl.dataset.id);
+    if (!node) return;
+    const act = e.target.closest('[data-act]');
+    if (act) {
+      switch (act.dataset.act) {
+        case 'fit':
+          revealSpaces(node.elements);
+          if (!viewer.fitElements(node.elements)) toast('Nothing in that branch draws any geometry.');
+          break;
+        case 'iso':
+          isolateElements(node.elements);
+          viewer.fitElements(node.elements);
+          break;
+        case 'vis':
+          if (mtHidden(node.elements)) showHiddenElements(node.elements);
+          else hideElements(node.elements);
+          break;
+      }
+      return;
+    }
+    // A branch opens and closes; an element is selected (and, with parts, opens too).
+    if (node.children.length && !node.element) {
+      if (mtExpanded.has(node.id)) mtExpanded.delete(node.id);
+      else mtExpanded.add(node.id);
+      renderModelTab();
+      return;
+    }
+    if (node.children.length && e.target.closest('.mt-tw')) {
+      if (mtExpanded.has(node.id)) mtExpanded.delete(node.id);
+      else mtExpanded.add(node.id);
+      renderModelTab();
+      return;
+    }
+    selectFromModelTab(node.element);
+  });
+
+  el.mtBody.addEventListener('dblclick', (e) => {
+    const target = e.target.closest('.mt-row, .mt-hit');
+    if (!target || e.target.closest('[data-act], button')) return;
+    const node = target.dataset.id ? mtNodes.get(target.dataset.id) : null;
+    const elements = node ? node.elements : [index.byId.get(target.dataset.key)].filter(Boolean);
+    if (elements.length) viewer.fitElements(elements);
+  });
+}
+
 // ------------------------------------------------------------------------- tabs
 
 function showTab(tab) {
-  for (const id of ['query', 'check', 'issues', 'warnings']) {
+  for (const id of ['query', 'check', 'issues', 'warnings', 'model']) {
     $('tab-' + id).style.display = id === tab ? 'flex' : 'none';
   }
   document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('active', x.dataset.tab === tab));
+  if (tab === 'model') renderModelTab();
 }
 
 // -------------------------------------------------------------------- IFC editing
@@ -3748,10 +4245,21 @@ async function exportEdits() {
   }
 }
 
-/** Saves a blob through the native picker where it exists, else as a download. */
-async function saveBlob(blob, name, types) {
+/**
+ * Saves a blob through the native picker where it exists, else as a download.
+ * @param {FileSystemHandle} [startIn]  a file whose folder the picker opens in
+ */
+async function saveBlob(blob, name, types, startIn) {
   if (typeof window.showSaveFilePicker === 'function') {
-    const handle = await window.showSaveFilePicker({ suggestedName: name, types });
+    let handle;
+    try {
+      handle = await window.showSaveFilePicker({ suggestedName: name, types, ...(startIn ? { startIn } : {}) });
+    } catch (err) {
+      // A handle the browser no longer accepts (the file moved, say) is not
+      // worth failing the save over: ask again from the default folder.
+      if (!startIn || (err && err.name === 'AbortError')) throw err;
+      handle = await window.showSaveFilePicker({ suggestedName: name, types });
+    }
     const w = await handle.createWritable();
     await w.write(blob);
     await w.close();
@@ -4154,6 +4662,7 @@ function dashboardForModel(dash) {
     byGroup: (m.byGroup || []).map(recordedRow),
     byLevel: m.byLevel.map(recordedRow),
     nearMisses: m.nearMisses,
+    unset: m.unset,
   }));
 }
 

@@ -54,7 +54,9 @@ millimetres of precision.
 **Visibility** is controlled three ways:
 
 - **Right-click any element** for a menu: hide it, hide everything of that entity
-  type, isolate it, show its properties, or **Show all**. Right-clicking empty
+  type, isolate it, show its properties, or **Show all**. Isolating hides
+  everything else the model draws, including elements the mapping does not
+  index (furniture, generic models). Right-clicking empty
   space gives you Show all and Fit view. While a query is showing, **Isolate
   selected components** hides everything the query does not colour — with a
   legend row soloed, only that row's elements stay.
@@ -66,6 +68,22 @@ millimetres of precision.
   restores closed-off models, and shows spaces again. It lights up whenever
   something is hidden, so the view is never mysteriously incomplete.
 
+**The Model tab** lists every loaded file as a tree: file, then level (lowest
+first, with its elevation), then IFC class, then the elements. A stair or other
+geometry-less aggregate holds the parts that draw it. Click an element to select
+it and open its properties; double-click any row, or use **Zoom**, to frame it.
+**Isolate** and **Hide / Show** on each row act on everything under it. Picking
+an element in the 3D view opens its branch in the tree.
+
+The search box above the tree (press `/` from anywhere to jump to it) finds
+elements whose name, GlobalId, tag, class, ObjectType, PredefinedType, type
+name, level or file contain every word typed, so `L02 door` finds the doors on
+level 2. Tick **Include property values** to search property sets too (a word
+can match a set, a property name or a value). Each result says which attribute
+matched; Enter selects the first, and **Show in model** / **Isolate** act on
+every result. The tree and search list the elements the IFC-SG mapping covers,
+the same ones queries and checks see.
+
 Hiding is implemented by rewriting the base mesh's index buffer so hidden
 elements collapse to zero-area triangles. That costs only the hidden elements'
 indices rather than rebuilding the model, so it stays instant on large files, and
@@ -74,7 +92,7 @@ index cache).
 
 ## Large models
 
-IFCs of **150 MB or more** open with a second engine, That Open
+IFCs of **30 MB or more** open with a second engine, That Open
 [Fragments](https://docs.thatopen.com/) (MIT), because parsing them whole in
 the tab, as smaller files are, needs several gigabytes and can crash it. Once
 open they work like any other model: queries, colouring, hiding, the element
@@ -93,14 +111,17 @@ measuring. Only **editing** needs the IFC itself (see below).
   (one revision per model, about 2 GB at most, least recently opened out
   first), so opening the same file again takes seconds.
 - **Save it as a `.rspfrag`** with the save button beside the model under the
-  model name drop-down. The file holds the converted geometry, the property
+  model name drop-down. In Chrome and Edge the save dialog opens in the IFC's
+  own folder with the name filled in, so the copy lands beside the model with
+  one click (a browser page cannot save without a dialog, or learn a file's
+  folder any other way). The file holds the converted geometry, the property
   index and the IFC header, so it opens on any machine, with no conversion and
   no IFC. Open it like an IFC (drop it, or choose it). The IFC stays the master
   copy: a `.rspfrag` made under different mapping rules opens with a warning,
   and a model opened from one cannot be edited (open its IFC to edit).
 
 `localStorage['rsp.largeModelMB']` overrides the threshold (`0` sends every IFC
-through Fragments; remove it to go back to 150).
+through Fragments; remove it to go back to 30).
 
 How it is put together: `js/frag/convert-worker.js` does the conversion,
 `js/frag/store.js` the cache and the `.rspfrag` format, and `js/viewer.js`
@@ -337,7 +358,8 @@ federated model, with breakdowns **by level**, **by file**, or totals only.
 
 | Metric | Definition |
 | --- | --- |
-| Gross Floor Area | `IfcSpace` · ObjectType `AREA_GFA` · where `SGPset_SpaceArea_Verification.AVF_IncludeAsGFA` is True · sums `SGPset_SpaceDimension.Area`, split by use quantum (`SGPset_SpaceArea_GFA.AGF_UseQuantum`: Predominant / Ancillary) |
+| Gross Floor Area | `IfcSpace` · ObjectType `AREA_GFA` · where `SGPset_SpaceArea_Verification.AVF_IncludeAsGFA` is True · sums `SGPset_SpaceDimension.Area` |
+| GFA - Use Quantum | The same GFA, split by `SGPset_SpaceArea_GFA.AGF_UseQuantum` (Predominant / Ancillary) · the property is required on every `AREA_GFA` space, so any space without it is listed by name, level and file, and **Show not set** colours them in the 3D view |
 | SGFA | Every `AREA_GFA` space, verified or not · same area, with verified / not-yet-verified sub-totals |
 | Planting Areas | `IfcGeographicElement` · `*PLANTINGAREAS` · sums `SGPset_GeographicElementDimension.Area`, with encroachment and compensated sub-totals |
 | Parking Lots | `IfcBuildingElementProxy` · `*CARLOT`, `*MOTORCYCLELOT`, `*LORRYLOT`, `*COACHLOT`, `*ARTICULATEDVEHICLELOT`, `*BICYCLELOT` · counted per type |
@@ -345,6 +367,10 @@ federated model, with breakdowns **by level**, **by file**, or totals only.
 | Refuse Handling Equipment | `IfcTank` · `*REFUSECONTAINER`, `*REFUSECOMPACTOR`, `*RECYCLABLECONTAINER`, `*RECYCLABLECOMPACTOR`, `*REFUSEHANDLINGEQUIPMENT` · sums `Pset_TankTypeCommon.NominalCapacity` |
 | Site Coverage | `IfcBuildingElementProxy` · `*SITECOVERAGE` · area |
 | Site Area | `IfcGeographicElement` · `*SITEBOUNDARY` · sums `SGPset_GeographicElementDimension.Area` |
+
+The arrow beside a card's title folds it down to its headline figure; folded
+cards stay folded in this browser. A card's "not set" list starts folded and
+scrolls inside the card when opened, so a long list never hides the rest.
 
 Every card quotes the mapping row it comes from and the property the value was
 actually read from, so a figure can be traced back. **Show in model** colours
@@ -812,6 +838,7 @@ js/ifc-index.js             walks each IFC once into a queryable element index
 js/ifcsg.js                 ruleset indexing, element matching, value evaluation
 js/dashboard.js             project quantity metrics, totalled by file and level
 js/warnings.js              export problems that will fail a submission (Warnings tab)
+js/model-tree.js            hierarchy tree and element search (Model tab)
 js/memory.js                tab memory estimate, budget and pre-load forecast
 js/util/dom.js              escaping and colour helpers shared with check modules
 js/geo/svy21.js             WGS84 <-> SVY21 (EPSG:3414) projection

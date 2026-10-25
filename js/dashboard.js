@@ -142,6 +142,8 @@ const TITLE_CASE = {
 };
 const pretty = (k) => TITLE_CASE[k] || k;
 
+const NOT_SET = '(not set)';
+
 /**
  * GFA split by use quantum: how much is the predominant use of the
  * development and how much is ancillary to it (SGPset_SpaceArea_GFA.AGF_UseQuantum).
@@ -150,9 +152,11 @@ const BY_USE_QUANTUM = {
   title: 'BY USE QUANTUM',
   get: (el) => {
     const v = getValue(el, 'SGPset_SpaceArea_GFA', 'AGF_UseQuantum');
-    return v === undefined || v === null || String(v).trim() === '' ? '(not set)' : String(v).trim();
+    return v === undefined || v === null || String(v).trim() === '' ? NOT_SET : String(v).trim();
   },
 };
+
+const isGfa = (el) => isTrue(getValue(el, 'SGPset_SpaceArea_Verification', 'AVF_IncludeAsGFA'));
 
 // --------------------------------------------------------------- metric specs
 
@@ -168,15 +172,34 @@ export const METRICS = [
     decimals: 2,
     entity: 'IFCSPACE',
     subtypes: ['*AREA_GFA'],
-    where: (el) => isTrue(getValue(el, 'SGPset_SpaceArea_Verification', 'AVF_IncludeAsGFA')),
+    where: isGfa,
     // Named separately from the closure above so a zero total can be explained:
     // did the property come back false, or is it simply not on the element?
     wherePset: 'SGPset_SpaceArea_Verification',
     whereProp: 'AVF_IncludeAsGFA',
     whereLabel: 'AVF_IncludeAsGFA = True',
     measure: SPACE_AREA,
-    groupBy: BY_USE_QUANTUM,
     source: 'IfcSpace · ObjectType AREA_GFA · SGPset_SpaceArea_Verification.AVF_IncludeAsGFA',
+  },
+  {
+    // The same GFA, split by use quantum. AGF_UseQuantum is required on every
+    // AREA_GFA space (mapping row 655, URA · DG · High), so a space without it
+    // is listed by name: that is GFA the authority cannot attribute to either
+    // the predominant or the ancillary use.
+    id: 'gfa-use-quantum',
+    title: 'GFA - Use Quantum',
+    unit: 'm²',
+    decimals: 2,
+    entity: 'IFCSPACE',
+    subtypes: ['*AREA_GFA'],
+    where: isGfa,
+    wherePset: 'SGPset_SpaceArea_Verification',
+    whereProp: 'AVF_IncludeAsGFA',
+    whereLabel: 'AVF_IncludeAsGFA = True',
+    measure: SPACE_AREA,
+    groupBy: BY_USE_QUANTUM,
+    required: { label: 'AGF_UseQuantum', missing: (el) => BY_USE_QUANTUM.get(el) === NOT_SET },
+    source: 'IfcSpace · ObjectType AREA_GFA · SGPset_SpaceArea_GFA.AGF_UseQuantum (Predominant / Ancillary)',
   },
   {
     // Every AREA_GFA space, verified or not — GFA above is the subset of this
@@ -302,6 +325,9 @@ export function computeDashboard(index, modelNames = new Map()) {
 
     let total = 0;
     let missingValue = 0;
+    // Elements lacking a property the mapping requires, kept by name so each
+    // one can be found again: the count alone does not say where to look.
+    const unset = [];
     const subtotals = (spec.subtotals || []).map((s) => ({ label: s.label, value: 0, count: 0 }));
 
     for (const el of elements) {
@@ -319,6 +345,7 @@ export function computeDashboard(index, modelNames = new Map()) {
         addTo(byType, pretty(subtypeOf(el, spec.splitByType) || 'Other'), v, 1, el);
       }
       if (spec.groupBy) addTo(byGroup, spec.groupBy.get(el), v, 1, el);
+      if (spec.required && spec.required.missing(el)) unset.push({ el, value: v });
       (spec.subtotals || []).forEach((s, i) => {
         if (s.when(el)) { subtotals[i].value += v; subtotals[i].count++; }
       });
@@ -366,12 +393,22 @@ export function computeDashboard(index, modelNames = new Map()) {
       byGroup: [...byGroup.values()].sort(byValueDesc),
       byFile: [...byFile.values()].sort(byValueDesc),
       byLevel: [...byLevel.values()].sort(byValueDesc),
+      requiredLabel: spec.required ? spec.required.label : null,
+      unset: unset.map(({ el, value }) => ({
+        name: el.name || el.tag || `#${el.expressID}`,
+        storey: el.storey || '(no storey)',
+        file: modelNames.get(el.modelID) || `Model ${el.modelID}`,
+        globalId: el.globalId || null,
+        value,
+      })),
+      unsetElements: unset.map((u) => u.el),
       elements,
     };
   });
 
   const missing = metrics.filter((m) => !m.present);
   const incomplete = metrics.filter((m) => m.present && m.missingValue > 0);
+  const unsetRequired = metrics.filter((m) => m.unset.length);
 
   return {
     metrics,
@@ -380,6 +417,7 @@ export function computeDashboard(index, modelNames = new Map()) {
       present: metrics.length - missing.length,
       missing: missing.map((m) => m.title),
       incomplete: incomplete.map((m) => ({ title: m.title, missing: m.missingValue, of: m.count })),
+      unsetRequired: unsetRequired.map((m) => ({ title: m.title, property: m.requiredLabel, missing: m.unset.length, of: m.count })),
     },
   };
 }
