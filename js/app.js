@@ -95,6 +95,8 @@ let contextMode = 'ghost'; // 'ghost' | 'hidden' | 'normal'
 
 /** Results of the last run, one entry per selected check. */
 let checkOutcomes = [];
+/** Why those results no longer describe the model (an edit, a scope change), or null. */
+let resultsStale = null;
 /** Check ids the user has ticked in the menu. */
 let selectedChecks = new Set();
 /** "<checkId>.<inputId>" -> the value the user supplied (a string, or {name, text}). */
@@ -484,6 +486,7 @@ function wireUI() {
 
   document.querySelectorAll('.tabs button').forEach((b) => {
     b.addEventListener('click', () => {
+      el.left.classList.remove('collapsed');
       document.querySelectorAll('.tabs button').forEach((x) => x.classList.remove('active'));
       b.classList.add('active');
       showTab(b.dataset.tab);
@@ -1132,6 +1135,12 @@ function renderWarnings() {
     : `<span class="pill ok">No export problems found</span>`;
 
   const files = new Set(viewer.entries.map((e) => e.name));
+  const related = (w) => {
+    const id = relatedCheck(w.id);
+    const meta = id && registry.byId(id);
+    return meta ? `<div class="warn-rel">Related check:
+      <button class="link-btn" data-rel="${esc(id)}">${esc(meta.title)} on the Compliance tab</button></div>` : '';
+  };
   const item = (w) => {
     const n = w.elements.length;
     const sub = [files.size > 1 || !w.file ? w.file : null, n ? `${n} element${n === 1 ? '' : 's'}` : null]
@@ -1154,7 +1163,7 @@ function renderWarnings() {
         <button class="warn-head"><span class="dot"></span>
           <span class="wt">${esc(w.title)}${sub ? `<small>${esc(sub)}</small>` : ''}</span>
           <span class="chev">&#9654;</span></button>
-        <div class="warn-body">${esc(w.detail)}${els}</div>
+        <div class="warn-body">${esc(w.detail)}${related(w)}${els}</div>
       </div>`;
   };
   el.warnList.innerHTML =
@@ -1183,6 +1192,8 @@ function renderWarnings() {
         if (!viewer.fitElements(w.elements)) toast('These elements have no geometry to zoom to.');
       });
     }
+    const rel = node.querySelector('[data-rel]');
+    if (rel) rel.addEventListener('click', () => openCheck(rel.dataset.rel));
     node.querySelectorAll('[data-el]').forEach((b) => b.addEventListener('click', () => {
       const e = w.elements[+b.dataset.el];
       if (e.bare) viewer.setSelection(e);
@@ -1190,6 +1201,32 @@ function renderWarnings() {
       viewer.fitElements([e]);
     }));
   });
+}
+
+/** The compliance check that looks at the same problem as a warning, if any. */
+function relatedCheck(warningId) {
+  const kind = warningId.split(':')[0];
+  if (/^(geo-|crs-|origin-far$|far$|datum$)/.test(kind)) return 'geo-referencing';
+  if (kind === 'space-geom') return 'space-geometry';
+  return null;
+}
+
+/** Shows one check on the Compliance tab: its row in the menu, ticked and in view. */
+function openCheck(id) {
+  showTab('check');
+  el.left.classList.remove('collapsed');
+  if (!selectedChecks.has(id)) {
+    selectedChecks.add(id);
+    saveSelection();
+  }
+  checkMenuOpen = true;
+  renderCheckMenu();
+  const row = el.checkMenu.querySelector(`.cm-row[data-id="${CSS.escape(id)}"]`);
+  if (row) {
+    row.scrollIntoView({ block: 'center' });
+    row.classList.add('flash');
+    setTimeout(() => row.classList.remove('flash'), 1400);
+  }
 }
 
 function fmtDistance(m) {
@@ -1536,18 +1573,19 @@ function renderBubbles(container, items, activeId, onClick) {
   });
 }
 
-/** Gateway is the top tier: scoped only by the secondary filters, not by authority. */
+/**
+ * Gateway is the top tier, but it belongs to the submission: it is shown here
+ * and changed in project setup, the one place it is set.
+ */
 function renderGatewayBubbles() {
   if (!el.gwBubbles) return;
-  const base = ruleset.targets.filter(matchesSecondaryFilters);
-  const counts_ = new Map();
-  for (const t of base) counts_.set(t.gateway, (counts_.get(t.gateway) || 0) + 1);
-
-  // No "All" here: the Construction Gateway already is everything.
-  const items = GATEWAY_ORDER.map((g) => ({ id: g, label: GATEWAY_LABEL[g], n: counts_.get(g) || 0 }));
-  renderBubbles(el.gwBubbles, items, gatewayFilter, (id) => {
-    setGateway(id);
-    refreshFilters();
+  const n = ruleset.targets.filter((t) => t.gateway === gatewayFilter && matchesSecondaryFilters(t)).length;
+  el.gwBubbles.innerHTML = `
+    <span class="bubble active static">${esc(GATEWAY_LABEL[gatewayFilter] || 'All gateways')}<span class="bc">${n}</span></span>
+    <button class="link-btn" data-open-project>Change in project setup</button>`;
+  el.gwBubbles.querySelector('[data-open-project]').addEventListener('click', (e) => {
+    e.stopPropagation();
+    openProjectPanel();
   });
 }
 
@@ -1556,6 +1594,7 @@ function renderGatewayBubbles() {
  * own gateway selector always agree, whichever of them was touched.
  */
 function setGateway(gateway) {
+  if (gateway !== gatewayFilter) markResultsStale('The submission gateway changed since these checks ran.');
   gatewayFilter = gateway;
   checkInputs.set('ura.gateway', gateway);
   // A drill-down: if the authority chosen below no longer has anything under
@@ -1847,7 +1886,7 @@ function selectComponent(group) {
     .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
     .map(([label, els], i) => ({ label, colour: PALETTE[i % PALETTE.length], elements: els, missing: false }));
   el.legendTitle.innerHTML =
-    `${esc(group.category)}<small>${esc(group.agencies.join(', '))} · ${elements.length} elements · ${kinds.size} kind${kinds.size === 1 ? '' : 's'}</small>`;
+    `${esc(group.category)}<small>${esc(group.agencies.join(', '))} · ${elements.length} element${elements.length === 1 ? '' : 's'} · ${kinds.size} kind${kinds.size === 1 ? '' : 's'}</small>`;
 
   renderTree();
   renderLegend();
@@ -1882,6 +1921,27 @@ function selectProperty(group, req) {
   renderTree();
   renderLegend();
   applyOverlay();
+}
+
+/**
+ * Opens the property query for one mapping requirement on the CX Queries tab,
+ * so every element it applies to is coloured by value and Set value… can fill
+ * the gap on all of them.
+ */
+function queryRequirement(req) {
+  const owns = (g) => g.targets.some((t) => t.requirements.includes(req));
+  const group = componentGroups(visibleTargets()).find(owns) ||
+    componentGroups(ruleset.targets.filter((t) => !gatewayFilter || t.gateway === gatewayFilter)).find(owns);
+  if (!group) {
+    toast(`${req.pset}.${req.prop} is not among the components shown on CX Queries.`);
+    return;
+  }
+  showTab('query');
+  el.left.classList.remove('collapsed');
+  selectProperty(group, req);
+  if (selection && selection.req === req && !el.btnSetValue.hidden) {
+    toast('Every element with this property is coloured by value. Use Set value… in the key to fill them all.');
+  }
 }
 
 function clearQuery() {
@@ -2095,6 +2155,7 @@ function refreshSurveyRail() {
 function clearCheckResults() {
   if (checkAbort) checkAbort.abort();
   checkOutcomes = [];
+  resultsStale = null;
   checkMenuOpen = true;
   applyCheckMenuFold();
   el.summary.classList.remove('visible');
@@ -2225,6 +2286,13 @@ function renderCheckInputs(check) {
            <input type="file" data-file="${esc(key)}" accept="${esc(input.accept || '')}" hidden />
            <span class="cm-filename">${held ? esc(held.name) : 'No file chosen'}</span>
            ${held ? `<button class="btn sm" data-clear="${esc(key)}" title="Remove">&times;</button>` : ''}
+         </div>`;
+    } else if (input.kind === 'select' && input.inProject) {
+      const current = held === undefined ? input.default : held;
+      const option = (input.options || []).find((o) => o.value === current);
+      control = `<div class="cm-file">
+           <span class="cm-filename">${esc(option ? option.label : current)}</span>
+           <button class="btn sm" data-open-project>Change in project setup</button>
          </div>`;
     } else if (input.kind === 'select') {
       const current = held === undefined ? input.default : held;
@@ -2392,6 +2460,7 @@ async function doRunCheck() {
     checkOutcomes = await runChecks(ids, ctx, (msg) => {
       el.issues.innerHTML = `<div class="empty-note">${esc(msg)}</div>`;
     });
+    resultsStale = null;
     // The setup has done its job; give the results the room.
     checkMenuOpen = false;
     refreshSurveyRail();
@@ -2433,15 +2502,22 @@ function renderSummary() {
   const names = checkOutcomes.filter((o) => o.result).map((o) => o.meta.title).join(', ');
 
   const num = (n) => n.toLocaleString();
-  // One line for what matters; the rest is a click away.
+  // One line for what matters; the rest is a click away. The percentage is of
+  // requirement checks (one property on one element, one URA rule…), not of
+  // elements, so it says so.
   const headline = t.assertions
-    ? `<b style="color:var(--ok)">${pct}% compliant</b>
-       · <b style="color:${t.fail ? 'var(--danger)' : 'var(--ok)'}">${num(t.fail)} issue${t.fail === 1 ? '' : 's'}</b>
+    ? `<b style="color:var(--ok)" title="${num(t.pass)} of ${num(t.assertions)} requirement checks pass. A requirement check is one requirement tested on one element.">${pct}% of requirements met</b>
+       · <button class="sissues" data-show-issues title="Show only what fails"
+           style="color:${t.fail ? 'var(--danger)' : 'var(--ok)'}">${num(t.fail)} issue${t.fail === 1 ? '' : 's'}</button>
        · ${num(t.elements)} element${t.elements === 1 ? '' : 's'} checked`
     : '<b>Nothing checked</b>';
 
   el.summary.classList.add('visible');
   el.summary.innerHTML = `
+    ${resultsStale ? `<div class="stale-note">
+      <span><b>Out of date.</b> ${esc(resultsStale)}</span>
+      <button class="btn sm primary" data-rerun>Re-run</button>
+    </div>` : ''}
     <div class="sbar">
       <i style="width:${pct}%;background:var(--ok)"></i>
       <i style="width:${100 - pct}%;background:var(--danger)"></i>
@@ -2458,15 +2534,37 @@ function renderSummary() {
       <span class="k">Scope</span><span class="v">${esc(scope)}</span>
       <span class="k">Models</span><span class="v">${viewer.entries.length}</span>
       <span class="k">Elements checked</span><span class="v">${t.elements}</span>
-      <span class="k">Assertions</span><span class="v">${t.assertions}</span>
-      <span class="k">Compliant</span><span class="v" style="color:var(--ok)">${t.pass} (${pct}%)</span>
+      <span class="k">Requirement checks</span><span class="v">${t.assertions}</span>
+      <span class="k">Met</span><span class="v" style="color:var(--ok)">${t.pass} (${pct}%)</span>
       <span class="k">Issues</span><span class="v" style="color:var(--danger)">${t.fail}</span>
     </div></details>`;
 
-  el.summary.querySelector('[data-issues-only]').addEventListener('change', (e) => {
+  const toggle = el.summary.querySelector('[data-issues-only]');
+  toggle.addEventListener('change', (e) => {
     issuesOnly = e.target.checked;
     el.issues.classList.toggle('issues-only', issuesOnly);
   });
+  // The issue count is the way into them.
+  const show = el.summary.querySelector('[data-show-issues]');
+  if (show) {
+    show.addEventListener('click', () => {
+      toggle.checked = true;
+      toggle.dispatchEvent(new Event('change'));
+      el.issues.scrollTop = 0;
+    });
+  }
+  const rerun = el.summary.querySelector('[data-rerun]');
+  if (rerun) rerun.addEventListener('click', doRunCheck);
+}
+
+/**
+ * Marks the last run's results as no longer describing the model, without
+ * throwing them away: the user decides when to re-run.
+ */
+function markResultsStale(reason) {
+  if (!checkOutcomes.length) return;
+  resultsStale = reason;
+  renderSummary();
 }
 
 /** Errors first, then most issues first; ties keep the menu's order. */
@@ -2795,15 +2893,8 @@ function renderDashboard() {
       </div>`);
   }
 
-  // Compliance: anything the submission does not contain at all.
-  if (summary.missing.length) {
-    parts.push(`
-      <div class="dash-alert">
-        <b>Not present in the submission —</b> ${summary.missing.length} of
-        ${summary.total} reported quantities have no matching elements.
-        <ul>${summary.missing.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>
-      </div>`);
-  }
+  // Quantities the submission does not contain at all are listed after the
+  // real figures, in their own compact section, rather than in a banner.
   if (summary.incomplete.length) {
     parts.push(`
       <div class="dash-alert warn">
@@ -2822,7 +2913,15 @@ function renderDashboard() {
   }
 
   parts.push('<div class="cards">');
-  for (const m of metrics) {
+  const ordered = [...metrics.filter((m) => m.present), ...metrics.filter((m) => !m.present)];
+  let absentStarted = false;
+  for (const m of ordered) {
+    if (!m.present && !absentStarted) {
+      absentStarted = true;
+      parts.push(`</div><div class="dash-sub">Not found in the submission
+        <small>${summary.missing.length} of ${summary.total} reported quantities have no matching elements. Open a card to see why.</small></div>
+        <div class="cards compact">`);
+    }
     const rows = dashBreakdown === 'file' ? m.byFile : dashBreakdown === 'level' ? m.byLevel : [];
     const brkTitle = dashBreakdown === 'file' ? 'BY FILE' : 'BY LEVEL';
 
@@ -2834,7 +2933,9 @@ function renderDashboard() {
           ? `<span class="flag partial">${m.unset.length} not set</span>`
           : '<span class="flag ok">OK</span>';
 
-    const folded = dashCollapsed.has(m.id);
+    // Missing quantities start folded; the stored set holds the cards the user
+    // flipped from their default.
+    const folded = m.present ? dashCollapsed.has(m.id) : !dashCollapsed.has(m.id);
     parts.push(`<div class="card${m.present ? '' : ' absent'}${folded ? ' collapsed' : ''}" data-m="${esc(m.id)}">
       <div class="card-head">
         <div class="ct"><h3>${esc(m.title)}</h3>${flag}<button class="card-fold" data-act="fold"
@@ -2969,7 +3070,9 @@ function renderDashboard() {
     b.addEventListener('click', () => {
       const card = b.closest('.card');
       const folded = card.classList.toggle('collapsed');
-      if (folded) dashCollapsed.add(card.dataset.m);
+      // Stored as a flip from the card's default (missing ones start folded).
+      const flipped = card.classList.contains('absent') ? !folded : folded;
+      if (flipped) dashCollapsed.add(card.dataset.m);
       else dashCollapsed.delete(card.dataset.m);
       b.innerHTML = folded ? '&#9656;' : '&#9662;';
       b.title = `${folded ? 'Expand' : 'Collapse'} this card`;
@@ -3188,7 +3291,11 @@ function showElement(item) {
         let fix = '';
         if (editable && f.req && f.severity !== SEVERITY.PASS) {
           fixable.push(f.req);
-          fix = `<button class="btn xs" data-fix="${fixable.length - 1}">Fix</button>`;
+          const i = fixable.length - 1;
+          // Fixing one element at a time does not scale: offer the query that
+          // shows every element with this property, where Set value… fills them all.
+          fix = `<button class="btn xs" data-fix="${i}">Fix</button>` +
+            `<button class="btn xs" data-bulk="${i}" title="Query this property on every element, to set it on all of them at once">All…</button>`;
         }
         html += `
           <div class="chk-row">
@@ -3228,6 +3335,10 @@ function showElement(item) {
   }
 
   // Editing affordances: each opens an inline row under the thing it edits.
+  el.panelBody.querySelectorAll('[data-bulk]').forEach((b) => {
+    b.addEventListener('click', () => queryRequirement(fixable[+b.dataset.bulk]));
+  });
+
   el.panelBody.querySelectorAll('[data-fix]').forEach((b) => {
     b.addEventListener('click', () => {
       const req = fixable[+b.dataset.fix];
@@ -3512,10 +3623,11 @@ function renderProjectPanel() {
 
   el.projectPanel.innerHTML = `
     <div class="pp-head">
-      <span>PROJECT</span>
+      <span>PROJECT SETUP</span>
       <span class="pp-state">${!project ? 'none open'
         : dirty ? (projectSavedFp === null ? 'not saved yet' : 'unsaved changes')
           : (p.saved ? 'saved ' + new Date(p.saved).toLocaleString() : 'saved')}</span>
+      <button class="pp-close" data-close title="Close (Esc)">&times;</button>
     </div>
     <div class="pp-body">
       <label class="pp-field"><span>Project code</span>
@@ -3646,6 +3758,10 @@ function renderProjectPanel() {
     refreshFilters();
   });
 
+  el.projectPanel.querySelector('[data-close]').addEventListener('click', () => {
+    el.projectPicker.classList.remove('open');
+  });
+
   el.projectPanel.querySelectorAll('[data-auth]').forEach((b) => {
     b.addEventListener('click', () => {
       ensureProject();
@@ -3654,6 +3770,7 @@ function renderProjectPanel() {
       const adding = !set.has(a);
       if (adding) set.add(a); else set.delete(a);
       projectAuthorities = set.size ? set : null;
+      markResultsStale('The authorities in scope changed since these checks ran.');
       // The authority's checks follow it in and out of scope; other checks are left alone.
       for (const c of registry.all()) {
         if (String(c.authority).toUpperCase() !== a) continue;
@@ -4114,6 +4231,7 @@ async function renameElement(element, name) {
 
 /** Refreshes everything that shows values after an edit landed. */
 function afterEdit() {
+  markResultsStale('The model has been edited since these checks ran.');
   renderEditsBar();
   renderProjectChip();
   // A property query's legend is a picture of the values, so redraw it.
@@ -4285,6 +4403,7 @@ function discardEdits() {
   if (!n) return;
   if (!window.confirm(`Forget all ${n} edit${n === 1 ? '' : 's'}? The values shown will no longer match the file.`)) return;
   for (const ed of editors.values()) ed.discard();
+  markResultsStale('Edits were discarded since these checks ran.');
   renderEditsBar();
   renderProjectChip();
   toast('Edits discarded. Reload the model to see the original values again.');

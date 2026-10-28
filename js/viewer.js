@@ -96,9 +96,10 @@ export function elementBoxes(geometry) {
 const FAR_FACTOR = 3;
 const FAR_MIN_M = 300;
 
-/** The selected element's highlight: Forma's selection blue, lit a little from within. */
-const SELECTION_COLOUR = 0x2f8cff;
-const SELECTION_EMISSIVE = 0x0b3d80;
+/** The selected element's highlight, lit a little from within. A magenta that no
+ *  query palette or check status uses, so a selection never reads as a result. */
+const SELECTION_COLOUR = 0xf044c8;
+const SELECTION_EMISSIVE = 0x5a1048;
 const SELECTION_ID = 'selection';
 
 /** How long the orbit pivot takes to glide onto a newly selected element. */

@@ -89,6 +89,9 @@ const MANIFEST = [
         // Defaults to the stricter gateway: a forgotten selection should
         // over-report rather than quietly skip requirements.
         default: 'construction',
+        // One gateway for the whole submission: set in project setup, and only
+        // shown here.
+        inProject: true,
         options: [
           { value: 'construction', label: 'Construction Gateway' },
           { value: 'design', label: 'Design Gateway' },
