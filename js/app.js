@@ -47,6 +47,8 @@ import {
   readBcf, writeBcf, newTopic, newComment, newViewpoint, touch as touchTopic,
 } from './bcf/bcf.js';
 import { buildReadinessReport } from './report/report.js';
+import { renderGuide, focusGuide } from './guide/guide.js';
+import { renderFeedback, installErrorLog } from './feedback/feedback.js';
 import {
   readHeader, buildIdentity, bestMatch, compareRevision, describeIdentity, MATCH,
 } from './model-id.js';
@@ -234,6 +236,7 @@ function renderMemory() {
 // ------------------------------------------------------------------------- boot
 
 async function init() {
+  installErrorLog();
   viewer = new Viewer($('viewer-container'));
   measurer = new MeasureTool(viewer);
   viewer.onPick(onPick);
@@ -491,6 +494,12 @@ function wireUI() {
       b.classList.add('active');
       showTab(b.dataset.tab);
     });
+  });
+  const help = $('tab-help');
+  help.dataset.guide = 'queries';
+  help.addEventListener('click', () => {
+    focusGuide(help.dataset.guide);
+    showTab('guide');
   });
 
   wireModelTab();
@@ -4144,6 +4153,77 @@ function showTab(tab) {
   }
   document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('active', x.dataset.tab === tab));
   if (tab === 'model') renderModelTab();
+  if (tab === 'guide') renderGuide($('tab-guide'), { showMe: guideShowMe });
+  if (tab === 'feedback') renderFeedback($('feedback-body'), { context: feedbackContext, toast });
+  else workTab = tab;
+  $('tab-help').dataset.guide = TAB_GUIDE[tab] || '';
+  $('tab-help').hidden = !TAB_GUIDE[tab];
+}
+
+/** Each working tab's entry in the User Guide, opened by its "?". */
+const TAB_GUIDE = { query: 'queries', model: 'search', warnings: 'warnings', check: 'compliance', issues: 'issues' };
+/** The tab in use before Feedback, which a bug report usually concerns. */
+let workTab = 'query';
+
+/**
+ * What a feedback report says about the app's state, as [label, value] rows.
+ * Counts and settings only; file and project names just when `names` is set.
+ */
+function feedbackContext({ names }) {
+  const rows = [['Tab in use', workTab]];
+  const mem = $('mem-val').textContent.trim();
+  if (mem && mem !== '—') rows.push(['Memory', mem]);
+
+  const entries = viewer ? viewer.entries : [];
+  if (!entries.length) return [...rows, ['Models', 'none loaded']];
+  const mapped = entries.reduce((n, e) => n + (indexes.get(e.modelID)?.count ?? 0), 0);
+  const large = entries.filter((e) => e.kind === 'frag').length;
+  rows.push(['Models', `${entries.length} loaded${large ? ` (${large} large)` : ''} · ${mapped.toLocaleString()} mapped elements`]);
+  if (names) {
+    rows.push(['Model files', entries.map((e) => e.name).join(', ')]);
+    if (project) rows.push(['Project', labelOf(project)]);
+  }
+  rows.push(['Gateway', GATEWAY_LABEL[gatewayFilter] || 'all']);
+  rows.push(['Authorities', projectAuthorities && projectAuthorities.size ? [...projectAuthorities].join(', ') : 'all']);
+
+  const ticked = registry.all().filter((c) => selectedChecks.has(c.id)).map((c) => c.title);
+  rows.push(['Checks ticked', ticked.join(', ') || 'none']);
+  if (checkOutcomes.some((o) => o.result)) {
+    const t = totalsOf(checkOutcomes);
+    const failed = checkOutcomes.filter((o) => o.error).map((o) => o.meta.title);
+    rows.push(['Last run', `${t.assertions ? Math.round((t.pass / t.assertions) * 100) : 0}% met · ${t.fail} issues · ` +
+      `${t.elements} elements checked${resultsStale ? ' · out of date' : ''}${failed.length ? ` · failed: ${failed.join(', ')}` : ''}`]);
+  } else {
+    rows.push(['Last run', 'not run']);
+  }
+  const fails = warnings.filter((w) => w.severity === 'fail').length;
+  rows.push(['Warnings', warnings.length
+    ? `${fails} will fail, ${warnings.length - fails} to review (${warnings.map((w) => w.id).join(', ')})` : 'none']);
+  return rows;
+}
+
+/**
+ * The guide's "Show me": opens the tab a control lives on and makes the control
+ * pulse, so the reader finds it on screen. A control that only exists in some
+ * states (the colour key, the edits bar) says when it appears instead.
+ */
+function guideShowMe({ tab, target, hint }) {
+  if (tab) {
+    el.left.classList.remove('collapsed');
+    showTab(tab);
+  }
+  const node = document.querySelector(target);
+  if (!node || !node.getClientRects().length) {
+    toast(hint || 'That appears once a model is loaded.');
+    return;
+  }
+  node.scrollIntoView({ block: 'nearest' });
+  node.classList.remove('guide-spot');
+  void node.offsetWidth; // restart the pulse when shown twice in a row
+  node.classList.add('guide-spot');
+  setTimeout(() => node.classList.remove('guide-spot'), 2600);
+  // Leaving the guide for another tab: a word on the way back.
+  if (tab) toast('Back to the steps: the User Guide tab, bottom left.');
 }
 
 // -------------------------------------------------------------------- IFC editing

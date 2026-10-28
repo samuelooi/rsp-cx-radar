@@ -226,11 +226,22 @@
   #left.collapsed .tab-body { display: none; }
   #left.collapsed .tabs { border-right: none; }
   #left.collapsed .tabs button.active { background: none; border-right-color: transparent; }
-  #left .tab-body { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+  #left .tab-body { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  /* "?" in the corner of each working tab: opens that tab's User Guide entry. */
+  .tab-help {
+    position: absolute; top: 6px; right: 8px; z-index: 2;
+    width: 18px; height: 18px; padding: 0; border-radius: 50%;
+    border: 1px solid var(--border); background: var(--panel-2); color: var(--text-muted);
+    font-size: 11px; font-weight: 600; line-height: 16px; cursor: pointer;
+  }
+  .tab-help:hover { color: #fff; border-color: var(--accent); background: var(--accent-dim); }
+  .tab-help[hidden] { display: none; }
+  /* Keep the top row's own controls clear of it. */
+  #tab-model > .filters:first-child, #tab-issues .issues-actions, #check-menu-bar { padding-right: 34px; }
   /* Before a model loads the drop overlay covers the window; keep the tab strip
      and the reference tabs usable above it, with the model tabs still dimmed. */
   #app:has(#dropzone.visible:not(.dragover)) #left { z-index: 26; }
-  #app:has(#dropzone.visible:not(.dragover)) #left .tab-body > :not(#tab-guide):not(#tab-feedback) {
+  #app:has(#dropzone.visible:not(.dragover)) #left .tab-body > :not(#tab-guide):not(#tab-feedback):not(#tab-help) {
     opacity: .4; pointer-events: none;
   }
 
@@ -1036,6 +1047,112 @@
   .warn-body { display: none; padding: 0 10px 10px 26px; font-size: 12px; line-height: 1.55; color: var(--text-muted); }
   .warn-item.open .warn-body { display: block; }
   .warn-rel { margin-top: 6px; }
+
+  /* ---------- User Guide ---------- */
+  .g-top { padding: 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .g-search {
+    width: 100%; font: inherit; font-size: 12.5px; color: var(--text);
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 8px;
+  }
+  .g-search:focus { outline: none; border-color: var(--accent); }
+  .g-list { padding: 8px 8px 16px; }
+  .g-card { border: 1px solid var(--border); border-radius: 5px; margin-bottom: 8px; background: var(--panel); }
+  .g-card-head {
+    display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px;
+    background: none; border: none; color: var(--text); font: inherit; text-align: left; cursor: pointer;
+  }
+  .g-card-head:hover { background: var(--panel-2); }
+  .g-badge {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
+    background: var(--accent-dim); color: #fff; font-size: 12px; font-weight: 600;
+  }
+  .g-card-title { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .g-card-title small { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--text-muted); }
+  .g-chev { color: var(--text-dim); font-size: 10px; transition: transform .15s ease; }
+  .g-card.open .g-chev { transform: rotate(90deg); }
+  .g-card-body { display: none; padding: 2px 12px 12px; font-size: 12.5px; line-height: 1.55; color: var(--text-muted); }
+  .g-card.open .g-card-body { display: block; }
+  .g-intro { margin: 0 0 8px; color: var(--text); }
+  .g-needs { margin: 0 0 10px; font-size: 12px; }
+  .g-needs b, .g-result b, .g-trouble b { color: var(--text); font-weight: 600; }
+  .g-steps { list-style: none; margin: 0; padding: 0; }
+  .g-step { padding: 10px 0; border-top: 1px solid var(--border); }
+  .g-step-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .g-num {
+    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
+    border: 1.5px solid var(--accent); color: var(--accent); font-size: 11.5px; font-weight: 700;
+  }
+  .g-step-title { flex: 1; color: var(--text); font-weight: 600; }
+  .g-show {
+    flex-shrink: 0; background: none; border: 1px solid var(--accent-dim); border-radius: 999px;
+    color: var(--accent); font: inherit; font-size: 11.5px; padding: 2px 9px; cursor: pointer;
+  }
+  .g-show:hover { background: var(--accent-dim); color: #fff; }
+  .g-step-text { padding-left: 28px; }
+  .g-fig { margin: 8px -4px 0; }
+  .g-fig svg { display: block; width: 100%; height: auto; border-radius: 4px; }
+  .g-ui {
+    display: inline-block; padding: 0 5px; border: 1px solid var(--border); border-bottom-width: 2px;
+    border-radius: 3px; background: var(--panel-2); color: var(--text); font-size: 11.5px; line-height: 1.5;
+    white-space: nowrap;
+  }
+  .g-result { margin-top: 10px; padding: 8px 10px; border-left: 3px solid var(--ok); background: #1f2a20; border-radius: 3px; }
+  .g-result b { display: block; margin-bottom: 2px; }
+  .g-trouble { margin-top: 10px; padding: 8px 10px; border-left: 3px solid var(--warn); background: #2b2519; border-radius: 3px; }
+  .g-trouble dl { margin: 4px 0 0; }
+  .g-trouble dt { color: var(--text); margin-top: 6px; }
+  .g-trouble dd { margin: 1px 0 0; }
+  .g-more { margin: 12px 4px 0; font-size: 12px; color: var(--text-dim); }
+
+  /* Feedback tab */
+  .fb { padding: 10px 12px 16px; font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+  .fb-intro { margin: 0 0 10px; color: var(--text); }
+  .fb-intro b, .fb-muted b { color: var(--text); font-weight: 600; }
+  .fb-kinds { display: flex; gap: 6px; margin-bottom: 12px; }
+  .fb-field { display: block; margin-bottom: 10px; }
+  .fb-field > span { display: block; font-size: 11.5px; color: var(--text-muted); margin-bottom: 3px; }
+  .fb-field > span small { color: var(--text-dim); margin-left: 4px; }
+  .fb-field input, .fb-field textarea {
+    width: 100%; font: inherit; font-size: 12.5px; color: var(--text); background: var(--panel-2);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 8px;
+  }
+  .fb-field textarea { resize: vertical; min-height: 40px; }
+  .fb-field input:focus, .fb-field textarea:focus { outline: none; border-color: var(--accent); }
+  .fb-check { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; margin-bottom: 4px; color: var(--text); cursor: pointer; }
+  .fb-check small { flex-basis: 100%; padding-left: 19px; color: var(--text-dim); font-size: 11.5px; }
+  .fb-check.fb-sub { margin-left: 19px; }
+  .fb-check:has(input:disabled) { opacity: .45; cursor: default; }
+  .fb-preview { margin: 6px 0 12px; }
+  .fb-preview summary { cursor: pointer; color: var(--accent); font-size: 12px; }
+  .fb-preview pre {
+    margin: 6px 0 0; padding: 8px; max-height: 220px; overflow: auto; white-space: pre-wrap; word-break: break-word;
+    font-size: 11px; line-height: 1.45; color: var(--text-muted); background: var(--panel-2); border-radius: var(--radius);
+  }
+  .fb-actions { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .fb-actions .spacer { flex: 1; }
+  .fb-muted { margin: 0; font-size: 12px; color: var(--text-dim); }
+  .fb-head {
+    margin: 18px 0 6px; padding-top: 12px; border-top: 1px solid var(--border);
+    font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim);
+  }
+  .fb-issue {
+    display: flex; align-items: flex-start; gap: 8px; padding: 6px 4px; border-radius: 4px;
+    color: var(--text); text-decoration: none;
+  }
+  .fb-issue:hover { background: var(--panel-2); }
+  .fb-state { flex-shrink: 0; margin-top: 1px; padding: 0 6px; border-radius: 999px; font-size: 10.5px; line-height: 16px; }
+  .fb-state.open { background: #1f3a24; color: #8fd19a; }
+  .fb-state.closed { background: #2c2440; color: #c3a9f0; }
+  .fb-ititle { flex: 1; min-width: 0; }
+  .fb-ititle small { display: block; color: var(--text-dim); font-size: 11px; }
+  .fb-all { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--accent); }
+
+  /* "Show me": the real control pulses so the reader can find it. */
+  .guide-spot { animation: guide-spot 0.85s ease-in-out 3; }
+  @keyframes guide-spot {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(79, 163, 209, 0); }
+    50% { box-shadow: 0 0 0 4px rgba(79, 163, 209, .85), 0 0 18px 4px rgba(79, 163, 209, .45); }
+  }
   .warn-body .acts { display: flex; gap: 6px; margin: 8px 0 6px; }
   .warn-els { display: flex; flex-direction: column; margin-top: 4px; }
   .warn-els button {
@@ -1145,6 +1262,7 @@
     </div>
 
     <div class="tab-body">
+    <button class="tab-help" id="tab-help" title="How to use this tab" aria-label="How to use this tab">?</button>
 
     <!-- Query tab -->
     <div id="tab-query" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
@@ -1206,14 +1324,12 @@
       <div class="scroll" id="warn-list"><div class="empty-note">Load an IFC file to check it for export problems: spatial structure, georeferencing, stray geometry, GlobalIds and subtypes.</div></div>
     </div>
 
-    <!-- User Guide tab: reference for using the app -->
-    <div id="tab-guide" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-      <div class="scroll" id="guide-body"><div class="empty-note">The user guide is coming soon.</div></div>
-    </div>
+    <!-- User Guide tab: step-by-step guides, drawn by js/guide/guide.js -->
+    <div id="tab-guide" style="display:none;flex-direction:column;flex:1;overflow:hidden;"></div>
 
     <!-- Feedback tab: report bugs and suggestions -->
     <div id="tab-feedback" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-      <div class="scroll" id="feedback-body"><div class="empty-note">Bug reports and feedback are coming soon.</div></div>
+      <div id="feedback-body" style="display:flex;flex-direction:column;flex:1;overflow:hidden;"></div>
     </div>
     </div>
   </div>
