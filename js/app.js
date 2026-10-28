@@ -1,5 +1,5 @@
 /**
- * RSP CX Takeoff — application wiring.
+ * RSP CX Radar — application wiring.
  *
  * Presets come straight from the CORENET X industry mapping: every component the
  * agencies query for becomes a clickable target, and every property they require
@@ -4341,7 +4341,7 @@ let bcfSelected = null;
 const AUTHOR_KEY = 'rsp-ifcsg.author';
 
 function bcfAuthor() {
-  return (el.bcfAuthor.value || '').trim() || 'RSP CX Takeoff';
+  return (el.bcfAuthor.value || '').trim() || 'RSP CX Radar';
 }
 
 const TYPE_CHIP = { fail: 'fail', error: 'fail', alert: 'alert', warning: 'alert', info: 'info' };

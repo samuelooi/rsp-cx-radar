@@ -1,4 +1,4 @@
-# Handover — RSP CX Takeoff
+# Handover — RSP CX Radar
 
 Written for: the next developer taking over this codebase, and the RSP BIM
 team who will run it. Dated 18 September 2026. The wiki in `wiki/` goes into

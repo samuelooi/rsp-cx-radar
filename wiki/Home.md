@@ -1,4 +1,4 @@
-# RSP CX Takeoff — Wiki
+# RSP CX Radar — Wiki
 
 Written for the RSP BIM team and whoever maintains the tool next. Copy these
 pages into the GitHub wiki, or read them here.

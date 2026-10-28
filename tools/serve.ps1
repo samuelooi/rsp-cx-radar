@@ -150,7 +150,7 @@ try {
 }
 
 Write-Host ""
-Write-Host "  RSP CX Takeoff" -ForegroundColor Cyan
+Write-Host "  RSP CX Radar" -ForegroundColor Cyan
 Write-Host "  serving $Root"
 Write-Host "  http://localhost:$Port/" -ForegroundColor Green
 Write-Host "  Ctrl+C to stop"

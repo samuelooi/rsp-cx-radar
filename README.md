@@ -1,5 +1,5 @@
-# RSP CX Takeoff
-RSP CX Takeoff - Corenet X IFC Viewer and Compliance Checker 
+# RSP CX Radar
+RSP CX Radar - Corenet X IFC Viewer and Compliance Checker 
 
 
 A browser-based IFC viewer that queries and checks models against the **CORENET X
