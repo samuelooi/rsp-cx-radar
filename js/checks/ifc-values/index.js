@@ -159,10 +159,16 @@ const module = {
     }
 
     const applicable = ctx.ruleset.targets.filter(
-      (t) => matchesTarget(element, t) && t.requirements.length);
+      (t) => (!ctx.filter || ctx.filter(t)) && matchesTarget(element, t) && t.requirements.length);
 
+    // An element can match the same requirement through more than one target
+    // (several subtype rows, say); list it once.
+    const seen = new Set();
     for (const target of applicable) {
       for (const req of target.requirements) {
+        const key = [target.agency, target.component, req.pset, req.prop].join('\u0000');
+        if (seen.has(key)) continue;
+        seen.add(key);
         const r = evaluate(element, req, ctx.ruleset);
         findings.push({
           element,
@@ -212,7 +218,7 @@ function renderPresets(results, host, actions) {
       return `<div class="issue-target${r.elements.length && !fail ? ' clean' : ''}" data-i="${i}">
         <div class="issue-head">
           <span class="iname">${esc(r.preset.name)}
-            <small>${esc(describePreset(r.preset))} · ${r.elements.length} elements</small>
+            <small>${esc(describePreset(r.preset))} · ${r.elements.length} element${r.elements.length === 1 ? '' : 's'}</small>
           </span>${pill}
         </div>
         <div class="issue-body"><div class="ilist">${[...bad.entries()]
@@ -242,7 +248,7 @@ function renderPresets(results, host, actions) {
           elements: r.byResult[code],
         })),
         r.preset.name,
-        'value preset · ' + r.elements.length + ' elements');
+        'value preset · ' + r.elements.length + ' element' + (r.elements.length === 1 ? '' : 's'));
     });
   });
 }
@@ -277,7 +283,7 @@ function renderMapping(result, host, actions) {
       '<div class="issue-head">' +
         '<span class="iname">' + esc(r.target.component) +
           '<small>' + esc(r.target.agency) + ' · ' + esc(r.target.entity) +
-          ' · ' + r.elements.length + ' elements</small>' +
+          ' · ' + r.elements.length + ' element' + (r.elements.length === 1 ? '' : 's') + '</small>' +
         '</span>' +
         '<span class="pill bad">' + r.fail + '</span>' +
       '</div>' +
@@ -312,7 +318,7 @@ function renderMapping(result, host, actions) {
         },
       ].filter((g) => g.elements.length),
       r.target.component,
-      'check result · ' + r.elements.length + ' elements');
+      'check result · ' + r.elements.length + ' element' + (r.elements.length === 1 ? '' : 's'));
     });
   });
 }

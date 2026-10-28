@@ -417,7 +417,7 @@ function showPassFail(api, preset) {
       elements: r.byResult[code],
     })),
     preset.name || 'Preset preview',
-    `${describePreset(preset)} · ${r.elements.length} elements`,
+    `${describePreset(preset)} · ${r.elements.length} element${r.elements.length === 1 ? '' : 's'}`,
   );
 }
 
@@ -444,5 +444,5 @@ function showByValue(api, preset) {
   }));
   if (missing.length) groups.push({ label: '(no property)', colour: MISSING_COLOUR, elements: missing });
   api.showInModel(groups, `${preset.pset}.${preset.prop}`,
-    `${preset.entity}${preset.subtype ? ' [' + preset.subtype + ']' : ''} · ${elements.length} elements`);
+    `${preset.entity}${preset.subtype ? ' [' + preset.subtype + ']' : ''} · ${elements.length} element${elements.length === 1 ? '' : 's'}`);
 }

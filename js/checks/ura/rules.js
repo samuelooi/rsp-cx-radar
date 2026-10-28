@@ -434,7 +434,7 @@ export const RULES = [
     evaluate: (ctx) => {
       const n = countElementsWithPsetMatching(ctx, /^Pset_.*Common$/i);
       return [n
-        ? say(SEVERITY.PASS, `${n} elements carry an IFC common property set.`)
+        ? say(SEVERITY.PASS, `${n} element${n === 1 ? ' carries' : 's carry'} an IFC common property set.`)
         : say(SEVERITY.WARN,
           'No element carries a Pset_…Common property set. "Export IFC common property sets" ' +
           'looks to have been off, and the reviewer loses the standard IFC properties.')];
@@ -449,7 +449,7 @@ export const RULES = [
     evaluate: (ctx) => {
       const n = countElementsWithPsetMatching(ctx, /^(Qto_|BaseQuantities)/i);
       return [n
-        ? say(SEVERITY.PASS, `${n} elements carry base quantities.`)
+        ? say(SEVERITY.PASS, `${n} element${n === 1 ? ' carries' : 's carry'} base quantities.`)
         : say(SEVERITY.WARN,
           'No element carries a Qto_ quantity set. "Export base quantities" looks to have been ' +
           'off; areas and volumes are useful in review and the dashboard falls back without them.')];

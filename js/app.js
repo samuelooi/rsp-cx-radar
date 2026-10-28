@@ -742,7 +742,7 @@ function openLevelsPanel() {
     ${planActive ? `<button data-act="exit"><span class="lname">Exit plan view<small>Return to 3D</small></span></button><div class="sep"></div>` : ''}
     ${levels.map((l) => `
       <button data-name="${esc(l.name)}" class="${planActive && planActive.name === l.name ? 'active' : ''}">
-        <span class="lname">${esc(l.name)}<small>${l.elements.length} elements · cut at level +1.2 m</small></span>
+        <span class="lname">${esc(l.name)}<small>${l.elements.length} element${l.elements.length === 1 ? '' : 's'} · cut at level +1.2 m</small></span>
       </button>`).join('')}`;
 
   const r = el.toolLevels.getBoundingClientRect();
@@ -1874,7 +1874,7 @@ function selectProperty(group, req) {
     missing: g.missing,
   }));
   el.legendTitle.innerHTML =
-    `${esc(req.prop)}<small>${esc(group.category)} · ${esc(req.pset)} · ${elements.length} elements</small>`;
+    `${esc(req.prop)}<small>${esc(group.category)} · ${esc(req.pset)} · ${elements.length} element${elements.length === 1 ? '' : 's'}</small>`;
   // A property query can be fixed in bulk from the legend.
   el.btnSetValue.hidden = !elements.some(canEdit);
   el.legendEdit.classList.remove('visible');
@@ -2437,7 +2437,7 @@ function renderSummary() {
   const headline = t.assertions
     ? `<b style="color:var(--ok)">${pct}% compliant</b>
        · <b style="color:${t.fail ? 'var(--danger)' : 'var(--ok)'}">${num(t.fail)} issue${t.fail === 1 ? '' : 's'}</b>
-       · ${num(t.elements)} element${t.elements === 1 ? '' : 's'}`
+       · ${num(t.elements)} element${t.elements === 1 ? '' : 's'} checked`
     : '<b>Nothing checked</b>';
 
   el.summary.classList.add('visible');
@@ -2599,7 +2599,7 @@ function colourByStatus() {
     }));
 
   shellActions.showInModel(groups, 'Compliance status',
-    `${worst.size} elements across ${checkOutcomes.filter((o) => o.result).length} checks`);
+    `${worst.size} element${worst.size === 1 ? '' : 's'} across ${checkOutcomes.filter((o) => o.result).length} checks`);
 }
 
 // ----------------------------------------------------------------- dashboard
@@ -3054,7 +3054,7 @@ function showMetricInModel(metric) {
   soloIndex = -1;
   if (metric.entity === 'IFCSPACE' && !spacesVisible) setSpacesVisible(true);
   el.legendTitle.innerHTML =
-    `${esc(metric.title)}<small>${metric.count} elements · ${esc(fmtNum(metric.total, metric.decimals))} ${esc(metric.unit)}</small>`;
+    `${esc(metric.title)}<small>${metric.count} element${metric.count === 1 ? '' : 's'} · ${esc(fmtNum(metric.total, metric.decimals))} ${esc(metric.unit)}</small>`;
   renderLegend();
   applyOverlay();
   closeDashboard();
@@ -3150,7 +3150,12 @@ function showElement(item) {
   // evaluated on demand, so it is correct whether or not a check has been run,
   // and a check the user has never loaded simply contributes nothing.
   if (ruleset) {
-    const ctx = { index, ruleset, modelNames: new Map(), filter: () => true };
+    // Same gateway and authority scope as a check run, so the panel agrees with
+    // the Compliance tab (and does not list a requirement once per gateway).
+    const ctx = {
+      index, ruleset, modelNames: new Map(),
+      filter: (t) => (!gatewayFilter || t.gateway === gatewayFilter) && inScope(t),
+    };
 
     for (const { meta, module } of registry.loadedModules()) {
       if (typeof module.explain !== 'function') continue;
@@ -3566,7 +3571,7 @@ function renderProjectPanel() {
           : '<div class="pp-note">No models recorded yet. Load a model and run the checks; its results are recorded here.</div>'}
         <div class="pp-note" style="margin-top:6px">
           ${totals.checked
-            ? `${totals.checked} of ${totals.models} recorded model${totals.models === 1 ? '' : 's'} checked · ${totals.elements} elements · ${totals.fail} failure${totals.fail === 1 ? '' : 's'}, ${totals.warn} warning${totals.warn === 1 ? '' : 's'} across the submission`
+            ? `${totals.checked} of ${totals.models} recorded model${totals.models === 1 ? '' : 's'} checked · ${totals.elements} mapped element${totals.elements === 1 ? '' : 's'} · ${totals.fail} failure${totals.fail === 1 ? '' : 's'}, ${totals.warn} warning${totals.warn === 1 ? '' : 's'} across the submission`
             : 'Run the checks to record a model.'}
           ${viewer.hasModels ? '<button class="btn xs" data-record style="margin-left:6px">Record loaded models</button>' : ''}
         </div>
@@ -3953,7 +3958,7 @@ function wireModelTab() {
       }).results.map((r) => r.element);
       if (hitsBtn.dataset.hits === 'show') {
         shellActions.showInModel([{ label: 'Search results', colour: SINGLE_COLOUR, elements: all }],
-          'Search', `“${el.mtSearch.value.trim()}” · ${all.length} elements`);
+          'Search', `“${el.mtSearch.value.trim()}” · ${all.length} element${all.length === 1 ? '' : 's'}`);
       } else {
         isolateElements(all);
         viewer.fitElements(all);
@@ -4017,7 +4022,7 @@ function wireModelTab() {
 // ------------------------------------------------------------------------- tabs
 
 function showTab(tab) {
-  for (const id of ['query', 'check', 'issues', 'warnings', 'model']) {
+  for (const id of ['query', 'model', 'warnings', 'check', 'issues', 'guide', 'feedback']) {
     $('tab-' + id).style.display = id === tab ? 'flex' : 'none';
   }
   document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('active', x.dataset.tab === tab));
@@ -4872,7 +4877,7 @@ function modelSubtitle(row) {
   } else {
     bits.push('recorded, not checked');
   }
-  if (r.elements) bits.push(`${r.elements} elements`);
+  if (r.elements) bits.push(`${r.elements} element${r.elements === 1 ? '' : 's'}`);
   return bits.join(' · ');
 }
 
