@@ -222,7 +222,7 @@ key-values, page-breaking tables, signatures, footers) plus:
 | --- | --- |
 | `all()` / `byId(id)` / `byAuthority()` (`registry.js`) | The static manifest — every check's metadata without loading its module. |
 | `requiredEntities()` (`registry.js`) | Every IFC entity any check might need, for the indexer's entity union. |
-| `customInputs()` (`registry.js`) | Every `kind: 'custom'` input across all checks (the value-preset editor is the only one today). |
+| `customInputs()` (`registry.js`) | Every `kind: 'custom'` input across all checks (the value-preset list is the only one today). |
 | `load(id)` (`registry.js`) | Dynamically imports a check's module, cached for the session. |
 | `runChecks(ids, ctx, onProgress?)` (`runner.js`) | Runs the selected checks in order, in a try/catch per check so one broken module does not stop the others. |
 | `allFindings(outcomes)` / `totalsOf(outcomes)` (`runner.js`) | Flattens findings across outcomes; sums pass/fail/warn. |
@@ -236,7 +236,7 @@ Each exports `{run, render, explain}` (see [Compliance checks](04-Compliance-Che
 | Module | `run` does | Notable extra exports |
 | --- | --- | --- |
 | `space-geometry/index.js` | Filters `IFCSPACE` for `hasGeometry === false`, sorted and grouped by Area_GFA vs other. | — |
-| `ifc-values/index.js` | Runs `runCheck` from `ifcsg.js` plus every enabled value preset. | `presets.js` — `normalisePreset`, `matchesPreset`, `testElement`, `runPreset`, `psetCatalog`, `distinctValues`, `subtypeCatalog`; `preset-store.js` — `loadPresets`, `savePresets`, `canSave`; `preset-editor.js` — the custom-input module (`mount`, `value`, `requiredEntities`). |
+| `ifc-values/index.js` | Runs `runCheck` from `ifcsg.js` plus every enabled value preset. | `presets.js` — `normalisePreset`, `validatePreset`, `matchesPreset`, `testElement`, `runPreset`; `preset-store.js` — `loadPresets`, `enabledPresets`, `setEnabledPresets`, `invalidPresets`; `preset-editor.js` — the custom-input module (`mount`, `value`, `requiredEntities`), a read-only list with ticks and 3D. |
 | `geo-referencing/index.js` | Compares the model's hull (via `viewer.elementHull`) against a cadastral lot or surveyed vertices, in SVY21. | — |
 | `ura/index.js` + `rules.js` | Twenty rules from the URA guide, built with `createAuthorityCheck`. | `gatewayOf(ctx)`, `ura(el, parameter)`, `areaGfa(ctx)`, `RULES`. |
 | `bca/index.js` + `rules.js` | Placeholder — `RULES` is empty. | — |

@@ -6,8 +6,9 @@
  * this job has FireRating 60", "no wall is left with a blank Mark". Each one is
  * a selector (which elements) plus a condition (what one property must satisfy).
  *
- * Everything here is pure: index and preset in, results out. Where presets are
- * stored lives in preset-store.js, and the editor in preset-editor.js.
+ * Everything here is pure: index and preset in, results out. Presets are
+ * written by hand in data/value-presets.json and read by preset-store.js; the
+ * check menu's list of them is preset-editor.js.
  */
 
 import {
@@ -16,7 +17,7 @@ import {
 
 /**
  * @typedef {object} ValuePreset
- * @property {string} id
+ * @property {string} id        Stable; a project file records ticks by it. Defaults to a slug of the name.
  * @property {string} name
  * @property {string} entity    IFC entity, e.g. "IfcDoor". Standard-case variants fold onto it.
  * @property {string} subtype   Comma-separated PredefinedType / ObjectType values; '' for any.
@@ -69,38 +70,40 @@ const splitList = (s) => String(s || '').split(/[,\n]/).map((x) => x.trim()).fil
 /** Fills defaults and drops unknown fields, so stored data has one shape. */
 export function normalisePreset(p) {
   return {
-    id: String(p.id || newId()),
+    id: String(p.id || slug(p.name)),
     name: String(p.name || '').trim(),
     entity: String(p.entity || '').trim(),
     subtype: String(p.subtype || '').trim(),
     pset: String(p.pset || '').trim(),
     prop: String(p.prop || '').trim(),
-    op: OP_BY_ID.has(p.op) ? p.op : 'exists',
+    // An op the file misspells is kept as written so validatePreset reports it.
+    op: p.op ? String(p.op).trim() : 'exists',
     value: String(p.value == null ? '' : p.value).trim(),
     enabled: p.enabled !== false,
   };
 }
 
-export function newId() {
-  return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+function slug(name) {
+  return String(name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
 /** Why a preset cannot run, or null when it can. */
 export function validatePreset(p) {
-  if (!p.name) return 'Give the preset a name.';
-  if (!p.entity) return 'Choose an IFC entity.';
-  if (!/^ifc[a-z0-9]+$/i.test(p.entity)) return `"${p.entity}" is not an IFC entity name.`;
-  if (!p.pset) return 'Enter a property set.';
-  if (!p.prop) return 'Enter a property.';
+  if (!p.name) return 'no name';
+  if (!p.id) return 'no id';
+  if (!p.entity) return 'no entity';
+  if (!/^ifc[a-z0-9]+$/i.test(p.entity)) return `"${p.entity}" is not an IFC entity name`;
+  if (!p.pset) return 'no pset';
+  if (!p.prop) return 'no prop';
   const op = OP_BY_ID.get(p.op);
-  if (!op) return 'Choose a condition.';
-  if (op.needsValue && p.value === '') return `"${op.label}" needs a value.`;
-  if (op.numeric && !Number.isFinite(Number(p.value))) return `"${op.label}" needs a number.`;
+  if (!op) return `unknown op "${p.op}"`;
+  if (op.needsValue && p.value === '') return `op "${op.id}" needs a value`;
+  if (op.numeric && !Number.isFinite(Number(p.value))) return `op "${op.id}" needs a number`;
   if (p.op === 'matches') {
     try {
       new RegExp(p.value, 'i');
     } catch (err) {
-      return `The pattern is not valid: ${err.message}`;
+      return `the pattern is not valid: ${err.message}`;
     }
   }
   return null;
@@ -198,65 +201,4 @@ export function describePreset(p) {
     ? `${op.label}${op.needsValue ? ' ' + p.value : ''}`
     : p.op;
   return `${sel} · ${p.pset}.${p.prop} ${cond}`;
-}
-
-// ------------------------------------------------------------- model lookups
-
-/**
- * What property sets and properties the selected elements actually carry, so the
- * editor can suggest names that exist rather than ones the user has to guess.
- * @returns {Array<{pset: string, props: string[], count: number}>}
- */
-export function psetCatalog(elements) {
-  const psets = new Map();
-  for (const el of elements) {
-    for (const [name, props] of Object.entries(el.psets)) {
-      let entry = psets.get(name);
-      if (!entry) psets.set(name, (entry = { pset: name, props: new Set(), count: 0 }));
-      entry.count++;
-      for (const k of Object.keys(props)) entry.props.add(k);
-    }
-  }
-  return [...psets.values()]
-    .map((e) => ({ pset: e.pset, props: [...e.props].sort(), count: e.count }))
-    .sort((a, b) => b.count - a.count || a.pset.localeCompare(b.pset));
-}
-
-/**
- * Distinct values of one property across elements, most common first.
- * Elements without the property are counted under `missing`.
- * @returns {{values: Array<{label: string, count: number, elements: object[]}>, missing: object[]}}
- */
-export function distinctValues(elements, pset, prop) {
-  const values = new Map();
-  const missing = [];
-  for (const el of elements) {
-    const v = getValue(el, pset, prop);
-    if (v === undefined) {
-      missing.push(el);
-      continue;
-    }
-    const label = isEmptyValue(v) ? '(empty)' : formatValue(v).trim();
-    let entry = values.get(label);
-    if (!entry) values.set(label, (entry = { label, count: 0, elements: [] }));
-    entry.count++;
-    entry.elements.push(el);
-  }
-  return {
-    values: [...values.values()].sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
-    missing,
-  };
-}
-
-/** Distinct subtypes (PredefinedType / ObjectType) among an entity's elements. */
-export function subtypeCatalog(index, entity) {
-  const bucket = (index && index.byEntity.get(canonicalEntity(entity))) || [];
-  const seen = new Map();
-  for (const el of bucket) {
-    for (const v of [el.predefinedType, el.objectType]) {
-      if (v === null || v === undefined || v === '' || v === 'NOTDEFINED') continue;
-      seen.set(String(v), (seen.get(String(v)) || 0) + 1);
-    }
-  }
-  return [...seen.entries()].sort((a, b) => b[1] - a[1]).map(([value, count]) => ({ value, count }));
 }

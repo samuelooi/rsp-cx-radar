@@ -31,8 +31,8 @@ const MANIFEST = [
         id: 'presets',
         kind: 'custom',
         label: 'Value presets',
-        help: 'Your own property queries, shared with the team through ' +
-          'data/value-presets.json. Ticked presets run with this check; "3D" shows ' +
+        help: 'Your own property queries, written in data/value-presets.json and ' +
+          'shared through git. Ticked presets run with this check; "3D" shows ' +
           'what a preset selects. Numbers are in the units the model was authored in.',
         load: () => import('./ifc-values/preset-editor.js'),
       },

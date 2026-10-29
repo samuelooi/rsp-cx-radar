@@ -3,15 +3,15 @@
 ## Run it
 
 The page uses ES modules and fetches JSON, so it must be served over HTTP.
-There is no build step and no Node.
+There is no build step and no Node. Any static host works (GitHub Pages, IIS,
+anything that sends `.js` and `.wasm` with the right MIME types). Locally,
+without Node or Python:
 
 ```
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/serve.ps1 -Port 8080
 ```
 
-Open <http://localhost:8080>. The server also exposes the shared value presets
-file at `/api/presets`, which is what lets the preset editor and project ticks
-save. On a plain static host everything else works and presets are read-only.
+Open <http://localhost:8080>.
 
 Chrome or Edge are recommended: they have the native save picker (save in
 place, Save as…) used by the project file, IFC export, BCF and PDF. Other

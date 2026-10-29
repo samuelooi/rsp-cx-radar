@@ -36,7 +36,7 @@ import {
   rememberProject, lastProject, clearLastProject,
 } from './project.js';
 import {
-  loadPresets, currentPresets, enabledPresets, savePresets, canSave,
+  loadPresets, enabledPresets, setEnabledPresets, onPresetsChanged,
 } from './checks/ifc-values/preset-store.js';
 import * as WebIFC from 'web-ifc';
 import { WASM_PATH } from './viewer.js';
@@ -263,6 +263,8 @@ async function init() {
     // Custom inputs can ask for entities too (a value preset on IfcTank), and
     // those are only known once their saved data has loaded.
     await loadCustomInputs();
+    // Preset ticks are saved with the project, so a toggle can make it dirty.
+    onPresetsChanged(() => renderProjectChip());
 
     // The element inspector reads live pass/fail from this module, so it is
     // fetched at boot rather than on first run. It is small, and not awaiting it
@@ -3494,27 +3496,13 @@ async function applyProject(p, { handle = null, quiet = false } = {}) {
 }
 
 /**
- * Ticks exactly the presets the project names. Ticks live in the shared
- * presets file, so this writes through the same store the editor uses; on a
- * host where that file is read-only the ticks are left as they are.
+ * Ticks exactly the presets the project names. Ticks are session state, so
+ * nothing is written to the shared presets file.
  */
 async function applyPresetTicks(ids) {
   if (!ids) return;
   await loadPresets();
-  const want = new Set(ids);
-  const list = currentPresets();
-  const next = list.map((p) => ({ ...p, enabled: want.has(p.id) }));
-  if (next.every((p, i) => p.enabled === list[i].enabled)) return;
-  if (!canSave()) {
-    toast('The project\'s preset ticks could not be applied: presets are read-only on this host.');
-    return;
-  }
-  try {
-    await savePresets(next);
-  } catch (err) {
-    console.error(err);
-    toast('The project\'s preset ticks could not be applied: ' + err.message);
-  }
+  setEnabledPresets(ids);
 }
 
 async function restoreLastProject() {

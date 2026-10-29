@@ -124,8 +124,8 @@ recipe and the traps. Results from this session:
 - Edits live in the IFC copy only. The next Revit export overwrites them. The
   panel and the report both say so.
 - A geometry-less space cannot be coloured. Its row opens the inspector.
-- Preset ticks are stored in the shared presets file; a project applies its
-  ticks by writing that file, which needs `serve.ps1` (read-only otherwise).
+- Value presets are written by hand in `data/value-presets.json`; the app only
+  reads them. Ticks are session state, saved and restored by the project file.
 - BCF viewpoints assume metres and the IFC project coordinate system, mapped
   through the viewer's coordination matrix. Viewpoints from other tools that
   use different conventions may land off target.

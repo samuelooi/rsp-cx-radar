@@ -55,8 +55,8 @@ chrome.exe --headless=new --disable-gpu --use-gl=swiftshader --no-sandbox
   that fetch a model concurrently.
 - A `const d = window.__dbg` snapshot copies scalar state; call the getter
   again for live values.
-- To get a generated file out of the page, PUT it as JSON to `/api/presets`:
-  the server writes it to `data/value-presets.json` in the served root.
+- To get a generated file out of the page, log it base64-encoded with a
+  `[tag]` prefix and decode it from the log; the dev server is read-only.
 
 ## Direct module tests
 

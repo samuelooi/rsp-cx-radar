@@ -30,7 +30,7 @@ IFC set: `<code>.ifcsg-project.json`. The format is in `js/project.js`.
 | `submission.authorities` | Scopes the query tab's authority bubbles, the IFC values check's targets and the check menu. Ticking or unticking an authority in the panel ticks or unticks its checks. Empty means all. |
 | `checks.selected` | The ticked checks. A file without the field ticks every non-experimental check in scope. |
 | `checks.inputs` | The check inputs by `<check>.<input>`; files are embedded as text so the project survives being emailed. |
-| `checks.presets` | Which shared value presets are ticked, by id. Applying writes the ticks to the shared file through the dev server. |
+| `checks.presets` | Which shared value presets are ticked, by id. Applying ticks exactly those for the session; the shared presets file is not touched. |
 | `project.files` | Expected model files, recorded on save. The panel shows which are loaded. |
 | `ruleset.generated` | The workbook stamp. A different stamp at load gives a one-line warning. |
 | `edits` | Hand edits made in the viewer, by file. Informational; not re-applied. |

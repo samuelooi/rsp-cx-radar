@@ -433,7 +433,6 @@
   .vp-list { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 6px; }
   .vp-row { display: flex; align-items: center; gap: 6px; padding: 5px 7px; }
   .vp-row + .vp-row { border-top: 1px solid #2e333c; }
-  .vp-row.editing { background: var(--panel-2); }
   .vp-row input { accent-color: var(--accent); flex-shrink: 0; margin: 0; }
   .vp-text { flex: 1; min-width: 0; }
   .vp-name { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text); }
@@ -441,40 +440,7 @@
     display: block; font-size: 11px; color: var(--text-dim);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .vp-new { margin-top: 2px; }
   .vp-warn { color: #d4a13c; }
-  .vp-form {
-    border: 1px solid var(--accent-dim); border-radius: var(--radius);
-    padding: 8px; margin-top: 4px; background: var(--panel-2);
-  }
-  .vp-title { font-size: 11.5px; color: var(--text); margin-bottom: 6px; }
-  .vp-field { display: block; margin-bottom: 6px; min-width: 0; }
-  .vp-field > span { display: block; font-size: 11.5px; color: var(--text-muted); margin-bottom: 2px; }
-  .vp-field em { font-style: normal; color: var(--text-dim); }
-  .vp-form .cm-textin, .vp-form .cm-select { background: var(--panel); }
-  .vp-pair { display: flex; gap: 6px; }
-  .vp-pair > .vp-field { flex: 1; }
-  .vp-pair > .vp-op { flex: 0 0 42%; }
-  .vp-hint { font-size: 11.5px; color: var(--text-dim); line-height: 1.45; margin: -2px 0 6px; }
-  .vp-hint:empty { display: none; }
-  .vp-values-head { color: var(--text-muted); margin-bottom: 3px; }
-  .vp-chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-  .vp-chip {
-    display: inline-flex; align-items: center; gap: 4px; max-width: 100%;
-    font-family: inherit; font-size: 11.5px; color: var(--text);
-    background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
-    padding: 1px 7px; cursor: pointer;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .vp-chip:hover { border-color: var(--accent); }
-  .vp-chip b { font-weight: 400; color: var(--text-dim); font-variant-numeric: tabular-nums; }
-  .vp-more { font-size: 11px; color: var(--text-dim); }
-  .vp-outcome { margin-top: 5px; font-variant-numeric: tabular-nums; }
-  .vp-error { font-size: 11.5px; color: var(--danger); margin-bottom: 6px; }
-  .vp-error:empty { display: none; }
-  .vp-actions { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-  .vp-spacer { flex: 1; }
-  .btn.vp-danger { color: #e59277; }
 
   /* Key/value facts a check reports above its findings. */
   .geo-facts {

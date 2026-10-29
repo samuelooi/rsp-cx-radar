@@ -9,8 +9,11 @@ Everything runs locally in the browser. No model is uploaded anywhere.
 
 ## Running it
 
-The app uses ES modules and fetches its ruleset, so it must be served over HTTP —
-opening `index.html` from disk will not work.
+The app is a static page: no build step and no server-side code. It uses ES
+modules and fetches its ruleset, so it must be served over HTTP — opening
+`index.html` from disk will not work. Any static host does (GitHub Pages, IIS,
+anything that serves `.js` and `.wasm` with the right MIME types). To run it
+locally without Node or Python:
 
 ```powershell
 powershell -File tools/serve.ps1          # http://localhost:8080
@@ -18,11 +21,6 @@ powershell -File tools/serve.ps1 -Port 9000
 ```
 
 Then open the URL and drop one or more `.ifc` files on the window.
-
-The server also handles `GET` and `PUT` requests to `/api/presets`, which read
-and save `data/value-presets.json` (see [Value presets](#value-presets)). It
-only listens on `localhost`, and it refuses writes that come from another
-origin.
 
 ## Working with models
 
@@ -489,28 +487,49 @@ A preset has two parts:
   equal, be one of, contain, match a pattern, or be `>` / `≥` / `<` / `≤`
   a number.
 
-Tick **IFC values** in the Compliance tab, then **+ New preset**. With a
-model loaded, the editor fills in its suggestions from that model: the
-entities and subtypes it contains, the property sets on the selected
-elements, and the values those properties actually hold. Click a value chip
-to use it.
+Presets are written by hand in `data/value-presets.json` and shared by
+committing it; the app only reads the file:
 
-- **Show in 3D** colours the elements that meet and don't meet the condition,
-  so you can check the preset selects the right things before you save it.
-- **By value** colours the selected elements by the property's value.
+```json
+{
+  "version": 1,
+  "presets": [
+    {
+      "id": "fire-doors-60",
+      "name": "Fire doors rated 60 min",
+      "entity": "IfcDoor",
+      "subtype": "FIREDOOR",
+      "pset": "Pset_DoorCommon",
+      "prop": "FireRating",
+      "op": "equals",
+      "value": "60",
+      "enabled": true
+    }
+  ]
+}
+```
 
-In the list of saved presets, **3D** shows what a preset selects, and its
-checkbox sets whether the check runs it. After a run, each preset gets its own
-result block. Click a block to colour its passing and failing elements.
+| Field | Meaning |
+| --- | --- |
+| `id` | Stable id; project files record ticks by it. Defaults to a slug of `name`. |
+| `entity` | IFC entity; standard-case variants fold onto it. |
+| `subtype` | Optional; comma-separated `PredefinedType` / `ObjectType` values. |
+| `op` | `exists`, `not-empty`, `equals`, `not-equals`, `one-of` (comma-separated `value`), `contains`, `matches` (regex), `gt`, `gte`, `lt`, `lte`. |
+| `enabled` | Whether it starts ticked. Defaults to `true`. |
 
-Presets are saved to `data/value-presets.json` via `tools/serve.ps1`.
-Commit that file to share them with the team. On a static host, without that
-server, presets still load and run, but can't be edited.
+Comparisons ignore case. A preset that is missing a field, has an unknown `op`
+or a bad pattern, or repeats an id is skipped, and the list says why.
+
+Tick **IFC values** in the Compliance tab to see the list. **3D** colours the
+elements a preset selects by whether they meet the condition, and its checkbox
+sets whether the check runs it for this session (a project file saves the
+ticks). After a run, each preset gets its own result block. Click a block to
+colour its passing and failing elements.
 
 Numbers are compared in the units the model was authored in. An entity the
 ruleset doesn't cover (such as `IfcTank`) is only read from models loaded
-*after* the preset that needs it was saved, so reload any model that's already
-open.
+after the page has read the preset that needs it, so reload the page after
+adding such a preset.
 
 ### URA requirements
 
@@ -849,9 +868,9 @@ js/checks/                  the check framework and the checks themselves
 js/app.js                   UI wiring: models, presets, legend, checks, dashboard
 data/ifcsg-rules.json       generated ruleset (do not edit)
 data/ura-vocabulary.json    values URA accepts that the workbook lacks (hand-maintained)
-data/value-presets.json     the team's value presets (written by the app)
+data/value-presets.json     the team's value presets (hand-written)
 tools/build-ifcsg-rules.ps1 workbook -> ruleset
-tools/serve.ps1             local server: static files plus /api/presets
+tools/serve.ps1             optional local static server
 vendor/web-ifc/             web-ifc 0.0.36 wasm (the direct path)
 vendor/web-ifc-0.0.77/      web-ifc 0.0.77 wasm (the large-model converter)
 vendor/fragments/worker.mjs That Open Fragments' worker, 3.4.7

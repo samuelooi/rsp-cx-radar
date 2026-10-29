@@ -58,4 +58,3 @@ BCF-side parity (done), then the geometry heuristics.
 - Results export beyond BCF (CSV of all findings).
 - Snapshot per finding topic when the count is small.
 - Undo for individual IFC edits.
-- Preset ticks per project without writing the shared file.
